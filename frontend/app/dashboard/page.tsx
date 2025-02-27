@@ -73,13 +73,13 @@ export default function Home() {
              
             </a>
             <a
-              href="#"
+              href="/chef/Chefdashboard"
               className="flex items-center text-gray-600 hover:text-indigo-800 py-4 transition-all duration-300 hover:translate-x-1"
             >
               <span className="material-icons-outlined mr-2">Chef</span>
              </a> 
             <a
-              href="#"
+              href="maid/maiddash"
               className="flex items-center text-gray-600 hover:text-indigo-800 py-4 transition-all duration-300 hover:translate-x-1"
             >
               <span className="material-icons-outlined mr-2">Maid Booking</span>

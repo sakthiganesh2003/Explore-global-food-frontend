@@ -11,7 +11,7 @@ export default function UploadRecipe() {
     image: "",
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("New Recipe:", newRecipe); // Temporary: Replace with API call or global state update
     setNewRecipe({ title: "", cuisine: "", ingredients: "", instructions: "", image: "" });

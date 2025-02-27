@@ -20,17 +20,17 @@ const Time = () => {
     { label: '1 hour', value: '60' }
   ];
 
-  const handleDateChange = (e) => {
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedDate(e.target.value);
     setError('');
   };
 
-  const handleTimeChange = (e) => {
+  const handleTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedTime(e.target.value);
     setError('');
   };
 
-  const handlePrepTimeChange = (e) => {
+  const handlePrepTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setPrepTime(e.target.value);
   };
 

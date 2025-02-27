@@ -1,6 +1,19 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-const maids = [
+interface Maid {
+  id: number;
+  name: string;
+  cuisine: string;
+  rating: number;
+  experience: string;
+  image: string;
+}
+
+interface MaidChooseProps {
+  onSelect?: (maid: Maid | undefined) => void;
+}
+
+const maids: Maid[] = [
   {
     id: 1,
     name: "Sophia Lee",
@@ -27,14 +40,14 @@ const maids = [
   },
 ];
 
-const MaidChoose = ({ onSelect = () => {} }) => {
-  const [selectedMaid, setSelectedMaid] = useState(null);
+const MaidChoose: React.FC<MaidChooseProps> = ({ onSelect = () => {} }) => {
+  const [selectedMaid, setSelectedMaid] = useState<number | null>(null);
 
-  const handleConfirmSelection = () => {
+  const handleConfirmSelection = (): void => {
     if (selectedMaid !== null) {
       const chosenMaid = maids.find((maid) => maid.id === selectedMaid);
       console.log("Confirmed Maid:", chosenMaid);
-      onSelect(chosenMaid); // Pass the selected maid back to the parent component
+      onSelect(chosenMaid);
     }
   };
 
@@ -42,7 +55,7 @@ const MaidChoose = ({ onSelect = () => {} }) => {
     <div className="text-center text-gray-500">
       <h2 className="text-xl font-semibold mb-4">Choose Your Maid</h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
         {maids.map((maid) => (
           <div
             key={maid.id}
@@ -51,10 +64,16 @@ const MaidChoose = ({ onSelect = () => {} }) => {
             }`}
             onClick={() => setSelectedMaid(maid.id)}
           >
-            <img src={maid.image} alt={maid.name} className="w-24 h-24 mx-auto rounded-full object-cover" />
+            <img
+              src={maid.image}
+              alt={maid.name}
+              className="w-24 h-24 mx-auto rounded-full object-cover"
+            />
             <h3 className="mt-2 text-lg font-bold">{maid.name}</h3>
             <p className="text-sm text-gray-600">{maid.cuisine}</p>
-            <p className="text-sm text-gray-600">⭐ {maid.rating} | {maid.experience}</p>
+            <p className="text-sm text-gray-600">
+              ⭐ {maid.rating} | {maid.experience}
+            </p>
           </div>
         ))}
       </div>
