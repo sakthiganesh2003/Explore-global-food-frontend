@@ -4,23 +4,30 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const AuthPage = () => {
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+interface User {
+  username: string;
+  password: string;
+  role: string;
+  userId?: number;
+}
+
+const AuthPage: React.FC = () => {
+  const [isSignUp, setIsSignUp] = useState<boolean>(false);
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   const router = useRouter();
 
   useEffect(() => {
     const role = localStorage.getItem("userRole");
     if (role) {
-      router.push("/"); 
+      router.push("/");
     }
   }, [router]);
 
-  const toggleForm = () => {
+  const toggleForm = (): void => {
     setIsSignUp((prev) => !prev);
     setUsername("");
     setPassword("");
@@ -28,11 +35,11 @@ const AuthPage = () => {
     setError("");
   };
 
-  const getUsers = () => {
-    const storedUsers = JSON.parse(localStorage.getItem("users") || "[]");
+  const getUsers = (): User[] => {
+    const storedUsers = JSON.parse(localStorage.getItem("users") || "[]") as User[];
 
     if (storedUsers.length === 0) {
-      const defaultUsers = [
+      const defaultUsers: User[] = [
         { username: "admin123", password: "adminpass", role: "admin" },
         { username: "user123", password: "userpass", role: "user" },
         { username: "guide123", password: "guidepass", role: "guide" },
@@ -44,47 +51,46 @@ const AuthPage = () => {
     return storedUsers;
   };
 
-  const handleLogin = (event) => {
+  const handleLogin = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     const users = getUsers();
 
     const user = users.find((u) => u.username === username && u.password === password);
     if (user) {
-      localStorage.setItem("username", user.username); // Store username
+      localStorage.setItem("username", user.username);
       localStorage.setItem("userRole", user.role);
-      router.push("/"); // Navigate to home
+      router.push("/");
     } else {
       setError("Invalid username or password!");
     }
   };
 
-  const handleSignUp = (event) => {
+  const handleSignUp = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     if (password !== confirmPassword) {
       setError("Passwords do not match!");
       return;
     }
-  
+
     let users = getUsers();
-    if (users.find((u) => u.username === username)) {
+    if (users.some((u) => u.username === username)) {
       setError("Username already taken!");
       return;
     }
-  
+
     // Generate a random userId
-    const userId = Math.floor(Math.random() * 1000000);
-  
-    const newUser = { username, password, role: "user", userId };
+    const userId: number = Math.floor(Math.random() * 1000000);
+
+    const newUser: User = { username, password, role: "user", userId };
     users.push(newUser);
     localStorage.setItem("users", JSON.stringify(users));
-  
+
     alert("Sign-up successful! Please log in.");
     toggleForm();
   };
-  
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-primary p-6 bg-gray-800 text-gray-900">
+    <div className="flex justify-center items-center min-h-screen bg-primary p-6">
       <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-2xl border border-gray-200">
         <h1 className="text-3xl font-bold text-gray-900 text-center mb-6">
           {isSignUp ? "Sign Up" : "Sign In"}
@@ -143,7 +149,7 @@ const AuthPage = () => {
 
           <button
             type="submit"
-            className="w-full bg-button hover:bg-opacity-80 text-white font-semibold py-3 rounded-lg bg-black transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="w-full bg-button hover:bg-opacity-80 text-white font-semibold py-3 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             {isSignUp ? "Sign Up" : "Sign In"}
           </button>

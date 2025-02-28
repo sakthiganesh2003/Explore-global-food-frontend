@@ -1,7 +1,20 @@
 "use client";
 import { useState } from "react";
 
-const cuisineDetails = {
+type Dish = {
+  name: string;
+  image: string;
+};
+
+type CuisineDetails = {
+  [key: string]: {
+    Morning: Dish[];
+    Evening: Dish[];
+    Night: Dish[];
+  };
+};
+
+const cuisineDetails: CuisineDetails = {
   Italian: {
     Morning: [
       { name: "Frittata", image: "/maid/rice.jpg" },
@@ -28,7 +41,7 @@ const cuisineDetails = {
     Evening: [
       { name: "Pakora", image: "/images/pakora.jpg" },
       { name: "Samosa", image: "/images/samosa.jpg" },
-      { name: "Pav Bhaji", image: "/images/pavbhaji.jpg" },
+      { name: "Chaat", image: "/images/chaat.jpg" },
     ],
     Night: [
       { name: "Butter Chicken", image: "/images/butterchicken.jpg" },
@@ -38,25 +51,29 @@ const cuisineDetails = {
   },
 };
 
-const mealTimes = ["Morning", "Evening", "Night"];
+const mealTimes = ["Morning", "Evening", "Night"] as const;
 
-const SelectCuisine = ({ onSelect = () => {} }) => {
-  const [selectedCuisine, setSelectedCuisine] = useState("");
-  const [selectedMealTime, setSelectedMealTime] = useState("");
-  const [selectedDish, setSelectedDish] = useState(null);
+type SelectCuisineProps = {
+  onSelect?: (selection: { cuisine: string; mealTime: string; dish: Dish }) => void;
+};
 
-  const handleCuisineSelect = (cuisine) => {
+const SelectCuisine: React.FC<SelectCuisineProps> = ({ onSelect = () => {} }) => {
+  const [selectedCuisine, setSelectedCuisine] = useState<string>("");
+  const [selectedMealTime, setSelectedMealTime] = useState<string>("");
+  const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
+
+  const handleCuisineSelect = (cuisine: string) => {
     setSelectedCuisine(cuisine);
     setSelectedMealTime("");
     setSelectedDish(null);
   };
 
-  const handleMealTimeSelect = (time) => {
+  const handleMealTimeSelect = (time: string) => {
     setSelectedMealTime(time);
     setSelectedDish(null);
   };
 
-  const handleDishSelect = (dish) => {
+  const handleDishSelect = (dish: Dish) => {
     setSelectedDish(dish);
     onSelect({ cuisine: selectedCuisine, mealTime: selectedMealTime, dish });
   };
@@ -105,7 +122,7 @@ const SelectCuisine = ({ onSelect = () => {} }) => {
         <>
           <h2 className="text-xl font-semibold mb-2">Select Dish</h2>
           <div className="grid grid-cols-2 gap-4">
-            {cuisineDetails[selectedCuisine][selectedMealTime].map((dish) => (
+            {cuisineDetails[selectedCuisine][selectedMealTime as keyof typeof cuisineDetails[typeof selectedCuisine]].map((dish) => (
               <button
                 key={dish.name}
                 className={`p-2 border rounded-lg transition-all duration-300 flex flex-col items-center ${
