@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Image from "next/image"; 
 
 interface Maid {
   id: number;
@@ -14,19 +15,13 @@ interface MaidChooseProps {
 }
 
 const maids: Maid[] = [
-  { id: 1, name: "Sophia Lee", cuisine: "Italian, French", rating: 4.8, experience: "5 years", image: "/chef2.jpg" },
-  { id: 2, name: "Amara Patel", cuisine: "Indian, Thai", rating: 4.7, experience: "3 years", image: "/chef1.jpg" },
-  { id: 3, name: "Daniel Carter", cuisine: "American, BBQ", rating: 4.9, experience: "7 years", image: "/chef3.jpg" },
+  { id: 1, name: "Sophia Lee", cuisine: "Italian, French", rating: 4.8, experience: "5 years", image: "/chef1.jpg" },
+  { id: 2, name: "Amara Patel", cuisine: "Indian, Thai", rating: 4.7, experience: "3 years", image: "/chef1" },
+  { id: 3, name: "Daniel Carter", cuisine: "American, BBQ", rating: 4.9, experience: "7 years", image: "/chef1" },
   { id: 4, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
   { id: 5, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
   { id: 6, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
-  { id: 7, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
-  { id: 8, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
-  { id: 9, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
-  { id: 10, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
-  { id: 11, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
-  { id: 12, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
-  { id: 13, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
+  
 ];
 
 const MaidChoose: React.FC<MaidChooseProps> = ({ onSelect = () => {} }) => {
@@ -66,11 +61,13 @@ const MaidChoose: React.FC<MaidChooseProps> = ({ onSelect = () => {} }) => {
             }`}
             onClick={() => setSelectedMaid(maid.id)}
           >
-            <img
+            <Image
               src={maid.image}
               alt={maid.name}
+              width={24}
+              height={24}
               className="w-24 h-24 mx-auto rounded-full object-cover"
-            />
+            ></Image>
             <h3 className="mt-2 text-lg font-bold">{maid.name}</h3>
             <p className="text-sm text-gray-600">{maid.cuisine}</p>
             <p className="text-sm text-gray-600">⭐ {maid.rating} | {maid.experience}</p>

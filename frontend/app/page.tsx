@@ -31,13 +31,13 @@ export default function Home() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center">
           {/* Left Side (Image & Cards) */}
           <div className="relative w-full md:w-1/2"> 
-            <img
+            <Image
               src="/maid/re.jpg"
               alt="Restaurant"
               className="rounded-lg shadow-lg w-full"
               width={500} // Specify width
               height={300} // Specify height
-            />
+            ></Image>
             {/* Card Container */}
             <div className="absolute top-5 left-5 md:left-10 bg-gray-800 p-4 rounded-lg w-60 gap-2">
               <span className="text-orange-400 text-xl">🔥 High Quality</span>
@@ -74,13 +74,13 @@ export default function Home() {
               key={index}
               className="relative group overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-transform transform hover:scale-105"
             >
-              <img
+              <Image
                 src={cuisine.image}
                 alt={cuisine.name}
                 className="w-full h-56 object-cover"
                 width={500}
                 height={300}
-              />
+              ></Image>
               <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <h3 className="text-white text-2xl font-bold">{cuisine.name}</h3>
               </div>

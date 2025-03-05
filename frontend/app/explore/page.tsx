@@ -3,6 +3,8 @@ import { useState } from "react";
 import Link from "next/link";
 import RecipePage1 from "../component/RecipePage";
 import Navbar from "../component/navbar";
+import Image from "next/image";
+
 const recipes = [
   { id: 1, title: "Spaghetti Carbonara", category: "Pasta", cuisine: "Italian", image: "/indian.jpg", description: "A classic Italian pasta dish with eggs, cheese, pancetta, and pepper." },
   { id: 2, title: "Avocado Toast", category: "Breakfast", cuisine: "American", image: "/amarican.jpg", description: "A healthy and delicious toast topped with mashed avocado and seasonings." },
@@ -24,14 +26,10 @@ export default function ReceipeUser() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-100  ">
+    <div className="min-h-screen bg-gray-100">
+      {/* Navbar */}
+      <Navbar />
 
-       {/* Navbar */}
-       
-        <Navbar/>
-      
-
-      
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-center mt-12 text-gray-600">Recipes</h1>
 
@@ -41,7 +39,7 @@ export default function ReceipeUser() {
           placeholder="Search recipes..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full p-2  text-black border border-gray-300 rounded-md mb-4"
+          className="w-full p-2 text-black border border-gray-300 rounded-md mb-4"
         />
 
         {/* Filters */}
@@ -75,7 +73,9 @@ export default function ReceipeUser() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-gray-600 p-5">
           {filteredRecipes.map((recipe) => (
             <div key={recipe.id} className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer">
-              <img src={recipe.image} alt={recipe.title} className="w-full h-48 object-cover" />
+              <div className="relative w-full h-48">
+                <Image src={recipe.image} alt={recipe.title} fill className="object-cover rounded-lg" />
+              </div>
               <div className="p-4">
                 <h2 className="text-xl font-semibold">{recipe.title}</h2>
                 <p className="text-gray-600">{recipe.category} | {recipe.cuisine}</p>
@@ -87,10 +87,11 @@ export default function ReceipeUser() {
           ))}
         </div>
       </div>
-  <div className="">
-      <h1 className="text-center text-size text-gray-800 text-3xl font-serif font-bold mt-10" >Traditional recipe</h1>"
-      <RecipePage1 />
-      </div> 
+
+      <div className="">
+        <h1 className="text-center text-size text-gray-800 text-3xl font-serif font-bold mt-10">Traditional recipe</h1>
+        <RecipePage1 />
+      </div>
     </div>
   );
 }

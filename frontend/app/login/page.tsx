@@ -1,172 +1,63 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import React, { useState } from "react";
 
-interface User {
-  username: string;
-  password: string;
-  role: string;
-  userId?: number;
-}
 
-const AuthPage: React.FC = () => {
-  const [isSignUp, setIsSignUp] = useState<boolean>(false);
-  const [username, setUsername] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [error, setError] = useState<string>("");
+const Login: React.FC = () => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
-  const router = useRouter();
-
-  useEffect(() => {
-    const role = localStorage.getItem("userRole");
-    if (role) {
-      router.push("/");
-    }
-  }, [router]);
-
-  const toggleForm = (): void => {
-    setIsSignUp((prev) => !prev);
-    setUsername("");
-    setPassword("");
-    setConfirmPassword("");
-    setError("");
-  };
-
-  const getUsers = (): User[] => {
-    const storedUsers = JSON.parse(localStorage.getItem("users") || "[]") as User[];
-
-    if (storedUsers.length === 0) {
-      const defaultUsers: User[] = [
-        { username: "admin123", password: "adminpass", role: "admin" },
-        { username: "user123", password: "userpass", role: "user" },
-        { username: "guide123", password: "guidepass", role: "guide" },
-      ];
-      localStorage.setItem("users", JSON.stringify(defaultUsers));
-      return defaultUsers;
-    }
-
-    return storedUsers;
-  };
-
-  const handleLogin = (event: React.FormEvent<HTMLFormElement>): void => {
-    event.preventDefault();
-    const users = getUsers();
-
-    const user = users.find((u) => u.username === username && u.password === password);
-    if (user) {
-      localStorage.setItem("username", user.username);
-      localStorage.setItem("userRole", user.role);
-      router.push("/");
-    } else {
-      setError("Invalid username or password!");
-    }
-  };
-
-  const handleSignUp = (event: React.FormEvent<HTMLFormElement>): void => {
-    event.preventDefault();
-    if (password !== confirmPassword) {
-      setError("Passwords do not match!");
-      return;
-    }
-
-    let users = getUsers();
-    if (users.some((u) => u.username === username)) {
-      setError("Username already taken!");
-      return;
-    }
-
-    // Generate a random userId
-    const userId: number = Math.floor(Math.random() * 1000000);
-
-    const newUser: User = { username, password, role: "user", userId };
-    users.push(newUser);
-    localStorage.setItem("users", JSON.stringify(users));
-
-    alert("Sign-up successful! Please log in.");
-    toggleForm();
+  const handleLogin = () => {
+    console.log("Username:", username);
+    console.log("Password:", password);
+    // Add authentication logic here
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-primary p-6">
-      <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-2xl border border-gray-200">
-        <h1 className="text-3xl font-bold text-gray-900 text-center mb-6">
-          {isSignUp ? "Sign Up" : "Sign In"}
-        </h1>
-
-        {error && <p className="bg-red-500 text-white p-2 text-center rounded-md mb-4">{error}</p>}
-
-        <form className="space-y-5" onSubmit={isSignUp ? handleSignUp : handleLogin}>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
-              className="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 shadow-sm"
-              required
-            />
+    <div className="w-screen min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 lg:px-8">
+      <div className="relative py-3 sm:max-w-xs sm:mx-auto">
+        <div className="min-h-96 px-8 py-6 mt-4 text-left bg-white dark:bg-gray-900 rounded-xl shadow-lg">
+          <div className="flex flex-col justify-center items-center h-full select-none">
+            <div className="flex flex-col items-center justify-center gap-2 mb-8">
+              
+              <p className="m-0 text-[16px] font-semibold dark:text-white">Login to your Account</p>
+              <span className="m-0 text-xs max-w-[90%] text-center text-[#8B8E98]">
+                Get started with our app, just sign in and enjoy the experience.
+              </span>
+            </div>
+            <div className="w-full flex flex-col gap-2">
+              <label className="font-semibold text-xs text-gray-400">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="border rounded-lg px-3 py-2 mb-5 text-sm w-full outline-none dark:border-gray-500 dark:bg-gray-900"
+                placeholder="Username"
+              />
+            </div>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
+          <div className="w-full flex flex-col gap-2">
+            <label className="font-semibold text-xs text-gray-400">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              className="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 shadow-sm"
-              required
+              className="border rounded-lg px-3 py-2 mb-5 text-sm w-full outline-none dark:border-gray-500 dark:bg-gray-900"
+              placeholder="••••••••"
             />
           </div>
-
-          {isSignUp && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm your password"
-                className="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 shadow-sm"
-                required
-              />
-            </div>
-          )}
-
-          {!isSignUp && (
-            <div className="text-right">
-              <Link href="/verify/forget_password">
-                <span className="text-sm text-blue-600 hover:underline cursor-pointer">
-                  Forgot Password?
-                </span>
-              </Link>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            className="w-full bg-button hover:bg-opacity-80 text-white font-semibold py-3 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            {isSignUp ? "Sign Up" : "Sign In"}
-          </button>
-        </form>
-
-        <p className="text-sm text-center mt-6">
-          {isSignUp ? "Already have an account?" : "New here?"}{" "}
-          <span
-            onClick={toggleForm}
-            className="text-blue-600 hover:underline font-medium cursor-pointer transition-all duration-300"
-          >
-            {isSignUp ? "Sign In" : "Sign Up"}
-          </span>
-        </p>
+          <div className="mt-5">
+            <button
+              onClick={handleLogin}
+              className="py-2 px-8 bg-blue-500 hover:bg-blue-800 focus:ring-offset-blue-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg cursor-pointer select-none"
+            >
+              Login
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-export default AuthPage;
+export default Login;

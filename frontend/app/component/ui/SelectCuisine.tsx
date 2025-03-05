@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 
 type Dish = {
   name: string;
@@ -130,7 +131,7 @@ const SelectCuisine: React.FC<SelectCuisineProps> = ({ onSelect = () => {} }) =>
                 }`}
                 onClick={() => handleDishSelect(dish)}
               >
-                <img src={dish.image} alt={dish.name} className="w-20 h-20 rounded-lg mb-2" />
+                <Image src={dish.image} alt={dish.name} className="w-20 h-20 rounded-lg mb-2" ></Image>
                 {dish.name}
               </button>
             ))}
@@ -151,7 +152,7 @@ const SelectCuisine: React.FC<SelectCuisineProps> = ({ onSelect = () => {} }) =>
           <p>
             <strong>Dish:</strong> {selectedDish.name}
           </p>
-          <img src={selectedDish.image} alt={selectedDish.name} className="w-32 h-32 mx-auto mt-2 rounded-lg" />
+          <Image src={selectedDish.image} alt={selectedDish.name} className="w-32 h-32 mx-auto mt-2 rounded-lg" ></Image>
         </div>
       )}
     </div>

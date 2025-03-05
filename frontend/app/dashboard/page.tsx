@@ -2,7 +2,7 @@
 
 import Sidebar from "../component/dashboard/Sidebar"; // Make sure this import is correct
 
-const Dashboard = () => {
+const Maiddash = () => {
   return (
     <div className="bg-white">
       <Sidebar />
@@ -10,4 +10,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Maiddash;

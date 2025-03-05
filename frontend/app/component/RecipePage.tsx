@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 const categories = ["All", "Village Food", "Home made Food", "Snacks", "Seafood"];
-const cuisines = ["All", "Italian", "American", "Indian", "Japanese"];
 
 const recipes = [
   {
@@ -46,9 +45,9 @@ const recipes = [
 ];
 
 export default function RecipePage() {
-  const [search, setSearch] = useState("");
+  const [search, ] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedCuisine, setSelectedCuisine] = useState("All");
+  const [selectedCuisine, ] = useState("All");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const filteredRecipes = recipes.filter((recipe) => {

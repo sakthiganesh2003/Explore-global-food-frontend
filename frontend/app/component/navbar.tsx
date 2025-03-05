@@ -7,7 +7,7 @@ import Image from 'next/image';
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [username, setUsername] = useState("");
-  const [userRole, setUserRole] = useState("");
+  const [, setUserRole] = useState("");
 
   useEffect(() => {
     const storedUsername = localStorage.getItem("username");

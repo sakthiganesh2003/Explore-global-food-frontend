@@ -1,6 +1,6 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import Image from "next/image";
 
 const recipes = [
   { id: 1, title: "Spaghetti Carbonara", category: "Pasta", cuisine: "Italian", image: "/indian.jpg", description: ["A classic Italian pasta dish with eggs, cheese, pancetta, and pepper.","A classic Italian pasta dish with eggs, cheese, pancetta, and pepper." ], steps: ["Boil pasta", "Cook pancetta", "Mix eggs and cheese", "Combine everything"] },
@@ -21,7 +21,7 @@ export default function RecipeDetail() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-2xl mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-        <img src={recipe.image} alt={recipe.title} className="w-full h-64 object-cover" />
+        <Image src={recipe.image} alt={recipe.title} className="w-full h-64 object-cover" ></Image>
         <div className="p-6">
           <h1 className="text-3xl font-bold text-gray-500">{recipe.title}</h1>
           <p className="text-gray-600 ">{recipe.category} | {recipe.cuisine}</p>
