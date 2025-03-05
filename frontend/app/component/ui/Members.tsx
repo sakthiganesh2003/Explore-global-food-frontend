@@ -1,23 +1,32 @@
 import React, { useState } from 'react';
 
+interface Member {
+  name: string;
+  dietary: string;
+  allergies: string;
+  specialRequest: string;
+  quantity: number;
+}
+
 const Members = () => {
-  const [members, setMembers] = useState([
-    { name: '', age: '', gender: '', dietary: '', allergies: '', specialRequest: '', quantity: 1 }
+  const [members, setMembers] = useState<Member[]>([
+    { name: '', dietary: '', allergies: '', specialRequest: '', quantity: 1 }
   ]);
 
   const handleAddMember = () => {
-    setMembers([...members, { name: '', age: '', gender: '', dietary: '', allergies: '', specialRequest: '', quantity: 1 }]);
+    setMembers([...members, { name: '', dietary: '', allergies: '', specialRequest: '', quantity: 1 }]);
   };
 
-  const handleRemoveMember = (index) => {
-    const updatedMembers = members.filter((_, i) => i !== index);
-    setMembers(updatedMembers);
+  const handleRemoveMember = (index: number) => {
+    setMembers((prevMembers) => prevMembers.filter((_, i) => i !== index));
   };
 
-  const handleChange = (index, field, value) => {
-    const updatedMembers = [...members];
-    updatedMembers[index][field] = value;
-    setMembers(updatedMembers);
+  const handleChange = (index: number, field: keyof Member, value: string | number) => {
+    setMembers((prevMembers) => {
+      const updatedMembers = [...prevMembers];
+      updatedMembers[index] = { ...updatedMembers[index], [field]: value };
+      return updatedMembers;
+    });
   };
 
   return (
@@ -40,7 +49,6 @@ const Members = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Name</label>
               <input
@@ -52,9 +60,6 @@ const Members = () => {
               />
             </div>
 
-           
-
-            {/* Dietary Preferences */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Dietary Preferences</label>
               <select
@@ -70,7 +75,6 @@ const Members = () => {
               </select>
             </div>
 
-            {/* Allergies */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Allergies</label>
               <input
@@ -82,7 +86,6 @@ const Members = () => {
               />
             </div>
 
-            {/* Special Request */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Special Requests</label>
               <input
@@ -94,13 +97,12 @@ const Members = () => {
               />
             </div>
 
-            {/* Quantity */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Meal Quantity</label>
               <input
                 type="number"
                 value={member.quantity}
-                onChange={(e) => handleChange(index, 'quantity', e.target.value)}
+                onChange={(e) => handleChange(index, 'quantity', Number(e.target.value))}
                 className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 min="1"
               />

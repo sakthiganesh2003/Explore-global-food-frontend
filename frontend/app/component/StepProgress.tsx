@@ -54,7 +54,7 @@ const StepProgress = () => {
             ></div>
           </div>
 
-          <ol className="mt-6 grid grid-cols-5 text-sm font-medium text-gray-500 text-center">
+          <ol className="mt-6 grid grid-cols-5 text-sm font-medium text-gray-500 text-center ">
             {steps.map((step, index) => (
               <li
                 key={index}

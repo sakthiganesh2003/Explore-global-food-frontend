@@ -14,34 +14,24 @@ interface MaidChooseProps {
 }
 
 const maids: Maid[] = [
-  {
-    id: 1,
-    name: "Sophia Lee",
-    cuisine: "Italian, French",
-    rating: 4.8,
-    experience: "5 years",
-    image: "/chef2.jpg",
-  },
-  {
-    id: 2,
-    name: "Amara Patel",
-    cuisine: "Indian, Thai",
-    rating: 4.7,
-    experience: "3 years",
-    image: "/chef1.jpg",
-  },
-  {
-    id: 3,
-    name: "Daniel Carter",
-    cuisine: "American, BBQ",
-    rating: 4.9,
-    experience: "7 years",
-    image: "/chef3.jpg",
-  },
+  { id: 1, name: "Sophia Lee", cuisine: "Italian, French", rating: 4.8, experience: "5 years", image: "/chef2.jpg" },
+  { id: 2, name: "Amara Patel", cuisine: "Indian, Thai", rating: 4.7, experience: "3 years", image: "/chef1.jpg" },
+  { id: 3, name: "Daniel Carter", cuisine: "American, BBQ", rating: 4.9, experience: "7 years", image: "/chef3.jpg" },
+  { id: 4, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
+  { id: 5, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
+  { id: 6, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
+  { id: 7, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
+  { id: 8, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
+  { id: 9, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
+  { id: 10, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
+  { id: 11, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
+  { id: 12, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
+  { id: 13, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
 ];
 
 const MaidChoose: React.FC<MaidChooseProps> = ({ onSelect = () => {} }) => {
   const [selectedMaid, setSelectedMaid] = useState<number | null>(null);
+  const [filter, setFilter] = useState("");
 
   const handleConfirmSelection = (): void => {
     if (selectedMaid !== null) {
@@ -51,12 +41,24 @@ const MaidChoose: React.FC<MaidChooseProps> = ({ onSelect = () => {} }) => {
     }
   };
 
+  const filteredMaids = maids.filter((maid) =>
+    maid.cuisine.toLowerCase().includes(filter.toLowerCase())
+  );
+
   return (
     <div className="text-center text-gray-500">
       <h2 className="text-xl font-semibold mb-4">Choose Your Maid</h2>
+      
+      <input
+        type="text"
+        placeholder="Filter by cuisine..."
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+        className="p-2 mb-4 border rounded w-full sm:w-1/2"
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-        {maids.map((maid) => (
+        {filteredMaids.map((maid) => (
           <div
             key={maid.id}
             className={`p-4 border rounded-lg cursor-pointer ${
@@ -71,9 +73,7 @@ const MaidChoose: React.FC<MaidChooseProps> = ({ onSelect = () => {} }) => {
             />
             <h3 className="mt-2 text-lg font-bold">{maid.name}</h3>
             <p className="text-sm text-gray-600">{maid.cuisine}</p>
-            <p className="text-sm text-gray-600">
-              ⭐ {maid.rating} | {maid.experience}
-            </p>
+            <p className="text-sm text-gray-600">⭐ {maid.rating} | {maid.experience}</p>
           </div>
         ))}
       </div>

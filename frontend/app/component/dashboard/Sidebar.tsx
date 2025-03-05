@@ -24,6 +24,7 @@ const Sidebar = () => {
         <SidebarItem icon={<BookOpen />} text="Booking" href="/dashboard/Booking" isOpen={isOpen} />
         <SidebarItem icon={<CreditCard />} text="Payment" href="/dashboard/Payment" isOpen={isOpen} />
         <SidebarItem icon={<ChefHat />} text="Chef" href="/dashboard/Chef" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="Maid accept" href="/dashboard/Maid" isOpen={isOpen} />
       </nav>
     </div>
   );

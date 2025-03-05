@@ -2,18 +2,12 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import Link from "next/link";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination, Autoplay, EffectCoverflow } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
+import Image from "next/image"; // Import Image from Next.js
+
 import ChefSwiper from "@/app/component/ChefSwiper";
 import Navbar from "@/app/component/navbar";
 import Footer from "@/app/component/Footer";
 import Hero from "@/app/component/homepage/Hero";
-
-
 
 export default function Home() {
   const ref = useRef(null);
@@ -34,56 +28,48 @@ export default function Home() {
       <Hero />
 
       <div className="bg-gray-900 text-white p-10">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center">
-        {/* Left Side (Image & Cards) */}
-        <div className="relative w-full md:w-1/2"> 
-          <img
-            src="/maid/re.jpg"
-            alt="Restaurant"
-            className="rounded-lg shadow-lg w-full"
-          />
-          {/* Card Container */}
-          <div className="absolute top-5 left-5 md:left-10 bg-gray-800 p-4 rounded-lg w-60 gap-2">
-            <span className="text-orange-400 text-xl">🔥 High Quality</span>
-            <p className="text-sm">Lorem ipsum dolor sit amet consectetur.</p>
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center">
+          {/* Left Side (Image & Cards) */}
+          <div className="relative w-full md:w-1/2"> 
+            <img
+              src="/maid/re.jpg"
+              alt="Restaurant"
+              className="rounded-lg shadow-lg w-full"
+              width={500} // Specify width
+              height={300} // Specify height
+            />
+            {/* Card Container */}
+            <div className="absolute top-5 left-5 md:left-10 bg-gray-800 p-4 rounded-lg w-60 gap-2">
+              <span className="text-orange-400 text-xl">🔥 High Quality</span>
+              <p className="text-sm">Lorem ipsum dolor sit amet consectetur.</p>
+            </div>
+            
+            <div className="absolute top-44 left-5 md:left-10 bg-gray-800 p-4 rounded-lg w-60">
+              <span className="text-orange-400 text-xl">👨‍🍳 Top Cheft</span>
+              <p className="text-sm">Nam libero tempore cum soluta.</p>
+            </div>
           </div>
-          
-          <div className="absolute top-44 left-5 md:left-10 bg-gray-800 p-4 rounded-lg w-60">
-            <span className="text-orange-400 text-xl">👨‍🍳 Top Cheft</span>
-            <p className="text-sm">Nam libero tempore cum soluta.</p>
+
+          {/* Right Side (Text) */}
+          <div className="w-full md:w-1/2 p-10 text-center md:text-left">
+            <h3 className="text-orange-400 text-lg">About</h3>
+            <h1 className="text-4xl font-bold">We Serve Tasty Grilled Goodness!</h1>
+            <p className="text-gray-400 mt-4">
+              Figma ipsum component variant main layer. Asset bullet project
+              prototype draft main. Select clip prototype flows content.
+            </p>
+            <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 mt-4 rounded-lg">
+              Learn More
+            </button>
           </div>
-        </div>
-
-        
-
-        {/* Right Side (Text) */}
-        <div className="w-full md:w-1/2 p-10 text-center md:text-left">
-          <h3 className="text-orange-400 text-lg">About</h3>
-          <h1 className="text-4xl font-bold">We Serve Tasty Grilled Goodness!</h1>
-          <p className="text-gray-400 mt-4">
-            Figma ipsum component variant main layer. Asset bullet project
-            prototype draft main. Select clip prototype flows content.
-          </p>
-          <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 mt-4 rounded-lg">
-            Learn More
-          </button>
         </div>
       </div>
-    </div>
-
 
       {/* Cuisine Showcase */}
       <motion.div style={{ y: textY }} className="container mx-auto py-16 px-6 text-center">
         <h2 className="text-4xl font-bold mb-12 text-gray-800">Discover Global Cuisines</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-          {[
-            { name: "Indian", image: "/indian.jpg" },
-            { name: "Japanese", image: "/japan.jpg" },
-            { name: "American", image: "/amarican.jpg" },
-            { name: "Mexican", image: "/mexican.jpg" },
-            { name: "French", image: "/french.jpg" },
-            { name: "Thai", image: "/thai.jpg" },
-          ].map((cuisine, index) => (
+          {[{ name: "Indian", image: "/indian.jpg" }, { name: "Japanese", image: "/japan.jpg" }, { name: "American", image: "/amarican.jpg" }].map((cuisine, index) => (
             <div
               key={index}
               className="relative group overflow-hidden rounded-xl shadow-lg hover:shadow-2xl transition-transform transform hover:scale-105"
@@ -92,6 +78,8 @@ export default function Home() {
                 src={cuisine.image}
                 alt={cuisine.name}
                 className="w-full h-56 object-cover"
+                width={500}
+                height={300}
               />
               <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <h3 className="text-white text-2xl font-bold">{cuisine.name}</h3>
