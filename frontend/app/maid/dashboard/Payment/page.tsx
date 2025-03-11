@@ -24,7 +24,7 @@ const UserTable: React.FC = () => {
 
       {/* Table Container */}
       <div className="overflow-x-auto flex-1 p-6">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-gray-800">
           <thead>
             <tr>
               {["Name", "Email", "Role", "Status", "Action"].map((heading) => (
@@ -37,7 +37,7 @@ const UserTable: React.FC = () => {
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-gray-500 divide-y divide-gray-200">
             {users.map((user) => (
               <tr key={user.id}>
                 <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>

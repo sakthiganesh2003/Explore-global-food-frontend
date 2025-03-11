@@ -3,32 +3,54 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [username, setUsername] = useState("");
-  const [, setUserRole] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
-    const storedUsername = localStorage.getItem("username");
-    const storedRole = localStorage.getItem("userRole");
+    const updateUserInfo = () => {
+      const token = localStorage.getItem("token");
+      const storedUsername = localStorage.getItem("userName");
 
-    if (storedUsername) setUsername(storedUsername);
-    if (storedRole) setUserRole(storedRole);
+      if (token) {
+        try {
+          const decoded = JSON.parse(atob(token.split('.')[1]));
+          console.log('Decoded Token:', decoded); // Debugging
+          setUsername(decoded.name || decoded.username || storedUsername || "");
+        } catch (error) {
+          console.error("Invalid token:", error);
+          setUsername(storedUsername || "");
+        }
+      } else {
+        setUsername(storedUsername || "");
+      }
+    };
+
+    // Initial load
+    updateUserInfo();
+
+    // Listen to changes in localStorage across tabs
+    window.addEventListener("storage", updateUserInfo);
+
+    return () => {
+      window.removeEventListener("storage", updateUserInfo);
+    };
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("username");
-    localStorage.removeItem("userRole");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userName");
     setUsername("");
-    setUserRole("");
-   
+    router.push("/login"); // Redirect to login after logout
   };
 
   return (
     <nav className="sticky top-0 left-0 z-50 bg-[#059669] shadow-md px-10 py-2">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        
+
         {/* Logo */}
         <Link href="/">
           <Image src="/icon/food1.png" alt="Logo" height={50} width={50} />
@@ -46,7 +68,7 @@ const Navbar = () => {
         <div className="flex items-center space-x-4">
           {username ? (
             <>
-              <span className="text-white font-semibold">{username}</span>
+              <span className="text-white font-semibold capitalize">{username}</span>
               <button 
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                 onClick={handleLogout}

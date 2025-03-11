@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Home, Utensils, BookOpen, CreditCard, Menu, ChefHat } from "lucide-react";
 import Link from "next/link";
 
-const Sidebar = () => {
+const SidebarMaid = () => {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
@@ -19,10 +19,11 @@ const Sidebar = () => {
 
       {/* Navigation Links */}
       <nav className="flex flex-col space-y-4 mt-4 px-2">
-        <SidebarItem icon={<Home />} text="Home" href="/dashboard" isOpen={isOpen} />
-        <SidebarItem icon={<Utensils />} text="Recipes" href="/recipes" isOpen={isOpen} />
+        <SidebarItem icon={<Home />} text="Home" href="/maid/dashboard" isOpen={isOpen} />
         
-        <SidebarItem icon={<ChefHat />} text="Chef" href="/dashboard/Chef" isOpen={isOpen} />
+        <SidebarItem icon={<BookOpen />} text="Booking" href="/maid/dashboard/Booking" isOpen={isOpen} />
+        <SidebarItem icon={<CreditCard />} text="Payment" href="/maid/dashboard/Payment" isOpen={isOpen} />
+        
      
       </nav>
     </div>
@@ -46,4 +47,4 @@ const SidebarItem = ({ icon, text, href, isOpen }: SidebarItemProps) => {
   );
 };
 
-export default Sidebar;
+export default SidebarMaid;
