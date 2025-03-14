@@ -47,8 +47,11 @@ const SignupPage: React.FC = () => {
     e.preventDefault();
 
     if (!validateForm()) {
+
+      
       return; // Don't submit if form is invalid
     }
+    toast.success("Form validated successfully! Proceeding with signup...");
 
     try {
       const res = await fetch("http://localhost:5000/api/auth/signup", {
@@ -63,11 +66,12 @@ const SignupPage: React.FC = () => {
         // Store the token in localStorage or cookies
         localStorage.setItem("token", data.token);
 
-        toast.success(data.message || "Signup successful!");
+        toast.success(data.message || "Signup successful!"); // Success message
         // Redirect to the next page, for example, the login page
         window.location.href = "/login";
       } else {
-        toast.error(data.message || "Signup failed");
+        // Server validation errors will be shown here
+        toast.error(data.message || "Signup failed"); // Error message from server
       }
     } catch (error) {
       toast.error("An error occurred during signup");
