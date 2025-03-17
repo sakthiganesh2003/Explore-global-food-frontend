@@ -43,7 +43,7 @@ const StepProgress = () => {
 
   return (
     <div className=" sticky min-h-screen flex justify-center items-center  bg-white">
-      <div className="w-full  p-10 bg-gray-100 rounded-lg shadow-lg">
+      <div className="w-full  p-10 bg-gray-100 rounded-lg shadow-lg min-h-screen">
         <h2 className="sr-only">Steps</h2>
 
         <div className="relative">
