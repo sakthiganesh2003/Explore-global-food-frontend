@@ -11,28 +11,24 @@ interface Maid {
 }
 
 interface MaidChooseProps {
-  onSelect?: (maid: Maid | undefined) => void;
+  onNext: (maid: Maid) => void; // Ensure onNext gets the selected maid
 }
 
 const maids: Maid[] = [
-  { id: 1, name: "Sophia Lee", cuisine: "Italian, French", rating: 4.8, experience: "5 years", image: "/chef1.jpg" },
-  { id: 2, name: "Amara Patel", cuisine: "Indian, Thai", rating: 4.7, experience: "3 years", image: "/chef1" },
-  { id: 3, name: "Daniel Carter", cuisine: "American, BBQ", rating: 4.9, experience: "7 years", image: "/chef1" },
+  { id: 1, name: "Sophia Lee", cuisine: "Italian, French", rating: 4.8, experience: "5 years", image: "/chef3.jpg" },
+  { id: 2, name: "Amara Patel", cuisine: "Indian, Thai", rating: 4.7, experience: "3 years", image: "/chef3.jpg" },
+  { id: 3, name: "Daniel Carter", cuisine: "American, BBQ", rating: 4.9, experience: "7 years", image: "/chef1.jpg" },
   { id: 4, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
-  { id: 5, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
-  { id: 6, name: "Lena Hoffman", cuisine: "German, Mediterranean", rating: 4.6, experience: "4 years", image: "/chef4.jpg" },
-  
 ];
 
-const MaidChoose: React.FC<MaidChooseProps> = ({ onSelect = () => {} }) => {
-  const [selectedMaid, setSelectedMaid] = useState<number | null>(null);
+const MaidChoose: React.FC<MaidChooseProps> = ({ onNext }) => {
+  const [selectedMaid, setSelectedMaid] = useState<Maid | null>(null);
   const [filter, setFilter] = useState("");
 
   const handleConfirmSelection = (): void => {
-    if (selectedMaid !== null) {
-      const chosenMaid = maids.find((maid) => maid.id === selectedMaid);
-      console.log("Confirmed Maid:", chosenMaid);
-      onSelect(chosenMaid);
+    if (selectedMaid) {
+      console.log("Confirmed Maid:", selectedMaid);
+      onNext(selectedMaid); // Send maid data and move to next step
     }
   };
 
@@ -57,17 +53,17 @@ const MaidChoose: React.FC<MaidChooseProps> = ({ onSelect = () => {} }) => {
           <div
             key={maid.id}
             className={`p-4 border rounded-lg cursor-pointer ${
-              selectedMaid === maid.id ? "border-blue-500 bg-blue-100" : "border-gray-300"
+              selectedMaid?.id === maid.id ? "border-blue-500 bg-blue-100" : "border-gray-300"
             }`}
-            onClick={() => setSelectedMaid(maid.id)}
+            onClick={() => setSelectedMaid(maid)}
           >
             <Image
               src={maid.image}
               alt={maid.name}
-              width={24}
-              height={24}
+              width={80}
+              height={80}
               className="w-24 h-24 mx-auto rounded-full object-cover"
-            ></Image>
+            />
             <h3 className="mt-2 text-lg font-bold">{maid.name}</h3>
             <p className="text-sm text-gray-600">{maid.cuisine}</p>
             <p className="text-sm text-gray-600">⭐ {maid.rating} | {maid.experience}</p>

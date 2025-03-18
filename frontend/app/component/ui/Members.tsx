@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 interface Member {
   name: string;
@@ -8,11 +8,7 @@ interface Member {
   quantity: number;
 }
 
-const Members = () => {
-  const [members, setMembers] = useState<Member[]>([
-    { name: '', dietary: '', allergies: '', specialRequest: '', quantity: 1 }
-  ]);
-
+const Members: React.FC<{ members: Member[]; setMembers: (members: Member[]) => void }> = ({ members, setMembers }) => {
   const handleAddMember = () => {
     setMembers([...members, { name: '', dietary: '', allergies: '', specialRequest: '', quantity: 1 }]);
   };
@@ -39,10 +35,7 @@ const Members = () => {
           <div className="flex justify-between items-center mb-4">
             <h4 className="text-lg font-semibold">Member {index + 1}</h4>
             {members.length > 1 && (
-              <button
-                onClick={() => handleRemoveMember(index)}
-                className="text-red-500 hover:text-red-700 font-semibold"
-              >
+              <button onClick={() => handleRemoveMember(index)} className="text-red-500 hover:text-red-700 font-semibold">
                 Remove
               </button>
             )}
@@ -55,7 +48,7 @@ const Members = () => {
                 type="text"
                 value={member.name}
                 onChange={(e) => handleChange(index, 'name', e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500"
                 placeholder="Enter name"
               />
             </div>
@@ -65,7 +58,7 @@ const Members = () => {
               <select
                 value={member.dietary}
                 onChange={(e) => handleChange(index, 'dietary', e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500"
               >
                 <option value="">Select preference</option>
                 <option value="Vegan">Vegan</option>
@@ -81,7 +74,7 @@ const Members = () => {
                 type="text"
                 value={member.allergies}
                 onChange={(e) => handleChange(index, 'allergies', e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500"
                 placeholder="E.g., Nuts, Dairy, Shellfish"
               />
             </div>
@@ -92,7 +85,7 @@ const Members = () => {
                 type="text"
                 value={member.specialRequest}
                 onChange={(e) => handleChange(index, 'specialRequest', e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500"
                 placeholder="E.g., No spicy food"
               />
             </div>
@@ -103,7 +96,7 @@ const Members = () => {
                 type="number"
                 value={member.quantity}
                 onChange={(e) => handleChange(index, 'quantity', Number(e.target.value))}
-                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500"
                 min="1"
               />
             </div>
@@ -112,10 +105,7 @@ const Members = () => {
       ))}
 
       <div className="flex justify-center">
-        <button
-          onClick={handleAddMember}
-          className="mt-4 px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600"
-        >
+        <button onClick={handleAddMember} className="mt-4 px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600">
           + Add Member
         </button>
       </div>
