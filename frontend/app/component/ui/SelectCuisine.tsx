@@ -16,19 +16,21 @@ export default function SelectCuisine({ onSelectConfirmedFoods }: SelectCuisineP
   const [selectedFoods, setSelectedFoods] = useState<string[]>([]);
 
   const handleCuisineToggle = (cuisine: string) => {
-    setSelectedCuisines(prev =>
-      prev.includes(cuisine) ? prev.filter(c => c !== cuisine) : [...prev, cuisine]
+    setSelectedCuisines((prev) =>
+      prev.includes(cuisine) ? prev.filter((c) => c !== cuisine) : [...prev, cuisine]
     );
   };
 
   const handleFoodToggle = (food: string) => {
-    setSelectedFoods(prev =>
-      prev.includes(food) ? prev.filter(f => f !== food) : [...prev, food]
+    setSelectedFoods((prev) =>
+      prev.includes(food) ? prev.filter((f) => f !== food) : [...prev, food]
     );
   };
 
   const handleConfirm = () => {
-    onSelectConfirmedFoods(selectedFoods); // ✅ Send selected foods to global state
+    if (selectedFoods.length > 0) {
+      onSelectConfirmedFoods(selectedFoods);
+    }
   };
 
   return (
@@ -54,8 +56,8 @@ export default function SelectCuisine({ onSelectConfirmedFoods }: SelectCuisineP
         <div className="mt-6 p-4 border rounded-lg bg-gray-100 text-gray-800">
           <h3 className="text-xl font-semibold mb-2">Select Foods</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {selectedCuisines.flatMap(cuisine =>
-              cuisines.find(c => c.name === cuisine)?.details.map(food => (
+            {selectedCuisines.flatMap((cuisine) =>
+              cuisines.find((c) => c.name === cuisine)?.details.map((food) => (
                 <label key={food} className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -71,7 +73,9 @@ export default function SelectCuisine({ onSelectConfirmedFoods }: SelectCuisineP
 
           <button
             onClick={handleConfirm}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+            className={`mt-4 px-4 py-2 text-white rounded-md transition ${
+              selectedFoods.length > 0 ? "bg-blue-500 hover:bg-blue-600" : "bg-gray-400 cursor-not-allowed"
+            }`}
             disabled={selectedFoods.length === 0}
           >
             Confirm Selection

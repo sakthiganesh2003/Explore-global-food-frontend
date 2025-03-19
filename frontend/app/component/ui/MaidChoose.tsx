@@ -1,5 +1,6 @@
 import { useState } from "react";
-import Image from "next/image"; 
+import Image from "next/image";
+import { toast } from "react-hot-toast"; // Import toast
 
 interface Maid {
   id: number;
@@ -11,7 +12,7 @@ interface Maid {
 }
 
 interface MaidChooseProps {
-  onNext: (maid: Maid) => void; // Ensure onNext gets the selected maid
+  onNext: (maid: Maid) => void;
 }
 
 const maids: Maid[] = [
@@ -26,10 +27,7 @@ const MaidChoose: React.FC<MaidChooseProps> = ({ onNext }) => {
   const [filter, setFilter] = useState("");
 
   const handleConfirmSelection = (): void => {
-    if (selectedMaid) {
-      console.log("Confirmed Maid:", selectedMaid);
-      onNext(selectedMaid); // Send maid data and move to next step
-    }
+   
   };
 
   const filteredMaids = maids.filter((maid) =>
@@ -55,7 +53,10 @@ const MaidChoose: React.FC<MaidChooseProps> = ({ onNext }) => {
             className={`p-4 border rounded-lg cursor-pointer ${
               selectedMaid?.id === maid.id ? "border-blue-500 bg-blue-100" : "border-gray-300"
             }`}
-            onClick={() => setSelectedMaid(maid)}
+            onClick={() => {
+              setSelectedMaid(maid);
+              toast.success(`You selected ${maid.name}`);
+            }}
           >
             <Image
               src={maid.image}
@@ -70,14 +71,27 @@ const MaidChoose: React.FC<MaidChooseProps> = ({ onNext }) => {
           </div>
         ))}
       </div>
-
-      <button
+{selectedMaid  ?( <button
         className="mt-6 px-4 py-2 bg-blue-500 text-white rounded-lg disabled:bg-gray-300"
-        disabled={!selectedMaid}
+        onClick={() => {
+          if (!selectedMaid) {
+            toast.error("Please select a maid before proceeding.");
+            return;
+          }
+          toast.success(`Maid ${selectedMaid.name} selected!`);
+          onNext(selectedMaid);
+        }}
+      >
+       selecting {selectedMaid.name}
+      </button>):(
+        <button
+        className="mt-6 px-4 py-2 bg-blue-500 text-white rounded-lg disabled:bg-gray-300"
         onClick={handleConfirmSelection}
       >
-        Confirm Selection
+          Confirm Selection
       </button>
+      )}
+      
     </div>
   );
 };

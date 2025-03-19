@@ -1,117 +1,115 @@
-import React from 'react';
+import { useState } from 'react';
 
-interface Member {
-  name: string;
-  dietary: string;
-  allergies: string;
-  specialRequest: string;
-  quantity: number;
-}
+const Members = ({ members, setMembers }) => {
+  const [name, setName] = useState('');
+  const [dietaryPreference, setDietaryPreference] = useState('');
+  const [allergies, setAllergies] = useState('');
+  const [specialRequests, setSpecialRequests] = useState('');
+  const [mealQuantity, setMealQuantity] = useState(1);
 
-const Members: React.FC<{ members: Member[]; setMembers: (members: Member[]) => void }> = ({ members, setMembers }) => {
-  const handleAddMember = () => {
-    setMembers([...members, { name: '', dietary: '', allergies: '', specialRequest: '', quantity: 1 }]);
-  };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !dietaryPreference) return;
 
-  const handleRemoveMember = (index: number) => {
-    setMembers((prevMembers) => prevMembers.filter((_, i) => i !== index));
-  };
+    const newMember = { name, dietaryPreference, allergies, specialRequests, mealQuantity };
+    setMembers([...members, newMember]);
 
-  const handleChange = (index: number, field: keyof Member, value: string | number) => {
-    setMembers((prevMembers) => {
-      const updatedMembers = [...prevMembers];
-      updatedMembers[index] = { ...updatedMembers[index], [field]: value };
-      return updatedMembers;
-    });
+    // Clear fields after adding
+    setName('');
+    setDietaryPreference('');
+    setAllergies('');
+    setSpecialRequests('');
+    setMealQuantity(1);
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-lg shadow-lg text-gray-800">
-      <h3 className="text-2xl font-semibold mb-4 text-center">Enter Member Details</h3>
-      <p className="text-center text-gray-600 mb-6">Provide information about the members who will be served.</p>
+    <div className="max-w-lg mx-auto p-6 bg-white shadow-lg rounded-lg text-gray-800">
+      <h2 className="text-lg font-semibold text-gray-700 mb-4">Add Members</h2>
 
-      {members.map((member, index) => (
-        <div key={index} className="mb-6 p-4 bg-gray-50 rounded-lg shadow-md">
-          <div className="flex justify-between items-center mb-4">
-            <h4 className="text-lg font-semibold">Member {index + 1}</h4>
-            {members.length > 1 && (
-              <button onClick={() => handleRemoveMember(index)} className="text-red-500 hover:text-red-700 font-semibold">
-                Remove
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Name</label>
-              <input
-                type="text"
-                value={member.name}
-                onChange={(e) => handleChange(index, 'name', e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500"
-                placeholder="Enter name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Dietary Preferences</label>
-              <select
-                value={member.dietary}
-                onChange={(e) => handleChange(index, 'dietary', e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500"
-              >
-                <option value="">Select preference</option>
-                <option value="Vegan">Vegan</option>
-                <option value="Vegetarian">Vegetarian</option>
-                <option value="Gluten-Free">Gluten-Free</option>
-                <option value="No Preference">No Preference</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Allergies</label>
-              <input
-                type="text"
-                value={member.allergies}
-                onChange={(e) => handleChange(index, 'allergies', e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500"
-                placeholder="E.g., Nuts, Dairy, Shellfish"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Special Requests</label>
-              <input
-                type="text"
-                value={member.specialRequest}
-                onChange={(e) => handleChange(index, 'specialRequest', e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500"
-                placeholder="E.g., No spicy food"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Meal Quantity</label>
-              <input
-                type="number"
-                value={member.quantity}
-                onChange={(e) => handleChange(index, 'quantity', Number(e.target.value))}
-                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500"
-                min="1"
-              />
-            </div>
-          </div>
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Name</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            required
+          />
         </div>
-      ))}
 
-      <div className="flex justify-center">
-        <button onClick={handleAddMember} className="mt-4 px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600">
-          + Add Member
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Dietary Preferences</label>
+          <select
+            value={dietaryPreference}
+            onChange={(e) => setDietaryPreference(e.target.value)}
+            className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            required
+          >
+            <option value="">Select preference</option>
+            <option value="vegetarian">Vegetarian</option>
+            <option value="vegan">Vegan</option>
+            <option value="gluten-free">Gluten-Free</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Allergies</label>
+          <input
+            type="text"
+            value={allergies}
+            onChange={(e) => setAllergies(e.target.value)}
+            className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            placeholder="E.g., Nuts, Dairy, Shellfish"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Special Requests</label>
+          <input
+            type="text"
+            value={specialRequests}
+            onChange={(e) => setSpecialRequests(e.target.value)}
+            className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            placeholder="E.g., No spicy food"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Meal Quantity</label>
+          <input
+            type="number"
+            value={mealQuantity}
+            onChange={(e) => setMealQuantity(Number(e.target.value))}
+            className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            min="1"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="w-full py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700"
+        >
+          Add Member
         </button>
-      </div>
+      </form>
 
-      <div className="mt-6 text-center">
-        <p className="text-gray-700 font-semibold">Total Members: {members.length}</p>
+      {/* Display added members */}
+      <div className="mt-6">
+        <h3 className="text-md font-semibold text-gray-700">Members List</h3>
+        {members.length > 0 ? (
+          <ul className="list-disc pl-5 mt-2">
+            {members.map((member, index) => (
+              <li key={index} className="text-gray-800">
+                {member.name} - {member.dietaryPreference} (Meals: {member.mealQuantity})
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500 text-sm mt-2">No members added yet.</p>
+        )}
       </div>
     </div>
   );
