@@ -3,8 +3,7 @@ import React, { useState } from "react";
 const Time = () => {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
-  const [prepTime, setPrepTime] = useState("");
-  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Mocked available time slots
   const availableTimeSlots = {
@@ -13,16 +12,8 @@ const Time = () => {
     evening: ["4:00 PM", "5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM"],
   };
 
-  const prepOptions = [
-    { label: "No extra time needed", value: "" },
-    { label: "15 minutes", value: "15" },
-    { label: "30 minutes", value: "30" },
-    { label: "1 hour", value: "60" },
-  ];
-
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedDate(e.target.value);
-    setError("");
   };
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -30,11 +21,6 @@ const Time = () => {
     if (newTime && !selectedTimes.includes(newTime)) {
       setSelectedTimes([...selectedTimes, newTime]);
     }
-    setError("");
-  };
-
-  const handlePrepTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setPrepTime(e.target.value);
   };
 
   const removeTimeSlot = (time: string) => {
@@ -42,23 +28,12 @@ const Time = () => {
   };
 
   const handleSubmit = () => {
-    if (!selectedDate || selectedTimes.length === 0) {
-      setError("Please select both a date and at least one time slot.");
-      return;
-    }
-
-    // Log data to console before sending
     console.log("Selected Date:", selectedDate);
     console.log("Selected Time Slots:", selectedTimes);
-    console.log("Preparation Time:", prepTime);
 
-    alert(
-      `Your session is scheduled on ${selectedDate} at ${selectedTimes.join(
-        ", "
-      )}${prepTime ? ` with ${prepTime} minutes of preparation time.` : ""}`
+    setSuccessMessage(
+      `Your session is scheduled on ${selectedDate} at ${selectedTimes.join(", ")}.`
     );
-
-    // Proceed to next step or submit data
   };
 
   return (
@@ -67,7 +42,7 @@ const Time = () => {
         Select Your Preferred Time
       </h3>
       <p className="text-gray-600 text-center mb-6">
-        Choose a date, multiple time slots, and preparation time if needed.
+        Choose a date and multiple time slots.
       </p>
 
       {/* Date Selection */}
@@ -79,7 +54,6 @@ const Time = () => {
           type="date"
           value={selectedDate}
           onChange={handleDateChange}
-          min={new Date().toISOString().split("T")[0]} // Prevent past dates
           className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 text-gray-800"
         />
       </div>
@@ -145,27 +119,6 @@ const Time = () => {
         </div>
       )}
 
-      {/* Preparation Time Selection */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700">
-          Need Extra Preparation Time?
-        </label>
-        <select
-          value={prepTime}
-          onChange={handlePrepTimeChange}
-          className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 text-gray-800"
-        >
-          {prepOptions.map((option, index) => (
-            <option key={index} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Error Message */}
-      {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
-
       {/* Confirm Button */}
       <div className="text-center">
         <button
@@ -175,6 +128,13 @@ const Time = () => {
           Confirm Time
         </button>
       </div>
+
+      {/* Success Message */}
+      {successMessage && (
+        <p className="mt-4 text-green-500 text-center font-semibold">
+          {successMessage}
+        </p>
+      )}
     </div>
   );
 };

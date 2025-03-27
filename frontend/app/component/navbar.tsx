@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [username, setUsername] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -35,8 +37,18 @@ const Navbar = () => {
     // Listen to changes in localStorage across tabs
     window.addEventListener("storage", updateUserInfo);
 
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
     return () => {
       window.removeEventListener("storage", updateUserInfo);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -44,7 +56,12 @@ const Navbar = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userName");
     setUsername("");
-    router.push("/login"); // Redirect to login after logout
+    setIsDropdownOpen(false);
+    router.push("/login");
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
   };
 
   return (
@@ -61,21 +78,53 @@ const Navbar = () => {
           <Link href="/" className="text-white hover:border-b-2 border-white">Home</Link>
           <Link href="/explore" className="text-white hover:border-b-2 border-white">Explore</Link>
           <Link href="/chef" className="text-white hover:border-b-2 border-white">Chef dish</Link>
-          <Link href="/maid" className="text-white hover:border-b-2 border-white">Maid booking</Link>
+          <Link href="/maid" className="text-white hover:border-b-2 border-white">Cooking</Link>
         </div>
 
         {/* User Info & Authentication Buttons */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 relative" ref={dropdownRef}>
           {username ? (
-            <>
-              <span className="text-white font-semibold capitalize">{username}</span>
+            <div className="relative">
               <button 
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                onClick={handleLogout}
+                onClick={toggleDropdown}
+                className="flex items-center space-x-1 focus:outline-none"
               >
-                Logout
+                <span className="text-white font-semibold capitalize">{username}</span>
+                <svg 
+                  className={`w-4 h-4 text-white transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
-            </>
+
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                  <Link 
+                    href="/maid/dashboard" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link 
+                    href="/maid/becomemaid" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    Become Maid
+                  </Link>
+                  <button 
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <Link href="/login">
               <button className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-700">
