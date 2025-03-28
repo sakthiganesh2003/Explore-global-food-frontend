@@ -26,7 +26,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData }) => {
           <ul className="list-disc pl-5 text-gray-700">
             {formData.members.map((member, index) => (
               <li key={index}>
-                <strong>{member.name}</strong> - {member.dietary}, {member.allergies ? `Allergies: ${member.allergies}` : 'No allergies'}, {member.specialRequest ? `Special Request: ${member.specialRequest}` : 'No special request'} (Quantity: {member.quantity})
+                 {member.dietary}, {member.allergies ? `Allergies: ${member.allergies}` : 'No allergies'}, {member.specialRequest ? `Special Request: ${member.specialRequest}` : 'No special request'} (Quantity: {member.quantity})
               </li>
             ))}
           </ul>

@@ -78,7 +78,7 @@ const Navbar = () => {
           <Link href="/" className="text-white hover:border-b-2 border-white">Home</Link>
           <Link href="/explore" className="text-white hover:border-b-2 border-white">Explore</Link>
           <Link href="/chef" className="text-white hover:border-b-2 border-white">Chef dish</Link>
-          <Link href="/maid" className="text-white hover:border-b-2 border-white">Cooking</Link>
+          <Link href="/maid" className="text-white hover:border-b-2 border-white">Cook</Link>
         </div>
 
         {/* User Info & Authentication Buttons */}

@@ -19,7 +19,7 @@ useEffect(() => {
       // Check if the role is 'instructor'
       if (decoded.role !== "maid") {
         // If the role is not 'instructor', redirect to login
-        router.push("/maid/dashboard");
+        router.push("/dashboard");
       }
     } catch (error) {
       console.error("Error decoding token", error);
