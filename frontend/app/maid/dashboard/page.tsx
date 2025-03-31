@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import SidebarMaid from "@/app/component/dashboard/SidebarMaid";
 
@@ -11,39 +11,80 @@ interface Maid {
   experience: number;
   image: string;
   isActive: boolean;
- // hourlyRate: number;
   description: string;
 }
 
 export default function MaidDashboard() {
-  // Maid data with editable fields
   const [maid, setMaid] = useState<Maid>({
-    _id: "1",
-    name: "Chef Maria",
-    cuisine: ["Italian", "Mexican", "American"],
-    rating: 4.9,
-    experience: 5,
-    image: "/chef1.jpg",
+    _id: "",
+    name: "",
+    cuisine: [],
+    rating: 0,
+    experience: 0,
+    image: "",
     isActive: false,
-   // hourlyRate: 25,
-    description: "Professional chef with 5 years of experience"
+    description: ""
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Maid>>({});
+  const [loading, setLoading] = useState(true);
+
+  // Fetch maid profile data
+  useEffect(() => {
+    const fetchMaidProfile = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/maid/profile/profile");
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile");
+        }
+        const data = await response.json();
+        setMaid({
+          ...data,
+          isActive: false, // Default status
+          description: data.description || "Professional chef" // Default description
+        });
+      } catch (error) {
+        toast.error("Failed to load profile");
+        console.error("Fetch error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMaidProfile();
+  }, []);
 
   // Toggle active status
-  const toggleActiveStatus = () => {
+  const toggleActiveStatus = async () => {
     const newStatus = !maid.isActive;
-    setMaid(prev => ({ ...prev, isActive: newStatus }));
-    toast.success(`You are now ${newStatus ? 'active' : 'inactive'}`);
+    try {
+      // Update in backend
+      const response = await fetch(`http://localhost:5000/api/maid/profile/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isActive: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update status");
+      }
+
+      // Update in state
+      setMaid(prev => ({ ...prev, isActive: newStatus }));
+      toast.success(`You are now ${newStatus ? 'active' : 'inactive'}`);
+    } catch (error) {
+      toast.error("Failed to update status");
+      console.error("Status update error:", error);
+    }
   };
 
   // Start editing
   const startEditing = () => {
     setEditData({
       name: maid.name,
-    //  hourlyRate: maid.hourlyRate,
       description: maid.description,
       cuisine: [...maid.cuisine]
     });
@@ -79,15 +120,33 @@ export default function MaidDashboard() {
   };
 
   // Save changes
-  const saveChanges = () => {
-    setMaid(prev => ({
-      ...prev,
-      ...editData,
-      cuisine: editData.cuisine || prev.cuisine
-    }));
-    setIsEditing(false);
-    toast.success("Profile updated successfully");
-    // Here you would typically call an API to save changes
+  const saveChanges = async () => {
+    try {
+      // Update in backend
+      const response = await fetch(`http://localhost:5000/api/maid/profile/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(editData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update profile");
+      }
+
+      // Update in state
+      setMaid(prev => ({
+        ...prev,
+        ...editData,
+        cuisine: editData.cuisine || prev.cuisine
+      }));
+      setIsEditing(false);
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      toast.error("Failed to update profile");
+      console.error("Profile update error:", error);
+    }
   };
 
   // Cancel editing
@@ -95,18 +154,29 @@ export default function MaidDashboard() {
     setIsEditing(false);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex">
+        <SidebarMaid />
+        <div className="flex-1 p-6 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <SidebarMaid />
       
       <div className="flex-1 p-6 text-gray-800">
         {/* Profile Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6 text-gray-800">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 mr-6">
                 <img 
-                  src={maid.image} 
+                  src={maid.image || "/chef1.jpg"} 
                   alt={maid.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -171,24 +241,6 @@ export default function MaidDashboard() {
               )}
             </div>
           </div>
-          
-          {/* Hourly Rate
-          <div className="mt-4">
-            {isEditing ? (
-              <div className="flex items-center">
-                <span className="mr-2">Hourly Rate: $</span>
-                <input
-                  type="number"
-                  name="hourlyRate"
-                  value={editData.hourlyRate || 0}
-                  onChange={handleInputChange}
-                  className="w-20 border-b border-gray-300 focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-            ) : (
-              <p>Hourly Rate: ${maid.hourlyRate}/hour</p>
-            )}
-          </div> */}
           
           {/* Description */}
           <div className="mt-4">

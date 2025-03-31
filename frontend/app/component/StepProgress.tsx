@@ -77,7 +77,7 @@ const StepProgress = () => {
           <SelectCuisine
             maidId={formData.maid?._id}
             onSelect={(selection: CuisineType) => updateFormData({ cuisine: selection })}
-            onSelectConfirmedFoods={(foods: FoodItemType[]) => updateFormData({ confirmedFoods: foods })}
+            onSelectConfirmedFoods={(foods) => updateFormData({ confirmedFoods: foods })}
           />
         );
       case 2:

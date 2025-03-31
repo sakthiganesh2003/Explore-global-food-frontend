@@ -3,7 +3,15 @@ import React, { useState } from "react";
 const Time = () => {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
+  const [address, setAddress] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [errors, setErrors] = useState({
+    date: "",
+    times: "",
+    address: "",
+    phone: ""
+  });
 
   // Mocked available time slots
   const availableTimeSlots = {
@@ -14,12 +22,14 @@ const Time = () => {
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedDate(e.target.value);
+    setErrors({...errors, date: ""});
   };
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newTime = e.target.value;
     if (newTime && !selectedTimes.includes(newTime)) {
       setSelectedTimes([...selectedTimes, newTime]);
+      setErrors({...errors, times: ""});
     }
   };
 
@@ -27,46 +37,132 @@ const Time = () => {
     setSelectedTimes(selectedTimes.filter((t) => t !== time));
   };
 
+  const validateForm = () => {
+    let valid = true;
+    const newErrors = {
+      date: "",
+      times: "",
+      address: "",
+      phone: ""
+    };
+
+    if (!selectedDate) {
+      newErrors.date = "Please select a date";
+      valid = false;
+    }
+
+    if (selectedTimes.length === 0) {
+      newErrors.times = "Please select at least one time slot";
+      valid = false;
+    }
+
+    if (!address.trim()) {
+      newErrors.address = "Address is required";
+      valid = false;
+    }
+
+    if (!phoneNumber.trim()) {
+      newErrors.phone = "Phone number is required";
+      valid = false;
+    } else if (!/^\d{10}$/.test(phoneNumber)) {
+      newErrors.phone = "Please enter a valid 10-digit phone number";
+      valid = false;
+    }
+
+    setErrors(newErrors);
+    return valid;
+  };
+
   const handleSubmit = () => {
+    if (!validateForm()) return;
+
     console.log("Selected Date:", selectedDate);
     console.log("Selected Time Slots:", selectedTimes);
+    console.log("Address:", address);
+    console.log("Phone Number:", phoneNumber);
 
     setSuccessMessage(
-      `Your session is scheduled on ${selectedDate} at ${selectedTimes.join(", ")}.`
+      `Your session is scheduled on ${selectedDate} at ${selectedTimes.join(", ")}. 
+      We'll contact you at ${phoneNumber} and serve at ${address}.`
     );
   };
 
   return (
     <div className="max-w-lg mx-auto p-6 bg-white rounded-lg shadow-md">
       <h3 className="text-2xl font-semibold mb-4 text-center text-gray-800">
-        Select Your Preferred Time
+        Book Your Service
       </h3>
       <p className="text-gray-600 text-center mb-6">
-        Choose a date and multiple time slots.
+        Provide your details and preferred time slots
       </p>
+
+      {/* Address Input */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700">
+          Delivery Address *
+        </label>
+        <input
+          type="text"
+          value={address}
+          onChange={(e) => {
+            setAddress(e.target.value);
+            setErrors({...errors, address: ""});
+          }}
+          className={`mt-1 block w-full px-3 py-3 border ${errors.address ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 text-gray-800`}
+          placeholder="Enter your full address"
+        />
+        {errors.address && (
+          <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+        )}
+      </div>
+
+      {/* Phone Number Input */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700">
+          Phone Number *
+        </label>
+        <input
+          type="tel"
+          value={phoneNumber}
+          onChange={(e) => {
+            setPhoneNumber(e.target.value);
+            setErrors({...errors, phone: ""});
+          }}
+          className={`mt-1 block w-full px-3 py-3 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 text-gray-800`}
+          placeholder="Enter your 10-digit phone number"
+          maxLength={10}
+        />
+        {errors.phone && (
+          <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+        )}
+      </div>
 
       {/* Date Selection */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700">
-          Choose Date
+          Choose Date *
         </label>
         <input
           type="date"
           value={selectedDate}
           onChange={handleDateChange}
-          className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 text-gray-800"
+          className={`mt-1 block w-full px-3 py-3 border ${errors.date ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 text-gray-800`}
+          min={new Date().toISOString().split('T')[0]} // Disable past dates
         />
+        {errors.date && (
+          <p className="mt-1 text-sm text-red-600">{errors.date}</p>
+        )}
       </div>
 
       {/* Time Slot Selection */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700">
-          Choose Time (Select multiple)
+          Choose Time Slots (Select multiple) *
         </label>
         <select
           value=""
           onChange={handleTimeChange}
-          className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 text-gray-800"
+          className={`mt-1 block w-full px-3 py-3 border ${errors.times ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 text-gray-800`}
         >
           <option value="">Select a time slot</option>
           <optgroup label="Morning">
@@ -91,6 +187,9 @@ const Time = () => {
             ))}
           </optgroup>
         </select>
+        {errors.times && (
+          <p className="mt-1 text-sm text-red-600">{errors.times}</p>
+        )}
       </div>
 
       {/* Display Selected Time Slots */}
@@ -123,17 +222,20 @@ const Time = () => {
       <div className="text-center">
         <button
           onClick={handleSubmit}
-          className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600"
+          className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
         >
-          Confirm Time
+          Confirm Booking
         </button>
       </div>
 
       {/* Success Message */}
       {successMessage && (
-        <p className="mt-4 text-green-500 text-center font-semibold">
-          {successMessage}
-        </p>
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-700 font-medium">{successMessage}</p>
+          <p className="mt-2 text-green-600">
+            Our team will contact you shortly to confirm the details.
+          </p>
+        </div>
       )}
     </div>
   );

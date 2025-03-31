@@ -20,9 +20,9 @@ const Sidebar = () => {
       {/* Navigation Links */}
       <nav className="flex flex-col space-y-4 mt-4 px-2">
         <SidebarItem icon={<Home />} text="Home" href="/dashboard" isOpen={isOpen} />
-        <SidebarItem icon={<Utensils />} text="Recipes" href="/recipes" isOpen={isOpen} />
+        <SidebarItem icon={<Utensils />} text="maid" href="/Admin/Booking" isOpen={isOpen} />
         
-        <SidebarItem icon={<ChefHat />} text="Chef" href="/dashboard/Chef" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="Chef" href="/Admin/Chef" isOpen={isOpen} />
      
       </nav>
     </div>
