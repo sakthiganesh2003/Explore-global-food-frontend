@@ -22,7 +22,7 @@ const teamMembers = [
   {
     name: "John Doe",
     role: "Good Guy",
-    image: "/chef4.jpg", 
+    image: "/chef3.jpg", 
   },
 ];
 

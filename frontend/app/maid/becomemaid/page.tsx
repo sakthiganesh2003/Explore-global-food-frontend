@@ -1,21 +1,43 @@
 'use client';
 
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef, ChangeEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ToastContainer, toast } from 'react-toastify';
+import { jwtDecode } from 'jwt-decode';
 import 'react-toastify/dist/ReactToastify.css';
+
+interface DecodedToken {
+  id: string;
+  role?: string;
+  exp?: number;
+}
+
+interface FormData {
+  fullName: string;
+  email: string;
+  phone: string;
+  experience: string;
+  specialties: string[];
+  bio: string;
+  aadhaarPhoto: File | null;
+  aadhaarNumber: string;
+  bankAccountNumber: string;
+  bankName: string;
+  ifscCode: string;
+  accountHolderName: string;
+}
 
 const BecomeMaidForm = () => {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
     phone: '',
     experience: '',
-    specialties: [] as string[],
+    specialties: [],
     bio: '',
-    aadhaarPhoto: null as File | null,
+    aadhaarPhoto: null,
     aadhaarNumber: '',
     bankAccountNumber: '',
     bankName: '',
@@ -24,251 +46,338 @@ const BecomeMaidForm = () => {
   });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const cuisines = ['Indian', 'Italian', 'Chinese', 'Mexican', 'Thai', 'Japanese', 'Mediterranean', 'Other'];
+
+  // Check authentication on component mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Please login to access this page');
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const decoded: DecodedToken = jwtDecode(token);
+      if (!decoded.id) {
+        throw new Error('Invalid token');
+      }
+      setIsLoggedIn(true);
+    } catch (error) {
+      toast.error('Session expired. Please login again.');
+      localStorage.removeItem('token');
+      router.push('/login');
+    }
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const file = e.target.files[0];
+    if (!e.target.files?.[0]) return;
 
-      if (!file.type.match('image/(jpeg|png)')) {
-        toast.error('Please upload a JPEG or PNG image');
-        return;
-      }
-
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error('File size should be less than 2MB');
-        return;
-      }
-
-      setFormData(prev => ({ ...prev, aadhaarPhoto: file }));
-
-      const reader = new FileReader();
-      reader.onload = () => setPreviewUrl(reader.result as string);
-      reader.readAsDataURL(file);
+    const file = e.target.files[0];
+    
+    // Validate file type
+    if (!file.type.match('image/(jpeg|png)')) {
+      toast.error('Please upload a JPEG or PNG image');
+      return;
     }
+
+    // Validate file size (2MB max)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File size should be less than 2MB');
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, aadhaarPhoto: file }));
+    
+    // Clear file error if exists
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.aadhaarPhoto;
+      return newErrors;
+    });
+
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onload = () => setPreviewUrl(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
-  const triggerFileInput = () => fileInputRef.current?.click();
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
 
-  const handleCheckboxChange = (value: string) => {
+  const handleCheckboxChange = (cuisine: string) => {
     setFormData(prev => ({
       ...prev,
-      specialties: prev.specialties.includes(value) 
-        ? prev.specialties.filter(item => item !== value) 
-        : [...prev.specialties, value]
+      specialties: prev.specialties.includes(cuisine)
+        ? prev.specialties.filter(item => item !== cuisine)
+        : [...prev.specialties, cuisine]
     }));
+    
+    // Clear specialties error when user selects at least one
+    if (validationErrors.specialties) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.specialties;
+        return newErrors;
+      });
+    }
   };
 
-  const validateForm = () => {
-    if (!formData.fullName.trim()) {
-      toast.error('Full name is required');
-      return false;
-    }
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      toast.error('Please enter a valid email address');
-      return false;
-    }
+    // Required field validation
+    if (!formData.fullName.trim()) errors.fullName = 'Full name is required';
+    if (!formData.email.trim()) errors.email = 'Email is required';
+    if (!formData.phone.trim()) errors.phone = 'Phone number is required';
+    if (!formData.experience) errors.experience = 'Experience level is required';
+    if (formData.specialties.length === 0) errors.specialties = 'Please select at least one specialty';
+    if (!formData.bio.trim()) errors.bio = 'Bio is required';
+    if (!formData.aadhaarPhoto) errors.aadhaarPhoto = 'Aadhaar photo is required';
+    if (!formData.aadhaarNumber.trim()) errors.aadhaarNumber = 'Aadhaar number is required';
+    if (!formData.accountHolderName.trim()) errors.accountHolderName = 'Account holder name is required';
+    if (!formData.bankName.trim()) errors.bankName = 'Bank name is required';
+    if (!formData.bankAccountNumber.trim()) errors.bankAccountNumber = 'Account number is required';
+    if (!formData.ifscCode.trim()) errors.ifscCode = 'IFSC code is required';
 
-    if (!/^\d{10}$/.test(formData.phone)) {
-      toast.error('Please enter a valid 10-digit phone number');
-      return false;
-    }
+    // Format validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = 'Invalid email format';
+    if (!/^\d{10}$/.test(formData.phone)) errors.phone = 'Phone must be 10 digits';
+    if (!/^\d{12}$/.test(formData.aadhaarNumber)) errors.aadhaarNumber = 'Aadhaar must be 12 digits';
+    if (!/^\d{9,18}$/.test(formData.bankAccountNumber)) errors.bankAccountNumber = 'Invalid account number';
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifscCode)) errors.ifscCode = 'Invalid IFSC format';
 
-    if (!formData.experience) {
-      toast.error('Please select your experience level');
-      return false;
-    }
-
-    if (formData.specialties.length === 0) {
-      toast.error('Please select at least one cuisine specialty');
-      return false;
-    }
-
-    if (!formData.bio.trim()) {
-      toast.error('Bio is required');
-      return false;
-    }
-
-    if (!formData.aadhaarPhoto) {
-      toast.error('Please upload your Aadhaar card photo');
-      return false;
-    }
-
-    if (!/^\d{12}$/.test(formData.aadhaarNumber)) {
-      toast.error('Please enter a valid 12-digit Aadhaar number');
-      return false;
-    }
-
-    if (!formData.accountHolderName.trim()) {
-      toast.error('Account holder name is required');
-      return false;
-    }
-
-    if (!formData.bankName.trim()) {
-      toast.error('Bank name is required');
-      return false;
-    }
-
-    if (!/^\d{9,18}$/.test(formData.bankAccountNumber)) {
-      toast.error('Please enter a valid bank account number (9-18 digits)');
-      return false;
-    }
-
-    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifscCode)) {
-      toast.error('Please enter a valid IFSC code (e.g., ABCD0123456)');
-      return false;
-    }
-
-    return true;
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const uploadImageToServer = async (file: File): Promise<string> => {
-    // In a real application, you would upload this to a storage service
-    // For now, we'll just return a mock URL
+    // In a real implementation, you would:
+    // 1. Upload to your server or cloud storage
+    // 2. Return the URL of the uploaded image
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve('https://example.com/aadhaar-uploads/' + file.name);
+        resolve(`https://storage.example.com/aadhaar/${file.name}-${Date.now()}`);
       }, 1000);
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
-    if (!validateForm()) return;
-  
+    
+    if (!validateForm()) {
+      toast.error('Please fix all form errors');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Authentication required');
+      router.push('/login');
+      return;
+    }
+
     setIsUploading(true);
-  
+
     try {
+      // Verify token
+      const decoded: DecodedToken = jwtDecode(token);
+      if (!decoded.id) {
+        throw new Error('Invalid token');
+      }
+
+      // Upload Aadhaar photo if exists
       let aadhaarPhotoUrl = '';
       if (formData.aadhaarPhoto) {
         aadhaarPhotoUrl = await uploadImageToServer(formData.aadhaarPhoto);
       }
-  
-      // Updated request format to match your sample
+
+      // Prepare request data
       const requestData = {
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        experience:`${formData.experience} years`,
-        specialties: formData.specialties.join(', '), // Convert array to string
-        bio: formData.bio,
+        userId: decoded.id,
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        experience: `${formData.experience} years`,
+        specialties: formData.specialties,
+        bio: formData.bio.trim(),
         aadhaarPhoto: aadhaarPhotoUrl,
-        aadhaarNumber: formData.aadhaarNumber,
-        // Flattened bank details
-        bankAccountNumber: formData.bankAccountNumber,
-        bankName: formData.bankName,
-        ifscCode: formData.ifscCode,
-        accountHolderName: formData.accountHolderName
+        aadhaarNumber: formData.aadhaarNumber.trim(),
+        bankDetails: {
+          accountNumber: formData.bankAccountNumber.trim(),
+          bankName: formData.bankName.trim(),
+          ifscCode: formData.ifscCode.trim(),
+          accountHolderName: formData.accountHolderName.trim()
+        }
       };
-  
+
+      // Submit to backend
       const response = await fetch('http://localhost:5000/api/formMaids', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(requestData),
+        body: JSON.stringify(requestData)
       });
-  
-    if(response){
-     toast.success('Application submitted successfully!');
-    }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Submission failed');
+      }
+
+      // Handle success
+      const result = await response.json();
+      toast.success('Application submitted successfully!');
+      router.push('/maid/dashboard');
     } catch (error: any) {
       console.error('Submission error:', error);
-      toast.error(error.message || 'Failed to submit application. Please try again.');
+      toast.error(error.message || 'Failed to submit application');
     } finally {
       setIsUploading(false);
     }
   };
 
+  const renderError = (fieldName: string) => {
+    return validationErrors[fieldName] ? (
+      <p className="mt-1 text-sm text-red-600">{validationErrors[fieldName]}</p>
+    ) : null;
+  };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Verifying authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8 text-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <ToastContainer position="top-right" autoClose={5000} />
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Header */}
           <div className="bg-indigo-600 px-6 py-8 text-center">
             <h1 className="text-3xl font-bold text-white">Join Our Team</h1>
             <p className="mt-2 text-indigo-100">Become a professional cooking maid</p>
           </div>
 
-          {/* Form */}
           <div className="p-6 sm:p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                {/* Personal Info */}
+                {/* Personal Information Section */}
                 <div className="space-y-4">
                   <h2 className="text-lg font-semibold text-gray-800">Personal Information</h2>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
+                        validationErrors.fullName ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       required
                     />
+                    {renderError('fullName')}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
+                        validationErrors.email ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       required
                     />
+                    {renderError('email')}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone Number <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="tel"
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
                       pattern="[0-9]{10}"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
+                        validationErrors.phone ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       required
                     />
+                    {renderError('phone')}
                   </div>
                 </div>
 
-                {/* Verification */}
+                {/* Verification Section */}
                 <div className="space-y-4">
                   <h2 className="text-lg font-semibold text-gray-800">Verification</h2>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Aadhaar Number*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Aadhaar Number <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="aadhaarNumber"
                       value={formData.aadhaarNumber}
                       onChange={handleChange}
                       pattern="[0-9]{12}"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
+                        validationErrors.aadhaarNumber ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       required
                     />
+                    {renderError('aadhaarNumber')}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Aadhaar Photo*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Aadhaar Photo <span className="text-red-500">*</span>
+                    </label>
                     <div className="flex items-center">
                       <button
                         type="button"
                         onClick={triggerFileInput}
-                        className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition"
+                        className={`px-4 py-2 rounded-lg hover:bg-indigo-200 transition ${
+                          validationErrors.aadhaarPhoto 
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-indigo-100 text-indigo-700'
+                        }`}
                       >
                         Choose File
                       </button>
@@ -284,6 +393,7 @@ const BecomeMaidForm = () => {
                         required
                       />
                     </div>
+                    {renderError('aadhaarPhoto')}
                     {previewUrl && (
                       <div className="mt-2">
                         <img 
@@ -297,17 +407,21 @@ const BecomeMaidForm = () => {
                 </div>
               </div>
 
-              {/* Experience */}
+              {/* Experience Section */}
               <div>
                 <h2 className="text-lg font-semibold text-gray-800 mb-2">Experience</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Years of Experience <span className="text-red-500">*</span>
+                    </label>
                     <select
                       name="experience"
                       value={formData.experience}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
+                        validationErrors.experience ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       required
                     >
                       <option value="">Select experience</option>
@@ -316,26 +430,35 @@ const BecomeMaidForm = () => {
                       <option value="3-5">3-5 years</option>
                       <option value="5+">5+ years</option>
                     </select>
+                    {renderError('experience')}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">About You*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      About You <span className="text-red-500">*</span>
+                    </label>
                     <textarea
                       name="bio"
                       rows={3}
                       value={formData.bio}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
+                        validationErrors.bio ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       placeholder="Your cooking style, specialties, etc."
                       required
                     />
+                    {renderError('bio')}
                   </div>
                 </div>
               </div>
 
-              {/* Specialties */}
+              {/* Specialties Section */}
               <div>
-                <h2 className="text-lg font-semibold text-gray-800 mb-2">Cuisine Specialties*</h2>
+                <h2 className="text-lg font-semibold text-gray-800 mb-2">
+                  Cuisine Specialties <span className="text-red-500">*</span>
+                </h2>
+                {renderError('specialties')}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {cuisines.map(cuisine => (
                     <div key={cuisine} className="flex items-center">
@@ -354,61 +477,81 @@ const BecomeMaidForm = () => {
                 </div>
               </div>
 
-              {/* Bank Account Information */}
+              {/* Bank Details Section */}
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-gray-800">Bank Account Details</h2>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Account Holder Name*</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Account Holder Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     name="accountHolderName"
                     value={formData.accountHolderName}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
+                      validationErrors.accountHolderName ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     required
                   />
+                  {renderError('accountHolderName')}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Bank Name <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="bankName"
                       value={formData.bankName}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
+                        validationErrors.bankName ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       required
                     />
+                    {renderError('bankName')}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Number*</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Account Number <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="bankAccountNumber"
                       value={formData.bankAccountNumber}
                       onChange={handleChange}
                       pattern="[0-9]{9,18}"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
+                        validationErrors.bankAccountNumber ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       required
                     />
+                    {renderError('bankAccountNumber')}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">IFSC Code*</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    IFSC Code <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     name="ifscCode"
                     value={formData.ifscCode}
                     onChange={handleChange}
                     pattern="[A-Z]{4}0[A-Z0-9]{6}"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
+                      validationErrors.ifscCode ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     placeholder="ABCD0123456"
                     required
                   />
+                  {renderError('ifscCode')}
                 </div>
               </div>
 

@@ -10,7 +10,7 @@ const chefs = [
     location: "New York",
     rating: 4.4,
     category: "Vegan Food",
-    image: "/chef4.jpg",
+    image: "/chef3.jpg",
   },
   {
     id: 2,
