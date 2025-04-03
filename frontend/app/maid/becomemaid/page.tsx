@@ -247,7 +247,7 @@ const BecomeMaidForm = () => {
       // Handle success
       const result = await response.json();
       toast.success('Application submitted successfully!');
-      router.push('/maid/dashboard');
+      router.push('./');
     } catch (error: any) {
       console.error('Submission error:', error);
       toast.error(error.message || 'Failed to submit application');
@@ -274,7 +274,7 @@ const BecomeMaidForm = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8 text-gray-800">
       <ToastContainer position="top-right" autoClose={5000} />
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">

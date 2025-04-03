@@ -9,6 +9,7 @@ const SignupPage: React.FC = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [errors, setErrors] = useState({
     email: "",
@@ -20,21 +21,35 @@ const SignupPage: React.FC = () => {
     let valid = true;
     let tempErrors = { email: "", password: "", confirmPassword: "" };
 
+    if (!name.trim()) {
+      toast.error("Please enter your name");
+      valid = false;
+    }
+
     // Validate email format
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-    if (!emailRegex.test(email)) {
+    if (!email.trim()) {
+      tempErrors.email = "Email is required";
+      valid = false;
+    } else if (!emailRegex.test(email)) {
       tempErrors.email = "Please enter a valid email address.";
       valid = false;
     }
 
-    // Validate password (e.g., minimum length of 6)
-    if (password.length < 6) {
+    // Validate password
+    if (!password) {
+      tempErrors.password = "Password is required";
+      valid = false;
+    } else if (password.length < 6) {
       tempErrors.password = "Password must be at least 6 characters long.";
       valid = false;
     }
 
     // Validate password confirmation
-    if (password !== confirmPassword) {
+    if (!confirmPassword) {
+      tempErrors.confirmPassword = "Please confirm your password";
+      valid = false;
+    } else if (password !== confirmPassword) {
       tempErrors.confirmPassword = "Passwords do not match.";
       valid = false;
     }
@@ -45,13 +60,14 @@ const SignupPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     if (!validateForm()) {
-
-      
-      return; // Don't submit if form is invalid
+      setIsSubmitting(false);
+      return;
     }
-    toast.success("Form validated successfully! Proceeding with signup...");
+
+    const loadingToast = toast.loading("Creating your account...");
 
     try {
       const res = await fetch("http://localhost:5000/api/auth/signup", {
@@ -63,18 +79,30 @@ const SignupPage: React.FC = () => {
       const data = await res.json();
 
       if (res.ok) {
-        // Store the token in localStorage or cookies
+        toast.dismiss(loadingToast);
         localStorage.setItem("token", data.token);
-
-        toast.success(data.message || "Signup successful!"); // Success message
-        // Redirect to the next page, for example, the login page
-        window.location.href = "/login";
+        
+        toast.success(data.message || "Account created successfully! Redirecting...", {
+          duration: 3000,
+        });
+        
+        // Redirect after showing success message
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
       } else {
-        // Server validation errors will be shown here
-        toast.error(data.message || "Signup failed"); // Error message from server
+        toast.dismiss(loadingToast);
+        toast.error(data.message || "Signup failed. Please try again.", {
+          duration: 4000,
+        });
       }
     } catch (error) {
-      toast.error("An error occurred during signup");
+      toast.dismiss(loadingToast);
+      toast.error("Network error. Please try again later.", {
+        duration: 4000,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -93,7 +121,6 @@ const SignupPage: React.FC = () => {
               placeholder="John Doe"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              required
             />
           </div>
           <div>
@@ -104,7 +131,6 @@ const SignupPage: React.FC = () => {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
             />
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
           </div>
@@ -116,7 +142,6 @@ const SignupPage: React.FC = () => {
               placeholder="Your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
             />
             {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
             <button
@@ -135,15 +160,15 @@ const SignupPage: React.FC = () => {
               placeholder="Confirm your password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              required
             />
             {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
           </div>
           <button
             type="submit"
-            className="w-full bg-indigo-600 text-white py-3 rounded-md hover:bg-indigo-500 transition"
+            className="w-full bg-indigo-600 text-white py-3 rounded-md hover:bg-indigo-500 transition disabled:opacity-70"
+            disabled={isSubmitting}
           >
-            Sign Up
+            {isSubmitting ? "Creating Account..." : "Sign Up"}
           </button>
         </form>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-6 text-center">
