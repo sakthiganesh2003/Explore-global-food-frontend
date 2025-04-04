@@ -233,7 +233,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
               onClick={handleBookMaid} 
               className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
-              Book {selectedMaid.fullName}
+              select {selectedMaid.fullName}
             </button>
           </div>
         </div>
