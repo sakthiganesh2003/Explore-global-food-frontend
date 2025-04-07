@@ -8,35 +8,37 @@ import Time from './ui/Time';
 import FinalReview from './ui/FinalReview';
 import Payment from './ui/Payment';
 
-// Define types for your form data
+// Enhanced type definitions
 type MaidType = {
   _id: string;
-  // Add other maid properties as needed
-  name?: string;
+  fullName: string;
+  specialties: string[];
+  rating: number;
+  experience: string | number;
+  image?: string;
+  hourlyRate?: number;
+  cuisine?: string[];
 };
 
 type CuisineType = {
-  // Define your cuisine type structure
   id: string;
   name: string;
 };
 
 type MemberType = {
-  // Define your member type structure
   id: string;
   name: string;
 };
 
 type TimeSlotType = {
-  // Define your time slot type structure
   date: string;
   time: string[];
 };
 
 type FoodItemType = {
-  // Define your food item type structure
   id: string;
   name: string;
+  price: number;
   quantity: number;
 };
 
@@ -60,24 +62,46 @@ const StepProgress = () => {
     confirmedFoods: [],
   });
 
-  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+  const nextStep = () => {
+    // Validate before proceeding to next step
+    if (currentStep === 0 && !formData.maid) {
+      alert('Please select a maid first');
+      return;
+    }
+    if (currentStep === 1 && !formData.cuisine) {
+      alert('Please select a cuisine');
+      return;
+    }
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+  };
+
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 0));
 
   const updateFormData = (data: Partial<FormDataType>) => {
     setFormData((prev) => ({ ...prev, ...data }));
+    // Auto-progress to next step when maid is selected
+    if (data.maid && currentStep === 0) {
+      setTimeout(() => nextStep(), 500);
+    }
   };
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
-        return <MaidChoose onNext={(maid: MaidType) => updateFormData({ maid })} />;
+        return (
+          <MaidChoose 
+            onNext={(maid: MaidType) => {
+              updateFormData({ maid });
+            }} 
+          />
+        );
       case 1:
-        console.log("Rendering SelectCuisine with Maid ID:", formData.maid?._id);
         return (
           <SelectCuisine
-            maidId={formData.maid?._id}
-            onSelect={(selection: CuisineType) => updateFormData({ cuisine: selection })}
-            onSelectConfirmedFoods={(foods) => updateFormData({ confirmedFoods: foods })}
+            maidId={formData.maid?._id || ''}
+            maidSpecialties={formData.maid?.specialties || []}
+            onSelect={(cuisine: CuisineType) => updateFormData({ cuisine })}
+            onSelectConfirmedFoods={(foods: FoodItemType[]) => updateFormData({ confirmedFoods: foods })}
           />
         );
       case 2:
@@ -88,11 +112,29 @@ const StepProgress = () => {
           />
         );
       case 3:
-        return <Time onNext={(time: TimeSlotType) => updateFormData({ time })} />;
+        return (
+          <Time 
+            onSelect={(time: TimeSlotType) => updateFormData({ time })}
+          />
+        );
       case 4:
-        return <FinalReview formData={formData} />;
+        return (
+          <FinalReview 
+            formData={formData} 
+            onConfirm={() => nextStep()}
+          />
+        );
       case 5:
-        return <Payment />;
+        return (
+          <Payment 
+            formData={formData}
+            onComplete={() => {
+              // Handle payment completion
+              console.log('Booking completed', formData);
+              alert('Booking confirmed!');
+            }}
+          />
+        );
       default:
         return null;
     }
@@ -100,11 +142,12 @@ const StepProgress = () => {
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-white">
-      <div className="w-full p-10 bg-gray-100 rounded-lg shadow-lg min-h-screen">
+      <div className="w-full p-4 md:p-10 bg-gray-100 rounded-lg shadow-lg min-h-screen">
+        {/* Progress indicator */}
         <div className="relative">
           <div className="overflow-hidden rounded-full bg-gray-200 h-2">
             <div
-              className="h-2 rounded-full bg-green-500 transition-all"
+              className="h-2 rounded-full bg-green-500 transition-all duration-300"
               style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
             ></div>
           </div>
@@ -114,32 +157,44 @@ const StepProgress = () => {
                 key={index}
                 className={`flex items-center justify-center ${
                   index <= currentStep ? 'text-black font-semibold' : ''
-                }`}
+                } ${index === currentStep ? 'text-blue-600' : ''}`}
               >
-                <span>{step}</span>
+                <span className="truncate">{step}</span>
               </li>
             ))}
           </ol>
         </div>
 
-        <div className="mt-6 text-center">
+        {/* Step content */}
+        <div className="mt-6">
           {renderStepContent()}
-          <div className="mt-4 flex justify-between">
-            <button 
-              onClick={prevStep} 
-              disabled={currentStep === 0} 
-              className="px-4 py-2 bg-gray-600 text-white rounded disabled:opacity-50"
-            >
-              Previous
-            </button>
+        </div>
+
+        {/* Navigation buttons */}
+        <div className="mt-8 flex justify-between">
+          <button 
+            onClick={prevStep} 
+            disabled={currentStep === 0} 
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg disabled:opacity-50 hover:bg-gray-700 transition-colors"
+          >
+            Previous
+          </button>
+          {currentStep < steps.length - 1 && (
             <button 
               onClick={nextStep} 
-              disabled={currentStep === steps.length - 1} 
-              className="px-4 py-2 bg-pink-600 text-white rounded disabled:opacity-50"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              {currentStep === steps.length - 1 ? 'Submit' : 'Next'}
+              Next
             </button>
-          </div>
+          )}
+          {currentStep === steps.length - 1 && (
+            <button 
+              onClick={() => console.log('Submit booking', formData)}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Confirm Booking
+            </button>
+          )}
         </div>
       </div>
     </div>
