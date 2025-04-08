@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
 import MaidChoose from './ui/MaidChoose';
 import SelectCuisine from './ui/SelectCuisine';
 import Members from './ui/Members';
 import Time from './ui/Time';
 import FinalReview from './ui/FinalReview';
 import Payment from './ui/Payment';
+// import 'react-toastify/dist/ReactToastify.css';
 
 // Enhanced type definitions
 type MaidType = {
@@ -26,13 +28,18 @@ type CuisineType = {
 };
 
 type MemberType = {
-  id: string;
-  name: string;
+  _id?: string;
+  dietaryPreference: string;
+  allergies: string;
+  specialRequests: string;
+  mealQuantity: number;
 };
 
 type TimeSlotType = {
   date: string;
   time: string[];
+  address: string;
+  phoneNumber: string;
 };
 
 type FoodItemType = {
@@ -62,14 +69,23 @@ const StepProgress = () => {
     confirmedFoods: [],
   });
 
+  console.log('Form Data:', formData);
+
   const nextStep = () => {
-    // Validate before proceeding to next step
     if (currentStep === 0 && !formData.maid) {
-      alert('Please select a maid first');
+      toast('maid selection successful!');
       return;
     }
     if (currentStep === 1 && !formData.cuisine) {
-      alert('Please select a cuisine');
+      toast.error('Please select a cuisine');
+      return;
+    }
+    if (currentStep === 2 && formData.members.length === 0) {
+      toast.error('Please add at least one member');
+      return;
+    }
+    if (currentStep === 3 && !formData.time) {
+      toast.error('Please confirm your time and details');
       return;
     }
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
@@ -79,20 +95,23 @@ const StepProgress = () => {
 
   const updateFormData = (data: Partial<FormDataType>) => {
     setFormData((prev) => ({ ...prev, ...data }));
-    // Auto-progress to next step when maid is selected
     if (data.maid && currentStep === 0) {
       setTimeout(() => nextStep(), 500);
     }
+  };
+
+  const updateMembers = (members: MemberType[]) => {
+    setFormData((prev) => ({ ...prev, members }));
   };
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
         return (
-          <MaidChoose 
+          <MaidChoose
             onNext={(maid: MaidType) => {
               updateFormData({ maid });
-            }} 
+            }}
           />
         );
       case 1:
@@ -106,32 +125,30 @@ const StepProgress = () => {
         );
       case 2:
         return (
-          <Members 
-            members={formData.members} 
-            setMembers={(members: MemberType[]) => updateFormData({ members })} 
+          <Members
+            members={formData.members}
+            setMembers={(members: MemberType[]) => updateFormData({ members })}
           />
         );
       case 3:
         return (
-          <Time 
-            onSelect={(time: TimeSlotType) => updateFormData({ time })}
+          <Time
+            onSelect={(time: TimeSlotType) => {
+              updateFormData({ time });
+              toast.success('Time details confirmed!');
+              setTimeout(() => nextStep(), 500); // Auto-advance after confirmation
+            }}
           />
         );
       case 4:
-        return (
-          <FinalReview 
-            formData={formData} 
-            onConfirm={() => nextStep()}
-          />
-        );
+        return <FinalReview formData={formData} onConfirm={() => nextStep()} updateMembers={updateMembers} />;
       case 5:
         return (
-          <Payment 
+          <Payment
             formData={formData}
             onComplete={() => {
-              // Handle payment completion
               console.log('Booking completed', formData);
-              alert('Booking confirmed!');
+              toast.success('Booking confirmed!');
             }}
           />
         );
@@ -143,7 +160,6 @@ const StepProgress = () => {
   return (
     <div className="min-h-screen flex justify-center items-center bg-white">
       <div className="w-full p-4 md:p-10 bg-gray-100 rounded-lg shadow-lg min-h-screen">
-        {/* Progress indicator */}
         <div className="relative">
           <div className="overflow-hidden rounded-full bg-gray-200 h-2">
             <div
@@ -164,31 +180,25 @@ const StepProgress = () => {
             ))}
           </ol>
         </div>
-
-        {/* Step content */}
-        <div className="mt-6">
-          {renderStepContent()}
-        </div>
-
-        {/* Navigation buttons */}
+        <div className="mt-6">{renderStepContent()}</div>
         <div className="mt-8 flex justify-between">
-          <button 
-            onClick={prevStep} 
-            disabled={currentStep === 0} 
+          <button
+            onClick={prevStep}
+            disabled={currentStep === 0}
             className="px-4 py-2 bg-gray-600 text-white rounded-lg disabled:opacity-50 hover:bg-gray-700 transition-colors"
           >
             Previous
           </button>
           {currentStep < steps.length - 1 && (
-            <button 
-              onClick={nextStep} 
+            <button
+              onClick={nextStep}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Next
             </button>
           )}
           {currentStep === steps.length - 1 && (
-            <button 
+            <button
               onClick={() => console.log('Submit booking', formData)}
               className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
@@ -197,6 +207,17 @@ const StepProgress = () => {
           )}
         </div>
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };

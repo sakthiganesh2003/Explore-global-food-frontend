@@ -77,7 +77,6 @@ const BecomeMaidForm = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear validation error when user starts typing
     if (validationErrors[name]) {
       setValidationErrors(prev => {
         const newErrors = { ...prev };
@@ -92,13 +91,11 @@ const BecomeMaidForm = () => {
 
     const file = e.target.files[0];
     
-    // Validate file type
     if (!file.type.match('image/(jpeg|png)')) {
       toast.error('Please upload a JPEG or PNG image');
       return;
     }
 
-    // Validate file size (2MB max)
     if (file.size > 2 * 1024 * 1024) {
       toast.error('File size should be less than 2MB');
       return;
@@ -106,14 +103,12 @@ const BecomeMaidForm = () => {
 
     setFormData(prev => ({ ...prev, aadhaarPhoto: file }));
     
-    // Clear file error if exists
     setValidationErrors(prev => {
       const newErrors = { ...prev };
       delete newErrors.aadhaarPhoto;
       return newErrors;
     });
 
-    // Create preview URL
     const reader = new FileReader();
     reader.onload = () => setPreviewUrl(reader.result as string);
     reader.readAsDataURL(file);
@@ -131,7 +126,6 @@ const BecomeMaidForm = () => {
         : [...prev.specialties, cuisine]
     }));
     
-    // Clear specialties error when user selects at least one
     if (validationErrors.specialties) {
       setValidationErrors(prev => {
         const newErrors = { ...prev };
@@ -144,7 +138,6 @@ const BecomeMaidForm = () => {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    // Required field validation
     if (!formData.fullName.trim()) errors.fullName = 'Full name is required';
     if (!formData.email.trim()) errors.email = 'Email is required';
     if (!formData.phone.trim()) errors.phone = 'Phone number is required';
@@ -158,7 +151,6 @@ const BecomeMaidForm = () => {
     if (!formData.bankAccountNumber.trim()) errors.bankAccountNumber = 'Account number is required';
     if (!formData.ifscCode.trim()) errors.ifscCode = 'IFSC code is required';
 
-    // Format validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = 'Invalid email format';
     if (!/^\d{10}$/.test(formData.phone)) errors.phone = 'Phone must be 10 digits';
     if (!/^\d{12}$/.test(formData.aadhaarNumber)) errors.aadhaarNumber = 'Aadhaar must be 12 digits';
@@ -167,17 +159,6 @@ const BecomeMaidForm = () => {
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
-  };
-
-  const uploadImageToServer = async (file: File): Promise<string> => {
-    // In a real implementation, you would:
-    // 1. Upload to your server or cloud storage
-    // 2. Return the URL of the uploaded image
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(`https://storage.example.com/aadhaar/${file.name}-${Date.now()}`);
-      }, 1000);
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -198,45 +179,36 @@ const BecomeMaidForm = () => {
     setIsUploading(true);
 
     try {
-      // Verify token
       const decoded: DecodedToken = jwtDecode(token);
       if (!decoded.id) {
         throw new Error('Invalid token');
       }
 
-      // Upload Aadhaar photo if exists
-      let aadhaarPhotoUrl = '';
+      // Prepare FormData for multipart/form-data request
+      const formDataToSend = new FormData();
+      formDataToSend.append('userId', decoded.id);
+      formDataToSend.append('fullName', formData.fullName.trim());
+      formDataToSend.append('email', formData.email.trim());
+      formDataToSend.append('phone', formData.phone.trim());
+      formDataToSend.append('experience', `${formData.experience} years`);
+      formDataToSend.append('specialties', JSON.stringify(formData.specialties)); // Send as JSON string
+      formDataToSend.append('bio', formData.bio.trim());
       if (formData.aadhaarPhoto) {
-        aadhaarPhotoUrl = await uploadImageToServer(formData.aadhaarPhoto);
+        formDataToSend.append('aadhaarPhoto', formData.aadhaarPhoto); // File upload
       }
-
-      // Prepare request data
-      const requestData = {
-        userId: decoded.id,
-        fullName: formData.fullName.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone.trim(),
-        experience: `${formData.experience} years`,
-        specialties: formData.specialties,
-        bio: formData.bio.trim(),
-        aadhaarPhoto: aadhaarPhotoUrl,
-        aadhaarNumber: formData.aadhaarNumber.trim(),
-        bankDetails: {
-          accountNumber: formData.bankAccountNumber.trim(),
-          bankName: formData.bankName.trim(),
-          ifscCode: formData.ifscCode.trim(),
-          accountHolderName: formData.accountHolderName.trim()
-        }
-      };
+      formDataToSend.append('aadhaarNumber', formData.aadhaarNumber.trim());
+      formDataToSend.append('bankDetails[accountNumber]', formData.bankAccountNumber.trim());
+      formDataToSend.append('bankDetails[bankName]', formData.bankName.trim());
+      formDataToSend.append('bankDetails[ifscCode]', formData.ifscCode.trim());
+      formDataToSend.append('bankDetails[accountHolderName]', formData.accountHolderName.trim());
 
       // Submit to backend
       const response = await fetch('http://localhost:5000/api/formMaids', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}` // No Content-Type header; FormData sets it automatically
         },
-        body: JSON.stringify(requestData)
+        body: formDataToSend
       });
 
       if (!response.ok) {
@@ -244,7 +216,6 @@ const BecomeMaidForm = () => {
         throw new Error(errorData.message || 'Submission failed');
       }
 
-      // Handle success
       const result = await response.json();
       toast.success('Application submitted successfully!');
       router.push('./');
@@ -302,7 +273,6 @@ const BecomeMaidForm = () => {
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
                         validationErrors.fullName ? 'border-red-500' : 'border-gray-300'
                       }`}
-                      required
                     />
                     {renderError('fullName')}
                   </div>
@@ -319,7 +289,6 @@ const BecomeMaidForm = () => {
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
                         validationErrors.email ? 'border-red-500' : 'border-gray-300'
                       }`}
-                      required
                     />
                     {renderError('email')}
                   </div>
@@ -333,11 +302,9 @@ const BecomeMaidForm = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      pattern="[0-9]{10}"
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
                         validationErrors.phone ? 'border-red-500' : 'border-gray-300'
                       }`}
-                      required
                     />
                     {renderError('phone')}
                   </div>
@@ -356,11 +323,9 @@ const BecomeMaidForm = () => {
                       name="aadhaarNumber"
                       value={formData.aadhaarNumber}
                       onChange={handleChange}
-                      pattern="[0-9]{12}"
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
                         validationErrors.aadhaarNumber ? 'border-red-500' : 'border-gray-300'
                       }`}
-                      required
                     />
                     {renderError('aadhaarNumber')}
                   </div>
@@ -390,7 +355,6 @@ const BecomeMaidForm = () => {
                         onChange={handleFileChange}
                         accept="image/jpeg,image/png"
                         className="hidden"
-                        required
                       />
                     </div>
                     {renderError('aadhaarPhoto')}
@@ -422,7 +386,6 @@ const BecomeMaidForm = () => {
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
                         validationErrors.experience ? 'border-red-500' : 'border-gray-300'
                       }`}
-                      required
                     >
                       <option value="">Select experience</option>
                       <option value="0-1">0-1 years</option>
@@ -446,7 +409,6 @@ const BecomeMaidForm = () => {
                         validationErrors.bio ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="Your cooking style, specialties, etc."
-                      required
                     />
                     {renderError('bio')}
                   </div>
@@ -493,7 +455,6 @@ const BecomeMaidForm = () => {
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
                       validationErrors.accountHolderName ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    required
                   />
                   {renderError('accountHolderName')}
                 </div>
@@ -511,7 +472,6 @@ const BecomeMaidForm = () => {
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
                         validationErrors.bankName ? 'border-red-500' : 'border-gray-300'
                       }`}
-                      required
                     />
                     {renderError('bankName')}
                   </div>
@@ -525,11 +485,9 @@ const BecomeMaidForm = () => {
                       name="bankAccountNumber"
                       value={formData.bankAccountNumber}
                       onChange={handleChange}
-                      pattern="[0-9]{9,18}"
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
                         validationErrors.bankAccountNumber ? 'border-red-500' : 'border-gray-300'
                       }`}
-                      required
                     />
                     {renderError('bankAccountNumber')}
                   </div>
@@ -544,12 +502,10 @@ const BecomeMaidForm = () => {
                     name="ifscCode"
                     value={formData.ifscCode}
                     onChange={handleChange}
-                    pattern="[A-Z]{4}0[A-Z0-9]{6}"
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
                       validationErrors.ifscCode ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="ABCD0123456"
-                    required
                   />
                   {renderError('ifscCode')}
                 </div>

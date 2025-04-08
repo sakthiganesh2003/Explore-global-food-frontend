@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
-interface Member {
-  _id?: string; // Optional since the backend returns it
+interface MemberType {
+  _id?: string;
   dietaryPreference: string;
   allergies: string;
   specialRequests: string;
@@ -9,8 +9,8 @@ interface Member {
 }
 
 interface MembersProps {
-  members: Member[];
-  setMembers: React.Dispatch<React.SetStateAction<Member[]>>;
+  members: MemberType[];
+  setMembers: React.Dispatch<React.SetStateAction<MemberType[]>>;
 }
 
 const Members = ({ members, setMembers }: MembersProps) => {
@@ -20,75 +20,34 @@ const Members = ({ members, setMembers }: MembersProps) => {
   const [mealQuantity, setMealQuantity] = useState(1);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Fetch members on component mount
-  useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        const res = await fetch('http://localhost:5000/api/members', {
-          headers: {
-            'Content-Type': 'application/json',
-            // Optionally add Authorization header here if needed.
-          },
-        });
-        if (!res.ok) {
-          throw new Error('Failed to fetch members');
-        }
-        const data = await res.json();
-        setMembers(data);
-      } catch (error) {
-        console.error('Error fetching members:', error);
-      }
-    };
-
-    fetchMembers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!dietaryPreference) return;
 
-    const newMember: Member = {
+    const newMember: MemberType = {
+      _id: Date.now().toString(), // Temporary unique ID for local use
       dietaryPreference,
       allergies,
       specialRequests,
       mealQuantity,
     };
 
-    try {
-      const res = await fetch('http://localhost:5000/api/members', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Optionally add Authorization header here if needed.
-        },
-        body: JSON.stringify(newMember),
-      });
+    // Update state with the new member locally
+    setMembers([...members, newMember]);
 
-      if (!res.ok) {
-        throw new Error('Failed to add member');
-      }
-      const savedMember = await res.json();
+    // Set success message
+    setSuccessMessage('Member added successfully!');
 
-      // Update state with the newly added member from the backend
-      setMembers([...members, savedMember]);
+    // Clear fields after adding
+    setDietaryPreference('');
+    setAllergies('');
+    setSpecialRequests('');
+    setMealQuantity(1);
 
-      // Set success message
-      setSuccessMessage('Member added successfully!');
-
-      // Clear fields after adding
-      setDietaryPreference('');
-      setAllergies('');
-      setSpecialRequests('');
-      setMealQuantity(1);
-
-      // Clear the success message after 3 seconds (optional)
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
-    } catch (error) {
-      console.error('Error adding member:', error);
-    }
+    // Clear the success message after 3 seconds
+    setTimeout(() => {
+      setSuccessMessage('');
+    }, 3000);
   };
 
   return (
@@ -98,9 +57,7 @@ const Members = ({ members, setMembers }: MembersProps) => {
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Dietary Preferences
-          </label>
+          <label className="block text-sm font-medium text-gray-700">Dietary Preferences</label>
           <select
             value={dietaryPreference}
             onChange={(e) => setDietaryPreference(e.target.value)}
@@ -115,9 +72,7 @@ const Members = ({ members, setMembers }: MembersProps) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Allergies
-          </label>
+          <label className="block text-sm font-medium text-gray-700">Allergies</label>
           <input
             type="text"
             value={allergies}
@@ -128,9 +83,7 @@ const Members = ({ members, setMembers }: MembersProps) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Special Requests
-          </label>
+          <label className="block text-sm font-medium text-gray-700">Special Requests</label>
           <input
             type="text"
             value={specialRequests}
@@ -141,9 +94,7 @@ const Members = ({ members, setMembers }: MembersProps) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Meal Quantity
-          </label>
+          <label className="block text-sm font-medium text-gray-700">Meal Quantity</label>
           <input
             type="number"
             value={mealQuantity}
@@ -161,6 +112,31 @@ const Members = ({ members, setMembers }: MembersProps) => {
           Add Member
         </button>
       </form>
+
+      {/* Display added members */}
+      {members.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-md font-semibold text-gray-700 mb-2">Added Members</h3>
+          <ul className="space-y-2">
+            {members.map((member, index) => (
+              <li key={member._id || index} className="p-2 bg-gray-50 rounded-md">
+                <p>
+                  <strong>Dietary:</strong> {member.dietaryPreference}
+                </p>
+                <p>
+                  <strong>Allergies:</strong> {member.allergies || 'None'}
+                </p>
+                <p>
+                  <strong>Special Requests:</strong> {member.specialRequests || 'None'}
+                </p>
+                <p>
+                  <strong>Quantity:</strong> {member.mealQuantity}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Display success message */}
       {successMessage && (

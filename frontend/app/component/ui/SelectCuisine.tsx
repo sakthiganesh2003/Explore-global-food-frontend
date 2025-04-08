@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from "react";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface FoodItem {
   name: string;
@@ -16,7 +18,7 @@ interface Cuisine {
 const cuisines: Cuisine[] = [
   { 
     name: "Italian", 
-    image: "/italian.jpg",
+    image: "/itallian.jpg",
     details: [
       { name: "Pasta", price: 250 },
       { name: "Pizza", price: 300 },
@@ -122,6 +124,25 @@ export default function SelectCuisine({
     }));
     
     onSelectConfirmedFoods(confirmedFoods);
+    
+    // Show success toast
+    toast.success(
+      <div>
+        <p className="font-semibold">Food selection confirmed!</p>
+        <p className="text-sm">
+          {confirmedFoods.length} items (₹{totalPrice}) added to your order.
+        </p>
+      </div>,
+      {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      }
+    );
   };
 
   const totalPrice = Object.values(selectedFoods).reduce(

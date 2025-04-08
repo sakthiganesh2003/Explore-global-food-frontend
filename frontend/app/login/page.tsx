@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Import useRouter for navigation
+import { useRouter } from "next/navigation";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -11,7 +11,7 @@ const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [successMessage, setSuccessMessage] = useState("");
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter();
 
   const validate = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -70,7 +70,6 @@ const LoginPage: React.FC = () => {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-        
         {/* Alert Box */}
         {successMessage && (
           <div className="bg-green-100 text-green-700 p-4 rounded-md mb-4">
@@ -106,7 +105,7 @@ const LoginPage: React.FC = () => {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
+              // Removed required attribute
             />
             {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
           </div>
@@ -122,7 +121,7 @@ const LoginPage: React.FC = () => {
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
+              // Removed required attribute
             />
             <button
               type="button"

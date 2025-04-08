@@ -38,9 +38,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
         console.log("API response:", data);
         
         if (isMounted) {
-          // Normalize the data structure
           const normalizedMaids = data.map((maid: any) => {
-            // Combine cuisine and specialties if both exist
             const specialties = [
               ...(maid.cuisine || []).filter((c: string | null) => c !== null),
               ...(maid.specialties || []).filter((s: string | null) => s !== null)
@@ -50,7 +48,6 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
               ...maid,
               specialties: specialties.length > 0 ? specialties : ['General Housekeeping'],
               image: formatImageUrl(maid.image),
-              // Convert experience to number if possible
               experience: typeof maid.experience === 'string' && !isNaN(parseInt(maid.experience))
                 ? parseInt(maid.experience)
                 : maid.experience || '0'
@@ -123,8 +120,8 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
             <div className="flex items-center gap-2">
               <span className="text-green-500">✓</span>
               <div>
-                <p className="font-bold">Booking confirmed!</p>
-                <p className="text-sm">{selectedMaid.fullName} will contact you shortly</p>
+                <p className="font-bold">{selectedMaid.fullName} successfully selected!</p>
+                <p className="text-sm">Proceeding to the next step...</p>
               </div>
             </div>
           ),
@@ -138,6 +135,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
           },
         }
       );
+      setShowDetails(false);
     }
   };
 
@@ -153,105 +151,107 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
   }
 
   return (
-    <div className="text-gray-500 p-4 max-w-6xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center">Choose Your Maid</h2>
+    <div className="text-gray-500 p-4 max-w-6xl mx-auto h-screen overflow-hidden">
+      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Choose Your Maid</h2>
       
       {showDetails && selectedMaid ? (
-        <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-2xl font-bold">{selectedMaid.fullName}</h3>
-              <p className="text-gray-600">
-                ⭐ {selectedMaid.rating} | {selectedMaid.experience} {typeof selectedMaid.experience === 'number' ? 'years' : ''} experience
-              </p>
-              {selectedMaid.hourlyRate && (
-                <p className="text-gray-600 mt-1">
-                  ${selectedMaid.hourlyRate}/hour
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 scrollbar-rounded">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-800">{selectedMaid.fullName}</h3>
+                <p className="text-gray-600">
+                  ⭐ {selectedMaid.rating} | {selectedMaid.experience} {typeof selectedMaid.experience === 'number' ? 'years' : ''} experience
                 </p>
+                {selectedMaid.hourlyRate && (
+                  <p className="text-gray-600 mt-1 font-medium">
+                    ${selectedMaid.hourlyRate}/hour
+                  </p>
+                )}
+              </div>
+              <button 
+                onClick={() => setShowDetails(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 transition-colors"
+                aria-label="Close details"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="mt-6 w-32 h-32 mx-auto relative rounded-full overflow-hidden border-2 border-gray-200 shadow-sm">
+              <Image 
+                src={selectedMaid.image || "/chef-placeholder.jpg"} 
+                alt={`Photo of ${selectedMaid.fullName}`}
+                layout="fill"
+                objectFit="cover"
+                className="rounded-full"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/chef-placeholder.jpg";
+                }}
+              />
+            </div>
+            
+            <div className="mt-6 space-y-6">
+              {selectedMaid.specialties && selectedMaid.specialties.length > 0 && (
+                <div>
+                  <p className="font-semibold mb-2 text-gray-700">Specializes in:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedMaid.specialties.map((specialty, i) => (
+                      <span key={i} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm shadow-sm">
+                        {specialty}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {selectedMaid.languages && selectedMaid.languages.length > 0 && (
+                <div>
+                  <p className="font-semibold mb-2 text-gray-700">Languages:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedMaid.languages.map((language, i) => (
+                      <span key={i} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm shadow-sm">
+                        {language}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {selectedMaid.bio && (
+                <div>
+                  <p className="font-semibold mb-2 text-gray-700">About:</p>
+                  <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">{selectedMaid.bio}</p>
+                </div>
               )}
             </div>
-            <button 
-              onClick={() => setShowDetails(false)}
-              className="text-gray-400 hover:text-gray-600 p-1"
-              aria-label="Close details"
-            >
-              ✕
-            </button>
-          </div>
-          
-          <div className="mt-4 w-32 h-32 mx-auto relative rounded-full overflow-hidden border-2 border-gray-200">
-            <Image 
-              src={selectedMaid.image || "/chef-placeholder.jpg"} 
-              alt={`Photo of ${selectedMaid.fullName}`}
-              layout="fill"
-              objectFit="cover"
-              className="rounded-full"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = "/chef-placeholder.jpg";
-              }}
-            />
-          </div>
-          
-          <div className="mt-4">
-            {selectedMaid.specialties && selectedMaid.specialties.length > 0 && (
-              <div className="mb-4">
-                <p className="font-semibold mb-2">Specializes in:</p>
-                <div className="flex flex-wrap gap-2">
-                  {selectedMaid.specialties.map((specialty, i) => (
-                    <span key={i} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                      {specialty}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
             
-            {selectedMaid.languages && selectedMaid.languages.length > 0 && (
-              <div className="mb-4">
-                <p className="font-semibold mb-2">Languages:</p>
-                <div className="flex flex-wrap gap-2">
-                  {selectedMaid.languages.map((language, i) => (
-                    <span key={i} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                      {language}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {selectedMaid.bio && (
-              <div className="mb-4">
-                <p className="font-semibold mb-2">About:</p>
-                <p className="text-gray-700">{selectedMaid.bio}</p>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex justify-center mt-6">
-            <button 
-              onClick={handleBookMaid} 
-              className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              select {selectedMaid.fullName}
-            </button>
+            <div className="flex justify-center mt-8">
+              <button 
+                onClick={handleBookMaid} 
+                className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-md"
+              >
+                Select {selectedMaid.fullName}
+              </button>
+            </div>
           </div>
         </div>
       ) : (
-        <>
+        <div className="h-[calc(100vh-8rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 scrollbar-rounded">
           <div className="mb-6 max-w-md mx-auto">
             <input
               type="text"
               placeholder="Filter by specialties (Cooking, Cleaning, Childcare...)"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="p-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+              className="p-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm bg-white"
             />
           </div>
           
           {filteredMaids.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg shadow">
-              <p className="text-lg mb-2">No maids found matching your criteria</p>
+            <div className="text-center py-12 bg-white rounded-lg shadow-md">
+              <p className="text-lg mb-2 text-gray-600">No maids found matching your criteria</p>
               <button 
                 onClick={() => setFilter("")}
                 className="mt-2 text-blue-600 hover:underline font-medium"
@@ -264,7 +264,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
               {filteredMaids.map((maid) => (
                 <div 
                   key={maid._id} 
-                  className="bg-white p-5 rounded-lg shadow-md cursor-pointer transition-all hover:shadow-lg hover:transform hover:-translate-y-1 flex flex-col"
+                  className="bg-white p-5 rounded-lg shadow-md cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col border border-gray-100"
                   onClick={() => handleMaidSelect(maid)}
                 >
                   <div className="flex items-center mb-4">
@@ -282,7 +282,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
                       />
                     </div>
                     <div>
-                      <h3 className="font-bold text-lg">{maid.fullName}</h3>
+                      <h3 className="font-bold text-lg text-gray-800">{maid.fullName}</h3>
                       <div className="flex items-center text-yellow-500">
                         {Array.from({ length: 5 }).map((_, i) => (
                           <span key={i}>
@@ -303,7 +303,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
                     
                     {maid.specialties && maid.specialties.length > 0 && (
                       <div>
-                        <p className="font-semibold text-sm mb-1">Specialties:</p>
+                        <p className="font-semibold text-sm mb-1 text-gray-700">Specialties:</p>
                         <div className="flex flex-wrap gap-1">
                           {maid.specialties.slice(0, 3).map((specialty, i) => (
                             <span key={i} className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">
@@ -322,7 +322,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
                   
                   {maid.hourlyRate && (
                     <div className="mt-auto pt-4">
-                      <p className="text-right font-bold text-lg">
+                      <p className="text-right font-bold text-lg text-gray-800">
                         ${maid.hourlyRate}<span className="text-sm font-normal">/hour</span>
                       </p>
                     </div>
@@ -331,7 +331,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
               ))}
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
