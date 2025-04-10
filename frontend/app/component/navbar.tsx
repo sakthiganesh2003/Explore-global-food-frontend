@@ -6,10 +6,12 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // Mobile menu toggle
   const [username, setUsername] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // User profile dropdown
+  const [isSigninOpen, setIsSigninOpen] = useState(false); // Sign-in options dropdown
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const signinRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -20,7 +22,7 @@ const Navbar = () => {
       if (token) {
         try {
           const decoded = JSON.parse(atob(token.split('.')[1]));
-          console.log('Decoded Token:', decoded); // Debugging
+          console.log('Decoded Token:', decoded);
           setUsername(decoded.name || decoded.username || storedUsername || "");
         } catch (error) {
           console.error("Invalid token:", error);
@@ -31,16 +33,15 @@ const Navbar = () => {
       }
     };
 
-    // Initial load
     updateUserInfo();
-
-    // Listen to changes in localStorage across tabs
     window.addEventListener("storage", updateUserInfo);
 
-    // Close dropdown when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
+      }
+      if (signinRef.current && !signinRef.current.contains(event.target as Node)) {
+        setIsSigninOpen(false);
       }
     };
 
@@ -62,12 +63,17 @@ const Navbar = () => {
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
+    setIsSigninOpen(false); // Close signin dropdown if open
+  };
+
+  const toggleSigninDropdown = () => {
+    setIsSigninOpen(!isSigninOpen);
+    setIsDropdownOpen(false); // Close user dropdown if open
   };
 
   return (
     <nav className="sticky top-0 left-0 z-50 bg-[#059669] shadow-md px-10 py-2">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-
         {/* Logo */}
         <Link href="/">
           <Image src="/icon/food1.png" alt="Logo" height={50} width={50} />
@@ -82,9 +88,9 @@ const Navbar = () => {
         </div>
 
         {/* User Info & Authentication Buttons */}
-        <div className="flex items-center space-x-4 relative" ref={dropdownRef}>
+        <div className="flex items-center space-x-4 relative">
           {username ? (
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button 
                 onClick={toggleDropdown}
                 className="flex items-center space-x-1 focus:outline-none"
@@ -126,11 +132,32 @@ const Navbar = () => {
               )}
             </div>
           ) : (
-            <Link href="/login">
-              <button className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-700">
+            <div className="relative" ref={signinRef}>
+              <button 
+                onClick={toggleSigninDropdown}
+                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-700 focus:outline-none"
+              >
                 Sign in
               </button>
-            </Link>
+              {isSigninOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                  <Link 
+                    href="/login" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsSigninOpen(false)}
+                  >
+                    User Signin
+                  </Link>
+                  <Link 
+                    href="/maid/login/signup" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsSigninOpen(false)}
+                  >
+                    Maid Signin
+                  </Link>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -147,10 +174,10 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden bg-green-700">
           <div className="flex flex-col items-center py-3 space-y-2">
-            <Link href="/" className="text-white hover:border-b-2 border-white py-2">Home</Link>
-            <Link href="/explore" className="text-white hover:border-b-2 border-white py-2">Explore</Link>
-            <Link href="/chef" className="text-white hover:border-b-2 border-white py-2">Chef dish</Link>
-            <Link href="/maid" className="text-white hover:border-b-2 border-white py-2">Maid Booking</Link>
+            <Link href="/" className="text-white hover:border-b-2 border-white py-2" onClick={() => setIsOpen(false)}>Home</Link>
+            <Link href="/explore" className="text-white hover:border-b-2 border-white py-2" onClick={() => setIsOpen(false)}>Explore</Link>
+            <Link href="/chef" className="text-white hover:border-b-2 border-white py-2" onClick={() => setIsOpen(false)}>Chef dish</Link>
+            <Link href="/maid" className="text-white hover:border-b-2 border-white py-2" onClick={() => setIsOpen(false)}>Maid Booking</Link>
           </div>
         </div>
       )}

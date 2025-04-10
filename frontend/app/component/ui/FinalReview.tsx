@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode'; // Correct ES module import
 
 interface MaidType {
-  _id: string;
+  userId: string;
   fullName: string;
   specialties: string[];
   rating: number;
@@ -136,7 +136,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
     // Prepare the payload to match the backend schema
     const payload = {
       userId,
-      maid: formData.maid?._id || '',
+      maid: formData.maid?.userId || '',
       cuisine: {
         id: formData.cuisine?.id || '',
         name: formData.cuisine?.name || '',
@@ -157,7 +157,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
       })),
       totalAmount: parseFloat(calculateTotal()),
     };
-
+console.log('Payload:', payload); // Debugging line to check the payload structure
     try {
       const response = await fetch('http://localhost:5000/api/bookings', {
         method: 'POST',
