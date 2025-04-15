@@ -8,8 +8,10 @@ import 'react-toastify/dist/ReactToastify.css';
 
 interface DecodedToken {
   id: string;
-  role?: string;
+  role: 'maid' | 'admin'; // Specify possible roles
   exp?: number;
+  email?: string;
+  username?: string;
 }
 
 interface FormData {
@@ -59,13 +61,30 @@ const BecomeMaidForm = () => {
       router.push('/login');
       return;
     }
-
+  
     try {
       const decoded: DecodedToken = jwtDecode(token);
       if (!decoded.id) {
         throw new Error('Invalid token');
       }
+  
+      // Check if user has the correct role to access this form
+      if (decoded.role !== 'maid') {
+        toast.error('You do not have permission to access this page');
+        router.push('/');
+        return;
+      }
+  
       setIsLoggedIn(true);
+      
+      // Pre-fill email if available in token
+      if (decoded.email) {
+        setFormData(prev => ({
+          ...prev,
+          email: decoded.email || '', // Ensure we fall back to empty string if undefined
+          fullName: decoded.username || prev.fullName // You might also want to pre-fill the name
+        }));
+      }
     } catch (error) {
       toast.error('Session expired. Please login again.');
       localStorage.removeItem('token');

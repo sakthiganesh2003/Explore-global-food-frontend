@@ -7,7 +7,6 @@ import SelectCuisine from './ui/SelectCuisine';
 import Members from './ui/Members';
 import Time from './ui/Time';
 import FinalReview from './ui/FinalReview';
-import Payment from './ui/Payment';
 // import 'react-toastify/dist/ReactToastify.css';
 
 // Enhanced type definitions
@@ -57,7 +56,7 @@ type FormDataType = {
   confirmedFoods: FoodItemType[];
 };
 
-const steps = ['Maid Choose', 'Select Cuisine', 'Members', 'Time', 'Final Review', 'Payment'] as const;
+const steps = ['Maid Choose', 'Select Cuisine', 'Members', 'Time', 'Final Review'] as const;
 
 const StepProgress = () => {
   const [currentStep, setCurrentStep] = useState<number>(0);
@@ -85,7 +84,7 @@ const StepProgress = () => {
       return;
     }
     if (currentStep === 3 && !formData.time) {
-      toast.error('Please confirm your time and details');
+      // toast.error('Please confirm your time and details');
       return;
     }
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
@@ -141,17 +140,10 @@ const StepProgress = () => {
           />
         );
       case 4:
-        return <FinalReview formData={formData} onConfirm={() => nextStep()} updateMembers={updateMembers} />;
-      case 5:
-        return (
-          <Payment
-            formData={formData}
-            onComplete={() => {
-              console.log('Booking completed', formData);
-              toast.success('Booking confirmed!');
-            }}
-          />
-        );
+        return <FinalReview formData={formData} onConfirm={() => {
+          console.log('Booking completed', formData);
+          toast.success('Booking confirmed!');
+        }} updateMembers={updateMembers} />;
       default:
         return null;
     }
@@ -167,7 +159,7 @@ const StepProgress = () => {
               style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
             ></div>
           </div>
-          <ol className="mt-6 grid grid-cols-6 text-sm font-medium text-gray-500 text-center">
+          <ol className="mt-6 grid grid-cols-5 text-sm font-medium text-gray-500 text-center">
             {steps.map((step, index) => (
               <li
                 key={index}

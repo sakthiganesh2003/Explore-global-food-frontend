@@ -101,12 +101,12 @@ const SignInComponent = () => {
         <div className="w-full max-w-md bg-zinc-300 bg-opacity-80 backdrop-blur-lg rounded-2xl shadow-xl p-8 md:p-12">
           <div className="text-center mb-8">
             <div
-              className="inline-flex items-center justify-center w-24 h-24 md:w-36 md:h-36 rounded-full mb-4 bg-gray-800"
-              style={{ backgroundImage: "url(/images/logo.png)" }}
+              className="inline-flex items-center justify-center w-24 h-24 md:w-36 md:h-36 rounded-full mb-4 bg-gray-800 h-80 w-80 bg-cover bg-center"
+              style={{ backgroundImage: "url(/Explore.png)" }}
             >
               <i className="fas fa-sign-in-alt text-indigo-600 fa-lg"></i> {/* Adjusted color */}
             </div>
-            <h2 className="text-xl md:text-2xl font-bold text-gray-800">Instructor Signin</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800">Maid Signin</h2>
             <p className="text-gray-600 mt-2">Please sign in to continue</p>
           </div>
 

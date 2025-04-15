@@ -22,7 +22,7 @@ const Sidebar = () => {
         <SidebarItem icon={<Home />} text="Home" href="/dashboard" isOpen={isOpen} />
         <SidebarItem icon={<Utensils />} text="maid" href="/Admin/Booking" isOpen={isOpen} />
         
-        <SidebarItem icon={<ChefHat />} text="Chef" href="/Admin/Chef" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="Chef" href="/Admin/maidstatus" isOpen={isOpen} />
      
       </nav>
     </div>
