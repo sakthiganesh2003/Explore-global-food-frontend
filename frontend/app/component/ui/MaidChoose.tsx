@@ -14,6 +14,7 @@ interface Maid {
   hourlyRate?: number;
   services?: string[];
   languages?: string[];
+  active: boolean;
 }
 
 const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
@@ -33,8 +34,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
 
     const fetchMaids = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/maids/maids");
-
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/maids/maids`); // Use env variable
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
         const data = await res.json();
@@ -48,13 +48,20 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
             ].filter(Boolean);
 
             return {
-              ...maid,
+              _id: maid._id,
+              fullName: maid.name || maid.fullName || "Unknown",
               specialties: specialties.length > 0 ? specialties : ["General Housekeeping"],
-              image: formatImageUrl(maid.image),
+              rating: maid.rating || 0,
               experience:
                 typeof maid.experience === "string" && !isNaN(parseInt(maid.experience))
                   ? parseInt(maid.experience)
                   : maid.experience || "0",
+              image: formatImageUrl(maid.image),
+              bio: maid.bio,
+              hourlyRate: maid.hourlyRate,
+              services: maid.services,
+              languages: maid.languages,
+              active: maid.active !== false,
             };
           });
 
@@ -87,8 +94,9 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
   };
 
   const getFilteredMaids = () => {
-    if (!filter) return maids;
-    return maids.filter((maid) =>
+    const activeMaids = maids.filter((maid) => maid.active === true);
+    if (!filter) return activeMaids;
+    return activeMaids.filter((maid) =>
       maid.specialties?.some(
         (specialty) => specialty && specialty.toLowerCase().includes(filter.toLowerCase())
       )
@@ -143,13 +151,6 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
     }
   };
 
-  const filteredMaids = getFilteredMaids();
-  const totalPages = Math.ceil(filteredMaids.length / maidsPerPage);
-  const paginatedMaids = filteredMaids.slice(
-    (currentPage - 1) * maidsPerPage,
-    currentPage * maidsPerPage
-  );
-
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
@@ -161,6 +162,13 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
       setCurrentPage(currentPage - 1);
     }
   };
+
+  const filteredMaids = getFilteredMaids();
+  const totalPages = Math.ceil(filteredMaids.length / maidsPerPage);
+  const paginatedMaids = filteredMaids.slice(
+    (currentPage - 1) * maidsPerPage,
+    currentPage * maidsPerPage
+  );
 
   if (loading) {
     return (
@@ -279,7 +287,11 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
 
           {filteredMaids.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-lg shadow-md">
-              <p className="text-lg mb-2 text-gray-600">No maids found matching your criteria</p>
+              <p className="text-lg mb-2 text-gray-600">
+                {filter
+                  ? "No active maids found matching your criteria"
+                  : "No active maids available at the moment"}
+              </p>
               <button
                 onClick={() => setFilter("")}
                 className="mt-2 text-blue-600 hover:underline font-medium"
@@ -361,33 +373,35 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
                 ))}
               </div>
 
-              <div className="flex justify-between items-center mt-8">
-                <button
-                  onClick={handlePrevPage}
-                  disabled={currentPage === 1}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    currentPage === 1
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
-                  }`}
-                >
-                  Previous
-                </button>
-                <span className="text-gray-600">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    currentPage === totalPages
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
-                  }`}
-                >
-                  Next
-                </button>
-              </div>
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center mt-8">
+                  <button
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      currentPage === 1
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
+                  >
+                    Previous
+                  </button>
+                  <span className="text-gray-600">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      currentPage === totalPages
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

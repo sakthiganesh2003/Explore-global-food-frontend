@@ -364,9 +364,9 @@ console.log('Payload:', payload); // Debugging line to check the payload structu
                   </div>
                   {food.price && (
                     <span className="text-gray-800 font-medium">
-                      ${(food.price * food.quantity).toFixed(2)}
+                      ₹{(food.price * food.quantity).toFixed(2)}
                       {food.quantity > 1 && (
-                        <span className="text-gray-500 text-sm ml-1">(${food.price.toFixed(2)} each)</span>
+                        <span className="text-gray-500 text-sm ml-1">(₹{food.price.toFixed(2)} each)</span>
                       )}
                     </span>
                   )}
@@ -376,7 +376,7 @@ console.log('Payload:', payload); // Debugging line to check the payload structu
             <div className="mt-4 pt-2 border-t">
               <div className="flex justify-between font-bold text-lg text-gray-800">
                 <span>Total:</span>
-                <span>${calculateTotal()}</span>
+                <span>₹{calculateTotal()}</span>
               </div>
             </div>
           </div>
@@ -400,7 +400,7 @@ console.log('Payload:', payload); // Debugging line to check the payload structu
       {/* Summary Footer */}
       <div className="mt-6 pt-4 border-t flex justify-between items-center">
         <div className="text-lg font-bold text-gray-800">
-          Grand Total: <span className="text-blue-600">${calculateTotal()}</span>
+          Grand Total: <span className="text-blue-600">₹{calculateTotal()}</span>
         </div>
         <button
           onClick={handleConfirmBooking}
