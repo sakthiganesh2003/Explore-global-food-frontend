@@ -21,7 +21,7 @@ const SidebarMaid = () => {
       <nav className="flex flex-col space-y-4 mt-4 px-2">
         <SidebarItem icon={<Home />} text="Home" href="/maid/dashboard" isOpen={isOpen} />
         
-        <SidebarItem icon={<BookOpen />} text="Booking" href="/maid/dashboard/Booking" isOpen={isOpen} />
+        <SidebarItem icon={<BookOpen />} text="Orders" href="/frontend/app/maid/dashboard/Booking" isOpen={isOpen} />
         <SidebarItem icon={<CreditCard />} text="Payment" href="/maid/dashboard/Payment" isOpen={isOpen} />
         
      

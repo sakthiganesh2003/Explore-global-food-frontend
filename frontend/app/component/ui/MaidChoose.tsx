@@ -3,7 +3,7 @@ import Image from "next/image";
 import { toast } from "react-hot-toast";
 
 interface Maid {
-  _id: string;
+  userId: string;
   fullName: string;
   cuisine?: string[];
   specialties: string[];
@@ -11,7 +11,6 @@ interface Maid {
   experience: string | number;
   image?: string;
   bio?: string;
-  hourlyRate?: number;
   services?: string[];
   languages?: string[];
   active: boolean;
@@ -25,7 +24,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const maidsPerPage = 16; // 4 columns * 4 rows
+  const maidsPerPage = 16;
 
   useEffect(() => {
     console.log("Fetching maids data");
@@ -34,7 +33,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
 
     const fetchMaids = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/maids/maids`); // Use env variable
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/maids/maids`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
         const data = await res.json();
@@ -48,7 +47,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
             ].filter(Boolean);
 
             return {
-              _id: maid._id,
+              userId: maid._id,
               fullName: maid.name || maid.fullName || "Unknown",
               specialties: specialties.length > 0 ? specialties : ["General Housekeeping"],
               rating: maid.rating || 0,
@@ -58,7 +57,6 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
                   : maid.experience || "0",
               image: formatImageUrl(maid.image),
               bio: maid.bio,
-              hourlyRate: maid.hourlyRate,
               services: maid.services,
               languages: maid.languages,
               active: maid.active !== false,
@@ -193,11 +191,6 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
                   ⭐ {selectedMaid.rating} | {selectedMaid.experience}{" "}
                   {typeof selectedMaid.experience === "number" ? "years" : ""} experience
                 </p>
-                {selectedMaid.hourlyRate && (
-                  <p className="text-gray-600 mt-1 font-medium">
-                    ${selectedMaid.hourlyRate}/hour
-                  </p>
-                )}
               </div>
               <button
                 onClick={() => setShowDetails(false)}
@@ -304,7 +297,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {paginatedMaids.map((maid) => (
                   <div
-                    key={maid._id}
+                    key={maid.userId}
                     className="bg-white p-5 rounded-lg shadow-md cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col border border-gray-100"
                     onClick={() => handleMaidSelect(maid)}
                   >
@@ -360,15 +353,6 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
                         </div>
                       )}
                     </div>
-
-                    {maid.hourlyRate && (
-                      <div className="mt-auto pt-4">
-                        <p className="text-right font-bold text-lg text-gray-800">
-                          ${maid.hourlyRate}
-                          <span className="text-sm font-normal">/hour</span>
-                        </p>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>

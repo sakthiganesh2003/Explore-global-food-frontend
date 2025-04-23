@@ -7,23 +7,21 @@ import SelectCuisine from './ui/SelectCuisine';
 import Members from './ui/Members';
 import Time from './ui/Time';
 import FinalReview from './ui/FinalReview';
-// import 'react-toastify/dist/ReactToastify.css';
 
-// Enhanced type definitions
 type MaidType = {
-  _id: string;
+  userId: string;
   fullName: string;
   specialties: string[];
   rating: number;
   experience: string | number;
   image?: string;
-  hourlyRate?: number;
   cuisine?: string[];
 };
 
 type CuisineType = {
   id: string;
   name: string;
+  price?: number;
 };
 
 type MemberType = {
@@ -68,11 +66,11 @@ const StepProgress = () => {
     confirmedFoods: [],
   });
 
-  console.log('Form Data:', formData);
+  console.log('StepProgress Form Data:', formData);
 
   const nextStep = () => {
     if (currentStep === 0 && !formData.maid) {
-      toast('maid selection successful!');
+      toast.error('Please select a maid!');
       return;
     }
     if (currentStep === 1 && !formData.cuisine) {
@@ -116,7 +114,7 @@ const StepProgress = () => {
       case 1:
         return (
           <SelectCuisine
-            maidId={formData.maid?._id || ''}
+            maidId={formData.maid?.userId || ''}
             maidSpecialties={formData.maid?.specialties || []}
             onSelect={(cuisine: CuisineType) => updateFormData({ cuisine })}
             onSelectConfirmedFoods={(foods: FoodItemType[]) => updateFormData({ confirmedFoods: foods })}
@@ -135,15 +133,21 @@ const StepProgress = () => {
             onSelect={(time: TimeSlotType) => {
               updateFormData({ time });
               toast.success('Time details confirmed!');
-              setTimeout(() => nextStep(), 500); // Auto-advance after confirmation
+              setTimeout(() => nextStep(), 500);
             }}
           />
         );
       case 4:
-        return <FinalReview formData={formData} onConfirm={() => {
-          console.log('Booking completed', formData);
-          toast.success('Booking confirmed!');
-        }} updateMembers={updateMembers} />;
+        return (
+          <FinalReview
+            formData={formData}
+            onConfirm={() => {
+              console.log('Booking completed', formData);
+              toast.success('Booking confirmed!');
+            }}
+            updateMembers={updateMembers}
+          />
+        );
       default:
         return null;
     }

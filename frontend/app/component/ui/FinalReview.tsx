@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { jwtDecode } from 'jwt-decode'; // Correct ES module import
+import { jwtDecode } from 'jwt-decode';
 
 interface MaidType {
   userId: string;
@@ -9,7 +9,6 @@ interface MaidType {
   rating: number;
   experience: string | number;
   image?: string;
-  hourlyRate?: number;
   cuisine?: string[];
 }
 
@@ -55,11 +54,11 @@ interface FormDataType {
 interface FinalReviewProps {
   formData: FormDataType;
   onConfirm: () => void;
-  updateMembers?: (members: MemberType[]) => void; // Callback to update members
+  updateMembers?: (members: MemberType[]) => void;
 }
 
 interface DecodedToken {
-  id: string; // Adjust based on your token's payload structure
+  id: string;
   [key: string]: any;
 }
 
@@ -67,7 +66,18 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const renderRatingStars = (rating: number) => {
     return Array(5)
@@ -81,26 +91,17 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
 
   const calculateTotal = () => {
     let total = 0;
-
-    if (formData.maid?.hourlyRate && formData.time?.time.length) {
-      const hours = formData.time.time.length;
-      total += formData.maid.hourlyRate * hours;
-    }
-
     if (formData.cuisine?.price) {
       total += formData.cuisine.price;
     }
-
     formData.confirmedFoods.forEach((food) => {
       if (food.price) {
         total += food.price * food.quantity;
       }
     });
-
     return total.toFixed(2);
   };
 
-  // Handle removing a member
   const handleRemoveMember = (indexToRemove: number) => {
     if (updateMembers) {
       const updatedMembers = formData.members.filter((_, index) => index !== indexToRemove);
@@ -108,20 +109,97 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
     }
   };
 
-  // Handle booking confirmation with API call
+  const initiatePayment = async (bookingId: string) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/payments/initiate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          bookingId,
+          amount: parseFloat(calculateTotal()) * 100,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to initiate payment');
+      }
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY || 'rzp_test_2HTK1FzohCF9N2',
+        order_id: data.order.id,
+        amount: data.order.amount,
+        currency: 'INR',
+        name: 'Maid Booking Service',
+        description: `Payment for booking ID: ${bookingId}`,
+        handler: async function (response: any) {
+          try {
+            const verifyResponse = await fetch('http://localhost:5000/api/payments/verify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem('token')}`,
+              },
+              body: JSON.stringify({
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+                bookingId,
+              }),
+            });
+
+            const verifyResult = await verifyResponse.json();
+            if (!verifyResponse.ok) {
+              throw new Error(verifyResult.message || 'Payment verification failed');
+            }
+
+            setPaymentStatus('Payment verified successfully!');
+            setSuccess(true);
+            onConfirm();
+            router.push('./');
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Payment verification failed');
+            setPaymentStatus(null);
+          }
+        },
+        prefill: {
+          contact: formData.time?.phoneNumber || '',
+        },
+        theme: {
+          color: '#2563eb',
+        },
+      };
+
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to initiate payment');
+      setPaymentStatus(null);
+    }
+  };
+
   const handleConfirmBooking = async () => {
     setLoading(true);
     setError(null);
     setSuccess(false);
+    setPaymentStatus(null);
 
-    // Decode the token to get the user ID
+    if (!formData.maid || !formData.maid.userId) {
+      setError('Please select a maid before confirming the booking.');
+      setLoading(false);
+      return;
+    }
+
     const token = localStorage.getItem('token');
     let userId = '';
 
     if (token) {
       try {
         const decoded: DecodedToken = jwtDecode(token);
-        userId = decoded.id; // Adjust based on your token's payload structure
+        userId = decoded.id;
       } catch (err) {
         setError('Invalid or expired token. Please log in again.');
         setLoading(false);
@@ -133,10 +211,9 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
       return;
     }
 
-    // Prepare the payload to match the backend schema
     const payload = {
       userId,
-      maid: formData.maid?.userId || '',
+      maid: formData.maid.userId,
       cuisine: {
         id: formData.cuisine?.id || '',
         name: formData.cuisine?.name || '',
@@ -148,7 +225,12 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
         specialRequests: member.specialRequests,
         mealQuantity: member.mealQuantity,
       })),
-      time: formData.time || { date: '', time: [], address: '', phoneNumber: '' },
+      time: {
+        date: formData.time?.date || '',
+        time: formData.time?.time || [],
+        address: formData.time?.address || '',
+        phoneNumber: formData.time?.phoneNumber || '',
+      },
       confirmedFoods: formData.confirmedFoods.map((food) => ({
         id: food.id,
         name: food.name,
@@ -157,29 +239,47 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
       })),
       totalAmount: parseFloat(calculateTotal()),
     };
-console.log('Payload:', payload); // Debugging line to check the payload structure
+
     try {
       const response = await fetch('http://localhost:5000/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Include token in headers if required
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
 
       const result = await response.json();
-      console.log('Booking response:', result);
+      console.log('Booking API response:', {
+        status: response.status,
+        ok: response.ok,
+        result,
+      });
 
       if (!response.ok) {
         throw new Error(result.message || 'Failed to create booking');
       }
 
-      setSuccess(true);
-      onConfirm(); // Call the parent callback to proceed
-      router.push('./'); // Redirect to bookings page (adjust as needed)
+      // Try multiple possible locations for booking ID
+      const bookingId =
+        result.booking?._id || // Nested booking object
+        result._id || // Top-level ID
+        result.data?._id || // Possible data object
+        result.id; // Alternative ID field
+
+      if (!bookingId) {
+        console.error('Booking ID not found in response:', result);
+        throw new Error(
+          'Booking ID not found in response. Please check the backend API response structure.'
+        );
+      }
+
+      // Initiate payment with the booking ID
+      await initiatePayment(bookingId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      console.error('Booking error:', err);
     } finally {
       setLoading(false);
     }
@@ -189,7 +289,6 @@ console.log('Payload:', payload); // Debugging line to check the payload structu
     <div className="p-6 bg-white shadow-md rounded-lg max-w-2xl mx-auto">
       <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Booking Summary</h2>
 
-      {/* Maid Information */}
       <div className="mb-6 p-4 border rounded-lg bg-gray-50">
         <h3 className="text-lg font-semibold mb-3 text-gray-700">Maid Details</h3>
         {formData.maid ? (
@@ -207,14 +306,6 @@ console.log('Payload:', payload); // Debugging line to check the payload structu
             <div className="flex-1">
               <div className="flex justify-between items-start">
                 <p className="font-bold text-gray-800">{formData.maid.fullName}</p>
-                {formData.maid.hourlyRate && formData.time?.time.length && (
-                  <p className="text-gray-800 font-medium">
-                    ${(formData.maid.hourlyRate * formData.time.time.length).toFixed(2)}
-                    <span className="text-gray-600 text-sm ml-1">
-                      ({formData.time.time.length} hrs × ${formData.maid.hourlyRate}/hr)
-                    </span>
-                  </p>
-                )}
               </div>
               <div className="flex items-center mt-1">
                 <span className="flex">{renderRatingStars(formData.maid.rating)}</span>
@@ -243,7 +334,6 @@ console.log('Payload:', payload); // Debugging line to check the payload structu
         )}
       </div>
 
-      {/* Cuisine Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="p-4 border rounded-lg bg-gray-50">
           <h3 className="text-lg font-semibold mb-3 text-gray-700">Cuisine Details</h3>
@@ -252,7 +342,7 @@ console.log('Payload:', payload); // Debugging line to check the payload structu
               <div className="flex justify-between items-center mb-2">
                 <p className="font-medium text-gray-800">{formData.cuisine.name}</p>
                 {formData.cuisine.price && (
-                  <p className="text-gray-800 font-medium">${formData.cuisine.price.toFixed(2)}</p>
+                  <p className="text-gray-800 font-medium">₹{formData.cuisine.price.toFixed(2)}</p>
                 )}
               </div>
               {formData.cuisine.type && (
@@ -276,7 +366,6 @@ console.log('Payload:', payload); // Debugging line to check the payload structu
           )}
         </div>
 
-        {/* Time Slot */}
         <div className="p-4 border rounded-lg bg-gray-50">
           <h3 className="text-lg font-semibold mb-3 text-gray-700">Time</h3>
           {formData.time ? (
@@ -306,7 +395,6 @@ console.log('Payload:', payload); // Debugging line to check the payload structu
         </div>
       </div>
 
-      {/* Members */}
       <div className="mt-6 p-4 border rounded-lg bg-gray-50">
         <h3 className="text-lg font-semibold mb-3 text-gray-700">Members</h3>
         {formData.members.length > 0 ? (
@@ -350,7 +438,6 @@ console.log('Payload:', payload); // Debugging line to check the payload structu
         )}
       </div>
 
-      {/* Confirmed Foods */}
       <div className="mt-6 p-4 border rounded-lg bg-gray-50">
         <h3 className="text-lg font-semibold mb-3 text-gray-700">Confirmed Foods</h3>
         {formData.confirmedFoods.length > 0 ? (
@@ -385,7 +472,6 @@ console.log('Payload:', payload); // Debugging line to check the payload structu
         )}
       </div>
 
-      {/* Feedback Messages */}
       {error && (
         <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-md">
           <p>{error}</p>
@@ -396,20 +482,24 @@ console.log('Payload:', payload); // Debugging line to check the payload structu
           <p>Booking created successfully!</p>
         </div>
       )}
+      {paymentStatus && (
+        <div className="mt-4 p-3 bg-blue-100 text-blue-700 rounded-md">
+          <p>{paymentStatus}</p>
+        </div>
+      )}
 
-      {/* Summary Footer */}
       <div className="mt-6 pt-4 border-t flex justify-between items-center">
         <div className="text-lg font-bold text-gray-800">
           Grand Total: <span className="text-blue-600">₹{calculateTotal()}</span>
         </div>
         <button
           onClick={handleConfirmBooking}
-          disabled={loading}
+          disabled={loading || !formData.maid?.userId}
           className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
+            loading || !formData.maid?.userId ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
-          {loading ? 'Confirming...' : 'Confirm Booking'}
+          {loading ? 'Processing...' : 'Confirm and Pay'}
         </button>
       </div>
     </div>
