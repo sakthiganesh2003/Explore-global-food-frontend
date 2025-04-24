@@ -97,7 +97,7 @@ const SignInComponent = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-cover bg-center flex items-center justify-center bg-indigo-950 p-6">
+      <div className="min-h-screen bg-cover bg-center text-gray-900 flex items-center justify-center bg-indigo-950 p-6">
         <div className="w-full max-w-md bg-zinc-300 bg-opacity-80 backdrop-blur-lg rounded-2xl shadow-xl p-8 md:p-12">
           <div className="text-center mb-8">
             <div
