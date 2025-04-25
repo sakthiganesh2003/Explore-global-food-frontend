@@ -7,7 +7,8 @@ import { useRouter } from 'next/navigation';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false); // Mobile menu toggle
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState('');
+  const [userRole, setUserRole] = useState(''); // User role
   const [isDropdownOpen, setIsDropdownOpen] = useState(false); // User profile dropdown
   const [isSigninOpen, setIsSigninOpen] = useState(false); // Sign-in options dropdown
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -16,25 +17,28 @@ const Navbar = () => {
 
   useEffect(() => {
     const updateUserInfo = () => {
-      const token = localStorage.getItem("token");
-      const storedUsername = localStorage.getItem("userName");
+      const token = localStorage.getItem('token');
+      const storedUsername = localStorage.getItem('userName');
 
       if (token) {
         try {
           const decoded = JSON.parse(atob(token.split('.')[1]));
           console.log('Decoded Token:', decoded);
-          setUsername(decoded.name || decoded.username || storedUsername || "");
+          setUsername(decoded.name || decoded.username || storedUsername || '');
+          setUserRole(decoded.role || '');
         } catch (error) {
-          console.error("Invalid token:", error);
-          setUsername(storedUsername || "");
+          console.error('Invalid token:', error);
+          setUsername(storedUsername || '');
+          setUserRole('');
         }
       } else {
-        setUsername(storedUsername || "");
+        setUsername(storedUsername || '');
+        setUserRole('');
       }
     };
 
     updateUserInfo();
-    window.addEventListener("storage", updateUserInfo);
+    window.addEventListener('storage', updateUserInfo);
 
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -45,20 +49,21 @@ const Navbar = () => {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
-      window.removeEventListener("storage", updateUserInfo);
-      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener('storage', updateUserInfo);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userName");
-    setUsername("");
+    localStorage.removeItem('token');
+    localStorage.removeItem('userName');
+    setUsername('');
+    setUserRole('');
     setIsDropdownOpen(false);
-    router.push("/login");
+    router.push('/login');
   };
 
   const toggleDropdown = () => {
@@ -81,48 +86,76 @@ const Navbar = () => {
 
         {/* Desktop Menu */}
         <div className="hidden md:flex space-x-6">
-          <Link href="/" className="text-white hover:border-b-2 border-white">Home</Link>
-          <Link href="/explore" className="text-white hover:border-b-2 border-white">Explore</Link>
-          <Link href="/chef" className="text-white hover:border-b-2 border-white">Chef dish</Link>
-          <Link href="/maid" className="text-white hover:border-b-2 border-white">Cook</Link>
+          <Link href="/" className="text-white hover:border-b-2 border-white">
+            Home
+          </Link>
+          <Link href="/explore" className="text-white hover:border-b-2 border-white">
+            Explore
+          </Link>
+          <Link href="/chef" className="text-white hover:border-b-2 border-white">
+            Chef dish
+          </Link>
+          <Link href="/maid" className="text-white hover:border-b-2 border-white">
+            Cook
+          </Link>
         </div>
 
         {/* User Info & Authentication Buttons */}
         <div className="flex items-center space-x-4 relative">
           {username ? (
             <div className="relative" ref={dropdownRef}>
-              <button 
+              <button
                 onClick={toggleDropdown}
                 className="flex items-center space-x-1 focus:outline-none"
               >
                 <span className="text-white font-semibold capitalize">{username}</span>
-                <svg 
-                  className={`w-4 h-4 text-white transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-                  fill="none" 
-                  viewBox="0 0 24 24" 
+                <svg
+                  className={`w-4 h-4 text-white transition-transform ${
+                    isDropdownOpen ? 'rotate-180' : ''
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
 
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                  <Link 
-                    href="/maid/dashboard" 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-                  <Link 
-                    href="/maid/becomemaid" 
+                  {/* Admin Dashboard for Admin Role */}
+                  {userRole === 'admin' && (
+                    <Link
+                      href="/Admin"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  {/* Maid Dashboard for Non-Admin Roles */}
+                  {userRole !== 'admin' && (
+                    <Link
+                      href="/maid/dashboard"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                  )}
+                  <Link
+                    href="/maid/becomemaid"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setIsDropdownOpen(false)}
                   >
                     Become Maid
                   </Link>
-                  <button 
+                  <button
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
@@ -133,7 +166,7 @@ const Navbar = () => {
             </div>
           ) : (
             <div className="relative" ref={signinRef}>
-              <button 
+              <button
                 onClick={toggleSigninDropdown}
                 className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-700 focus:outline-none"
               >
@@ -141,19 +174,26 @@ const Navbar = () => {
               </button>
               {isSigninOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                  <Link 
-                    href="/login" 
+                  <Link
+                    href="/login"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setIsSigninOpen(false)}
                   >
                     User Signin
                   </Link>
-                  <Link 
-                    href="/maid/login/signup" 
+                  <Link
+                    href="/maid/login/signup"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setIsSigninOpen(false)}
                   >
                     Maid Signin
+                  </Link>
+                  <Link
+                    href="/admin/login"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsSigninOpen(false)}
+                  >
+                    Admin Signin
                   </Link>
                 </div>
               )}
@@ -174,10 +214,71 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden bg-green-700">
           <div className="flex flex-col items-center py-3 space-y-2">
-            <Link href="/" className="text-white hover:border-b-2 border-white py-2" onClick={() => setIsOpen(false)}>Home</Link>
-            <Link href="/explore" className="text-white hover:border-b-2 border-white py-2" onClick={() => setIsOpen(false)}>Explore</Link>
-            <Link href="/chef" className="text-white hover:border-b-2 border-white py-2" onClick={() => setIsOpen(false)}>Chef dish</Link>
-            <Link href="/maid" className="text-white hover:border-b-2 border-white py-2" onClick={() => setIsOpen(false)}>Maid Booking</Link>
+            <Link
+              href="/"
+              className="text-white hover:border-b-2 border-white py-2"
+              onClick={() => setIsOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
+              href="/explore"
+              className="text-white hover:border-b-2 border-white py-2"
+              onClick={() => setIsOpen(false)}
+            >
+              Explore
+            </Link>
+            <Link
+              href="/chef"
+              className="text-white hover:border-b-2 border-white py-2"
+              onClick={() => setIsOpen(false)}
+            >
+              Chef dish
+            </Link>
+            <Link
+              href="/maid"
+              className="text-white hover:border-b-2 border-white py-2"
+              onClick={() => setIsOpen(false)}
+            >
+              Maid Booking
+            </Link>
+            {/* Admin Dashboard for Admin Role */}
+            {username && userRole === 'admin' && (
+              <Link
+                href="/Admin"
+                className="text-white hover:border-b-2 border-white py-2"
+                onClick={() => setIsOpen(false)}
+              >
+                Admin Dashboard
+              </Link>
+            )}
+            {/* Maid Dashboard for Non-Admin Roles */}
+            {username && userRole !== 'admin' && (
+              <Link
+                href="/maid/dashboard"
+                className="text-white hover:border-b-2 border-white py-2"
+                onClick={() => setIsOpen(false)}
+              >
+                Dashboard
+              </Link>
+            )}
+            {username && (
+              <Link
+                href="/maid/becomemaid"
+                className="text-white hover:border-b-2 border-white py-2"
+                onClick={() => setIsOpen(false)}
+              >
+                Become Maid
+              </Link>
+            )}
+            {username && (
+              <button
+                onClick={handleLogout}
+                className="text-white hover:border-b-2 border-white py-2"
+              >
+                Logout
+              </button>
+            )}
           </div>
         </div>
       )}

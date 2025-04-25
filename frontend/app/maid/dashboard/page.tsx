@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import SidebarMaid from "@/app/component/dashboard/SidebarMaid";
 import { jwtDecode } from "jwt-decode";
+import { useRouter } from "next/navigation";
 
 interface Maid {
   id: string;
@@ -29,25 +30,23 @@ export default function MaidDashboard() {
     experience: "",
     image: "/chef1.jpg",
     isActive: false,
-    description: "Professional chef"
+    description: "Professional chef",
   });
-
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Maid>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const getUserIdFromToken = (): string | null => {
     if (typeof window === "undefined") return null;
-    
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         toast.error("Please login to access this page");
-        window.location.href = "/login";
+        router.push("/login");
         return null;
       }
-      
       const decoded: DecodedToken = jwtDecode(token);
       if (!decoded.id) {
         toast.error("Invalid token format");
@@ -58,7 +57,7 @@ export default function MaidDashboard() {
       console.error("Error decoding token:", error);
       toast.error("Session expired. Please login again");
       localStorage.removeItem('token');
-      window.location.href = "/login";
+      router.push("/login");
       return null;
     }
   };
@@ -66,35 +65,41 @@ export default function MaidDashboard() {
   const fetchMaidProfile = async () => {
     const userId = getUserIdFromToken();
     if (!userId) return;
-  
+
     setLoading(true);
     setError(null);
-  
+
     try {
-      const response = await fetch(`http://localhost:5000/api/maid/${userId}`, {
-        method: "GET",
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No token found. Please log in.');
+      }
+
+      console.log('Sending request with token:', token);
+      const response = await fetch('http://localhost:3000/api/maid-dashboard/profile', {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
-  
+
       if (response.status === 404) {
         setError("Profile not found. Please complete your profile setup.");
         setLoading(false);
         return;
       }
-  
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to fetch profile");
       }
-  
+
       const result = await response.json();
-      
       if (!result?.success) {
         throw new Error(result?.message || "Invalid profile data");
       }
-  
+
       setMaid({
         id: result.data.id,
         fullName: result.data.fullName || "New Maid",
@@ -103,9 +108,8 @@ export default function MaidDashboard() {
         experience: result.data.experience || "",
         image: result.data.image || "/chef1.jpg",
         isActive: result.data.isActive || false,
-        description: result.data.description || "Professional chef"
+        description: result.data.description || "Professional chef",
       });
-  
     } catch (error) {
       console.error("Fetch error:", error);
       const message = error instanceof Error ? error.message : "Unknown error";
@@ -126,11 +130,11 @@ export default function MaidDashboard() {
 
     const newStatus = !maid.isActive;
     try {
-      const response = await fetch(`http://localhost:5000/api/maid/${userId}/status`, {
-        method: "PATCH",
+      const response = await fetch('http://localhost:3000/api/maid-dashboard/toggle-status', {
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify({ isActive: newStatus }),
       });
@@ -152,18 +156,28 @@ export default function MaidDashboard() {
       fullName: maid.fullName,
       description: maid.description,
       specialties: [...maid.specialties],
-      experience: maid.experience
+      experience: maid.experience,
+      rating: maid.rating,
+      image: maid.image,
     });
     setIsEditing(true);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setEditData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const fileUrl = URL.createObjectURL(file);
+      setEditData(prev => ({ ...prev, image: fileUrl }));
+    }
+  };
+
   const handleSpecialtyChange = (index: number, value: string) => {
-    const newSpecialties = [...editData.specialties || []];
+    const newSpecialties = [...(editData.specialties || [])];
     newSpecialties[index] = value;
     setEditData(prev => ({ ...prev, specialties: newSpecialties }));
   };
@@ -171,12 +185,12 @@ export default function MaidDashboard() {
   const addSpecialty = () => {
     setEditData(prev => ({
       ...prev,
-      specialties: [...(prev.specialties || []), ""]
+      specialties: [...(prev.specialties || []), ""],
     }));
   };
 
   const removeSpecialty = (index: number) => {
-    const newSpecialties = [...editData.specialties || []];
+    const newSpecialties = [...(editData.specialties || [])];
     newSpecialties.splice(index, 1);
     setEditData(prev => ({ ...prev, specialties: newSpecialties }));
   };
@@ -190,23 +204,40 @@ export default function MaidDashboard() {
         toast.error("Name is required");
         return;
       }
+      if (!editData.experience) {
+        toast.error("Experience is required");
+        return;
+      }
+      if (!editData.rating) {
+        toast.error("Rating is required");
+        return;
+      }
+      if (!editData.specialties?.length) {
+        toast.error("At least one specialty is required");
+        return;
+      }
 
-      const response = await fetch(`http://localhost:5000/api/maid/${userId}`, {
-        method: "PATCH",
+      const formData = new FormData();
+      formData.append('fullName', editData.fullName || '');
+      formData.append('specialties', editData.specialties?.filter(s => s.trim()).join(','));
+      formData.append('rating', editData.rating?.toString() || '0');
+      formData.append('experience', editData.experience || '');
+      formData.append('description', editData.description || '');
+      if (editData.image && typeof editData.image !== "string" && editData.image instanceof File) {
+        formData.append('image', editData.image);
+      }
+
+      const response = await fetch('http://localhost:3000/api/maid-dashboard/profile', {
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify({
-          fullName: editData.fullName,
-          specialties: editData.specialties?.filter(s => s.trim() !== ""),
-          experience: editData.experience,
-          description: editData.description
-        }),
+        body: formData,
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update profile");
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update profile');
       }
 
       const updatedData = await response.json();
@@ -215,11 +246,13 @@ export default function MaidDashboard() {
         fullName: updatedData.data.fullName || prev.fullName,
         description: updatedData.data.description || prev.description,
         specialties: updatedData.data.specialties || prev.specialties,
-        experience: updatedData.data.experience || prev.experience
+        experience: updatedData.data.experience || prev.experience,
+        rating: updatedData.data.rating || prev.rating,
+        image: updatedData.data.image || prev.image,
       }));
-      
       setIsEditing(false);
       toast.success("Profile updated successfully");
+      fetchMaidProfile(); // Refresh profile
     } catch (error) {
       toast.error("Failed to update profile");
       console.error("Profile update error:", error);
@@ -248,14 +281,14 @@ export default function MaidDashboard() {
         <div className="flex-1 p-6 flex flex-col items-center justify-center">
           <div className="text-red-500 text-lg mb-4">{error}</div>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={() => fetchMaidProfile()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Retry
           </button>
           {error.includes("complete your profile") && (
             <button
-              onClick={() => window.location.href = "/maid/profile-setup"}
+              onClick={() => router.push("/maid/profile-setup")}
               className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               Complete Profile Setup
@@ -269,7 +302,6 @@ export default function MaidDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <SidebarMaid />
-      
       <div className="flex-1 p-6 text-gray-800">
         {/* Profile Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -287,14 +319,23 @@ export default function MaidDashboard() {
               </div>
               <div>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={editData.fullName || ""}
-                    onChange={handleInputChange}
-                    className="text-2xl font-bold border-b border-gray-300 focus:border-blue-500 focus:outline-none"
-                    placeholder="Your name"
-                  />
+                  <>
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={editData.fullName || ""}
+                      onChange={handleInputChange}
+                      className="text-2xl font-bold border-b border-gray-300 focus:border-blue-500 focus:outline-none"
+                      placeholder="Your name"
+                    />
+                    <input
+                      type="file"
+                      name="image"
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      className="mt-2"
+                    />
+                  </>
                 ) : (
                   <h1 className="text-2xl font-bold">{maid.fullName}</h1>
                 )}
@@ -310,7 +351,6 @@ export default function MaidDashboard() {
                 </div>
               </div>
             </div>
-            
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className={`h-3 w-3 rounded-full ${maid.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
@@ -318,7 +358,6 @@ export default function MaidDashboard() {
                   {maid.isActive ? 'Available for bookings' : 'Not accepting bookings'}
                 </span>
               </div>
-              
               <div className="flex gap-2">
                 {isEditing ? (
                   <>
@@ -337,7 +376,12 @@ export default function MaidDashboard() {
                   </>
                 ) : (
                   <>
-                    
+                    <button
+                      onClick={toggleActiveStatus}
+                      className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                    >
+                      {maid.isActive ? 'Deactivate' : 'Activate'}
+                    </button>
                     <button
                       onClick={startEditing}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -349,8 +393,6 @@ export default function MaidDashboard() {
               </div>
             </div>
           </div>
-          
-          {/* Description */}
           <div className="mt-6">
             {isEditing ? (
               <textarea
@@ -368,8 +410,6 @@ export default function MaidDashboard() {
             )}
           </div>
         </div>
-
-        {/* Cuisine Specialties */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Cuisine Specialties</h2>
@@ -385,7 +425,6 @@ export default function MaidDashboard() {
               </button>
             )}
           </div>
-          
           {isEditing ? (
             <div className="space-y-3">
               {(editData.specialties || []).map((specialty, index) => (
@@ -426,8 +465,25 @@ export default function MaidDashboard() {
             </div>
           )}
         </div>
-
-        {/* Status Card */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Experience</h2>
+          {isEditing ? (
+            <select
+              name="experience"
+              value={editData.experience || ""}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+            >
+              <option value="">Select Experience</option>
+              <option value="0-1 years">0-1 years</option>
+              <option value="1-3 years">1-3 years</option>
+              <option value="3-5 years">3-5 years</option>
+              <option value="5+ years">5+ years</option>
+            </select>
+          ) : (
+            <p className="text-gray-700">{maid.experience || "No experience specified"}</p>
+          )}
+        </div>
         <div className={`p-4 rounded-lg ${maid.isActive ? 'bg-green-50' : 'bg-gray-100'}`}>
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-full ${maid.isActive ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-600'}`}>
