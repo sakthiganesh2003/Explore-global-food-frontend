@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -76,6 +76,38 @@ const Navbar = () => {
     setIsDropdownOpen(false); // Close user dropdown if open
   };
 
+  // Determine visibility of Become Chef and Become Maid links
+  const showBecomeChef = username && userRole !== 'chef';
+  const showBecomeMaid = username && userRole !== 'maid';
+
+  // Determine dashboard link based on user role
+  const getDashboardLink = () => {
+    switch (userRole) {
+      case 'admin':
+        return '/Admin';
+      case 'maid':
+        return '/maid/dashboard';
+      case 'chef':
+        return '/chef/dashboard';
+      default:
+        return '/chef/dashboard'; // Default for regular users or other roles
+    }
+  };
+
+  // Determine dashboard label based on user role
+  const getDashboardLabel = () => {
+    switch (userRole) {
+      case 'admin':
+        return 'Admin Dashboard';
+      case 'maid':
+        return 'Maid Dashboard';
+      case 'chef':
+        return 'Chef Dashboard';
+      default:
+        return 'Dashboard';
+    }
+  };
+
   return (
     <nav className="sticky top-0 left-0 z-50 bg-[#059669] shadow-md px-10 py-2">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -93,7 +125,7 @@ const Navbar = () => {
             Explore
           </Link>
           <Link href="/chef" className="text-white hover:border-b-2 border-white">
-            Chef dish
+            Chef Dish
           </Link>
           <Link href="/maid" className="text-white hover:border-b-2 border-white">
             Cook
@@ -128,33 +160,34 @@ const Navbar = () => {
 
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                  {/* Admin Dashboard for Admin Role */}
-                  {userRole === 'admin' && (
-                    <Link
-                      href="/Admin"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      Admin Dashboard
-                    </Link>
-                  )}
-                  {/* Maid Dashboard for Non-Admin Roles */}
-                  {userRole !== 'admin' && (
-                    <Link
-                      href="/maid/dashboard"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      Dashboard
-                    </Link>
-                  )}
+                  {/* Dashboard based on role */}
                   <Link
-                    href="/maid/becomemaid"
+                    href={getDashboardLink()}
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setIsDropdownOpen(false)}
                   >
-                    Become Maid
+                    {getDashboardLabel()}
                   </Link>
+                  {/* Conditionally render Become Chef */}
+                  {showBecomeChef && (
+                    <Link
+                      href="/chef/becomechef"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Become Chef
+                    </Link>
+                  )}
+                  {/* Conditionally render Become Maid */}
+                  {showBecomeMaid && (
+                    <Link
+                      href="/chef/becomechef"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Become chef
+                    </Link>
+                  )}
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -187,6 +220,13 @@ const Navbar = () => {
                     onClick={() => setIsSigninOpen(false)}
                   >
                     Maid Signin
+                  </Link>
+                  <Link
+                    href="/chef/login/signup"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsSigninOpen(false)}
+                  >
+                    Chef Signin
                   </Link>
                   <Link
                     href="/admin/login"
@@ -233,42 +273,41 @@ const Navbar = () => {
               className="text-white hover:border-b-2 border-white py-2"
               onClick={() => setIsOpen(false)}
             >
-              Chef dish
+              Chef Dish
             </Link>
             <Link
               href="/maid"
               className="text-white hover:border-b-2 border-white py-2"
               onClick={() => setIsOpen(false)}
             >
-              Maid Booking
+              Cook
             </Link>
-            {/* Admin Dashboard for Admin Role */}
-            {username && userRole === 'admin' && (
-              <Link
-                href="/Admin"
-                className="text-white hover:border-b-2 border-white py-2"
-                onClick={() => setIsOpen(false)}
-              >
-                Admin Dashboard
-              </Link>
-            )}
-            {/* Maid Dashboard for Non-Admin Roles */}
-            {username && userRole !== 'admin' && (
-              <Link
-                href="/maid/dashboard"
-                className="text-white hover:border-b-2 border-white py-2"
-                onClick={() => setIsOpen(false)}
-              >
-                Dashboard
-              </Link>
-            )}
+            {/* Dashboard based on role */}
             {username && (
+              <Link
+                href={getDashboardLink()}
+                className="text-white hover:border-b-2 border-white py-2"
+                onClick={() => setIsOpen(false)}
+              >
+                {getDashboardLabel()}
+              </Link>
+            )}
+            {/* Conditionally render Become Chef */}
+            {showBecomeChef && (
+              <Link
+                href="/chef/becomechef"
+                className="text-white hover:border-b-2 border-white py-2"
+              >
+                Become Chef
+              </Link>
+            )}
+            {/* Conditionally render Become Maid */}
+            {showBecomeMaid && (
               <Link
                 href="/maid/becomemaid"
                 className="text-white hover:border-b-2 border-white py-2"
-                onClick={() => setIsOpen(false)}
               >
-                Become Maid
+                Become chef
               </Link>
             )}
             {username && (

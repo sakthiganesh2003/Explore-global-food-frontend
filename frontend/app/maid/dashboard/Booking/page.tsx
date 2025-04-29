@@ -1,26 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SidebarMaid from '@/app/component/dashboard/SidebarMaid';
+import { jwtDecode } from 'jwt-decode';
 
 // Interfaces for type safety
 interface Maid {
   _id: string;
-  fullName: string;
-  specialties: string[];
-  rating: number;
-  experience: number;
-  image?: string;
-  hourlyRate?: number;
+}
+
+interface User {
+  _id: string;
+  email: string;
 }
 
 interface Booking {
   _id: string;
-  userId: string;
-  maid: Maid;
+  userId: User;
+  maidId: Maid;
   cuisine: {
     id: string;
     name: string;
@@ -52,6 +52,10 @@ interface Booking {
   createdAt: string;
 }
 
+interface DecodedToken {
+  id: string;
+}
+
 // Utility function to format date
 const formatDate = (dateString: string): string => {
   const options: Intl.DateTimeFormatOptions = {
@@ -69,21 +73,75 @@ const MaidBookingActionPage: React.FC = () => {
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const params = useParams();
+  const router = useRouter();
   const bookingId = params.id as string;
+
+  // Function to get maidId from token
+  const getMaidIdFromToken = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Please login to access this page', {
+          position: 'top-right',
+          autoClose: 3000,
+        });
+        router.push('/login');
+        return null;
+      }
+      const decoded: DecodedToken = jwtDecode(token);
+      if (!decoded.id) {
+        toast.error('Invalid token format', {
+          position: 'top-right',
+          autoClose: 3000,
+        });
+        return null;
+      }
+      return decoded.id;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      toast.error('Session expired. Please login again', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+      localStorage.removeItem('token');
+      router.push('/login');
+      return null;
+    }
+  };
 
   // Fetch booking details
   useEffect(() => {
     const fetchBooking = async () => {
+      const maidId = getMaidIdFromToken();
+      if (!maidId || !bookingId) return;
+
       try {
         setIsFetching(true);
-        const response = await fetch(`/api/bookings/${bookingId}`);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No token found. Please log in.');
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/book/${bookingId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
         const result = await response.json();
 
-        if (!response.ok || !result.success) {
+        if (!response.ok || !result) {
           throw new Error(result.message || 'Failed to fetch booking');
         }
 
-        setBooking(result.data);
+        // Verify maidId matches the booking's maidId
+        if (result.maidId._id !== maidId) {
+          throw new Error('Unauthorized: You are not assigned to this booking');
+        }
+
+        setBooking(result);
         setError(null);
       } catch (err: any) {
         setError(err.message || 'Error fetching booking');
@@ -105,14 +163,32 @@ const MaidBookingActionPage: React.FC = () => {
   const handleAction = async (action: 'accepted' | 'rejected') => {
     setIsLoading(true);
     try {
-      // Simulate API call (replace with actual API to update booking status)
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Mock delay
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No token found. Please log in.');
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/book/${bookingId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: action }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || `Failed to ${action} booking`);
+      }
+
+      setBooking((prev) => (prev ? { ...prev, status: action } : prev));
       toast.success(`Booking ${action} successfully!`, {
         position: 'top-right',
         autoClose: 3000,
       });
     } catch (err: any) {
-      toast.error('Failed to update booking status', {
+      toast.error(err.message || 'Failed to update booking status', {
         position: 'top-right',
         autoClose: 3000,
       });
@@ -157,8 +233,8 @@ const MaidBookingActionPage: React.FC = () => {
             <div className="mt-2 flex justify-center items-center space-x-3">
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  booking.status === 'confirmed'
-                    ? 'bg-green-100 text-green-800'
+                  booking.status === 'pending'
+                    ? 'bg-yellow-100 text-yellow-800'
                     : booking.status === 'accepted'
                     ? 'bg-blue-100 text-blue-800'
                     : 'bg-red-100 text-red-800'
@@ -291,7 +367,7 @@ const MaidBookingActionPage: React.FC = () => {
             </div>
 
             {/* Action Buttons (Conditional) */}
-            {booking.status === 'confirmed' && (
+            {booking.status === 'pending' && (
               <div className="border-t border-gray-200 px-4 py-4 bg-gray-50 text-right sm:px-6">
                 <button
                   type="button"

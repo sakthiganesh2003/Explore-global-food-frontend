@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import MaidChoose from './ui/MaidChoose';
 import SelectCuisine from './ui/SelectCuisine';
 import Members from './ui/Members';
@@ -48,6 +49,7 @@ type FoodItemType = {
 
 type FormDataType = {
   maid: MaidType | null;
+  maidId: string | null;
   cuisine: CuisineType | null;
   members: MemberType[];
   time: TimeSlotType | null;
@@ -60,6 +62,7 @@ const StepProgress = () => {
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [formData, setFormData] = useState<FormDataType>({
     maid: null,
+    maidId: null,
     cuisine: null,
     members: [],
     time: null,
@@ -82,7 +85,6 @@ const StepProgress = () => {
       return;
     }
     if (currentStep === 3 && !formData.time) {
-      // toast.error('Please confirm your time and details');
       return;
     }
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
@@ -91,7 +93,13 @@ const StepProgress = () => {
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 0));
 
   const updateFormData = (data: Partial<FormDataType>) => {
-    setFormData((prev) => ({ ...prev, ...data }));
+    setFormData((prev) => {
+      const newData = { ...prev, ...data };
+      if (data.maid) {
+        newData.maidId = data.maid.userId; // Store userId as maidId
+      }
+      return newData;
+    });
     if (data.maid && currentStep === 0) {
       setTimeout(() => nextStep(), 500);
     }
@@ -114,7 +122,7 @@ const StepProgress = () => {
       case 1:
         return (
           <SelectCuisine
-            maidId={formData.maid?.userId || ''}
+            maidId={formData.maidId || ''}
             maidSpecialties={formData.maid?.specialties || []}
             onSelect={(cuisine: CuisineType) => updateFormData({ cuisine })}
             onSelectConfirmedFoods={(foods: FoodItemType[]) => updateFormData({ confirmedFoods: foods })}

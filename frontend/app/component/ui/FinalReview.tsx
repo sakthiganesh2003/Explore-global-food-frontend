@@ -45,6 +45,7 @@ interface CuisineType {
 
 interface FormDataType {
   maid: MaidType | null;
+  maidId: string | null; // maidId is userId from Maid collection (references User schema)
   cuisine: CuisineType | null;
   members: MemberType[];
   time: TimeType | null;
@@ -187,7 +188,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
     setSuccess(false);
     setPaymentStatus(null);
 
-    if (!formData.maid || !formData.maid.userId) {
+    if (!formData.maidId) {
       setError('Please select a maid before confirming the booking.');
       setLoading(false);
       return;
@@ -213,7 +214,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
 
     const payload = {
       userId,
-      maid: formData.maid.userId,
+      maidId: formData.maidId, // Send maidId instead of maid
       cuisine: {
         id: formData.cuisine?.id || '',
         name: formData.cuisine?.name || '',
@@ -263,10 +264,10 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
 
       // Try multiple possible locations for booking ID
       const bookingId =
-        result.booking?._id || // Nested booking object
-        result._id || // Top-level ID
-        result.data?._id || // Possible data object
-        result.id; // Alternative ID field
+        result.booking?._id ||
+        result._id ||
+        result.data?._id ||
+        result.id;
 
       if (!bookingId) {
         console.error('Booking ID not found in response:', result);
@@ -494,9 +495,9 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
         </div>
         <button
           onClick={handleConfirmBooking}
-          disabled={loading || !formData.maid?.userId}
+          disabled={loading || !formData.maidId}
           className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 ${
-            loading || !formData.maid?.userId ? 'opacity-50 cursor-not-allowed' : ''
+            loading || !formData.maidId ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
           {loading ? 'Processing...' : 'Confirm and Pay'}

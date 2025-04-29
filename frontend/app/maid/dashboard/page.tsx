@@ -65,41 +65,41 @@ export default function MaidDashboard() {
   const fetchMaidProfile = async () => {
     const userId = getUserIdFromToken();
     if (!userId) return;
-
+  
     setLoading(true);
     setError(null);
-
+  
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('No token found. Please log in.');
       }
-
+  
       console.log('Sending request with token:', token);
-      const response = await fetch('http://localhost:3000/api/maid-dashboard/profile', {
+      const response = await fetch(`http://localhost:5000/api/maid/${userId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
-
+  
       if (response.status === 404) {
         setError("Profile not found. Please complete your profile setup.");
         setLoading(false);
         return;
       }
-
+  
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to fetch profile");
       }
-
+  
       const result = await response.json();
       if (!result?.success) {
         throw new Error(result?.message || "Invalid profile data");
       }
-
+  
       setMaid({
         id: result.data.id,
         fullName: result.data.fullName || "New Maid",

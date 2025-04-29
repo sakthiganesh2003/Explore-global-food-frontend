@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import { toast } from "react-hot-toast";
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { toast } from 'react-hot-toast';
 
 interface Maid {
+  _id: string; // Added _id for unique key
   userId: string;
   fullName: string;
   cuisine?: string[];
@@ -18,7 +19,7 @@ interface Maid {
 
 const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
   const [selectedMaid, setSelectedMaid] = useState<Maid | null>(null);
-  const [filter, setFilter] = useState("");
+  const [filter, setFilter] = useState('');
   const [maids, setMaids] = useState<Maid[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
@@ -27,7 +28,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
   const maidsPerPage = 16;
 
   useEffect(() => {
-    console.log("Fetching maids data");
+    console.log('Fetching maids data');
 
     let isMounted = true;
 
@@ -37,7 +38,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
         const data = await res.json();
-        console.log("API response:", data);
+        console.log('API response:', data);
 
         if (isMounted) {
           const normalizedMaids = data.map((maid: any) => {
@@ -47,14 +48,15 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
             ].filter(Boolean);
 
             return {
-              userId: maid._id,
-              fullName: maid.name || maid.fullName || "Unknown",
-              specialties: specialties.length > 0 ? specialties : ["General Housekeeping"],
+              _id: maid._id, // Include _id for unique key
+              userId: maid.userId || maid._id, // Prioritize userId, fallback to _id
+              fullName: maid.fullName || maid.name || 'Unknown',
+              specialties: specialties.length > 0 ? specialties : ['General Housekeeping'],
               rating: maid.rating || 0,
               experience:
-                typeof maid.experience === "string" && !isNaN(parseInt(maid.experience))
+                typeof maid.experience === 'string' && !isNaN(parseInt(maid.experience))
                   ? parseInt(maid.experience)
-                  : maid.experience || "0",
+                  : maid.experience || '0',
               image: formatImageUrl(maid.image),
               bio: maid.bio,
               services: maid.services,
@@ -66,9 +68,9 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
           setMaids(normalizedMaids);
         }
       } catch (error) {
-        console.error("Fetch error:", error);
-        toast.error("Failed to load maids. Please try again later.", {
-          position: "top-center",
+        console.error('Fetch error:', error);
+        toast.error('Failed to load maids. Please try again later.', {
+          position: 'top-center',
         });
       } finally {
         if (isMounted) {
@@ -85,9 +87,9 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
   }, []);
 
   const formatImageUrl = (url?: string) => {
-    if (!url) return "/chef-placeholder.jpg";
-    if (url.startsWith("http")) return url;
-    if (url.startsWith("/")) return url;
+    if (!url) return '/chef-placeholder.jpg';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/')) return url;
     return `/${url}`;
   };
 
@@ -105,12 +107,12 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
     setSelectedMaid(maid);
     setShowDetails(true);
     toast.success(`${maid.fullName} selected`, {
-      icon: "👩‍🍳",
-      position: "top-center",
+      icon: '👩‍🍳',
+      position: 'top-center',
       duration: 1500,
       style: {
-        background: "#4BB543",
-        color: "#fff",
+        background: '#4BB543',
+        color: '#fff',
       },
     });
   };
@@ -130,7 +132,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
             <div className="flex items-center gap-2">
               <span className="text-green-500">✓</span>
               <div>
-                <p className="font-bold">{selectedMaid.fullName} successfully selected!</p>
+                <p className="font-bold">{selectedMaid.fullName} selected!</p>
                 <p className="text-sm">Proceeding to the next step...</p>
               </div>
             </div>
@@ -138,10 +140,10 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
           error: `Failed to book ${selectedMaid.fullName}`,
         },
         {
-          position: "bottom-right",
+          position: 'bottom-right',
           duration: 4000,
           style: {
-            minWidth: "300px",
+            minWidth: '300px',
           },
         }
       );
@@ -188,8 +190,8 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
               <div>
                 <h3 className="text-2xl font-bold text-gray-800">{selectedMaid.fullName}</h3>
                 <p className="text-gray-600">
-                  ⭐ {selectedMaid.rating} | {selectedMaid.experience}{" "}
-                  {typeof selectedMaid.experience === "number" ? "years" : ""} experience
+                  ⭐ {selectedMaid.rating} | {selectedMaid.experience}{' '}
+                  {typeof selectedMaid.experience === 'number' ? 'years' : ''} experience
                 </p>
               </div>
               <button
@@ -203,14 +205,14 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
 
             <div className="mt-6 w-32 h-32 mx-auto relative rounded-full overflow-hidden border-2 border-gray-200 shadow-sm">
               <Image
-                src={selectedMaid.image || "/chef-placeholder.jpg"}
+                src={selectedMaid.image || '/chef-placeholder.jpg'}
                 alt={`Photo of ${selectedMaid.fullName}`}
                 layout="fill"
                 objectFit="cover"
                 className="rounded-full"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = "/chef-placeholder.jpg";
+                  target.src = '/chef-placeholder.jpg';
                 }}
               />
             </div>
@@ -282,11 +284,11 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
             <div className="text-center py-12 bg-white rounded-lg shadow-md">
               <p className="text-lg mb-2 text-gray-600">
                 {filter
-                  ? "No active maids found matching your criteria"
-                  : "No active maids available at the moment"}
+                  ? 'No active maids found matching your criteria'
+                  : 'No active maids available at the moment'}
               </p>
               <button
-                onClick={() => setFilter("")}
+                onClick={() => setFilter('')}
                 className="mt-2 text-blue-600 hover:underline font-medium"
               >
                 Clear filters and show all maids
@@ -297,21 +299,21 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {paginatedMaids.map((maid) => (
                   <div
-                    key={maid.userId}
+                    key={maid._id} // Use _id instead of userId for unique key
                     className="bg-white p-5 rounded-lg shadow-md cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col border border-gray-100"
                     onClick={() => handleMaidSelect(maid)}
                   >
                     <div className="flex items-center mb-4">
                       <div className="w-16 h-16 relative rounded-full overflow-hidden mr-4 flex-shrink-0">
                         <Image
-                          src={maid.image || "/chef-placeholder.jpg"}
+                          src={maid.image || '/chef-placeholder.jpg'}
                           alt={`Photo of ${maid.fullName}`}
                           layout="fill"
                           objectFit="cover"
                           className="rounded-full"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = "/chef-placeholder.jpg";
+                            target.src = '/chef-placeholder.jpg';
                           }}
                         />
                       </div>
@@ -319,7 +321,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
                         <h3 className="font-bold text-lg text-gray-800">{maid.fullName}</h3>
                         <div className="flex items-center text-yellow-500">
                           {Array.from({ length: 5 }).map((_, i) => (
-                            <span key={i}>{i < Math.floor(maid.rating) ? "★" : "☆"}</span>
+                            <span key={i}>{i < Math.floor(maid.rating) ? '★' : '☆'}</span>
                           ))}
                           <span className="text-gray-500 ml-1 text-sm">({maid.rating})</span>
                         </div>
@@ -328,8 +330,8 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
 
                     <div className="mt-2">
                       <p className="text-sm text-gray-600 mb-2">
-                        <span className="font-semibold">Experience:</span> {maid.experience}{" "}
-                        {typeof maid.experience === "number" ? "years" : ""}
+                        <span className="font-semibold">Experience:</span> {maid.experience}{' '}
+                        {typeof maid.experience === 'number' ? 'years' : ''}
                       </p>
 
                       {maid.specialties && maid.specialties.length > 0 && (
@@ -364,8 +366,8 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
                     disabled={currentPage === 1}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                       currentPage === 1
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
                     }`}
                   >
                     Previous
@@ -378,8 +380,8 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
                     disabled={currentPage === totalPages}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                       currentPage === totalPages
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
                     }`}
                   >
                     Next
