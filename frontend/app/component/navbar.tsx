@@ -90,7 +90,7 @@ const Navbar = () => {
       case 'chef':
         return '/chef/dashboard';
       default:
-        return '/chef/dashboard'; // Default for regular users or other roles
+        return username ? '/User/dashboard' : '/'; // User Dashboard for logged-in users without specific role
     }
   };
 
@@ -104,7 +104,7 @@ const Navbar = () => {
       case 'chef':
         return 'Chef Dashboard';
       default:
-        return 'Dashboard';
+        return username ? 'User Dashboard' : 'Dashboard'; // User Dashboard for logged-in users without specific role
     }
   };
 
@@ -181,11 +181,11 @@ const Navbar = () => {
                   {/* Conditionally render Become Maid */}
                   {showBecomeMaid && (
                     <Link
-                      href="/chef/becomechef"
+                      href="/maid/becomemaid"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      Become chef
+                      Become Maid
                     </Link>
                   )}
                   <button
@@ -297,6 +297,7 @@ const Navbar = () => {
               <Link
                 href="/chef/becomechef"
                 className="text-white hover:border-b-2 border-white py-2"
+                onClick={() => setIsOpen(false)}
               >
                 Become Chef
               </Link>
@@ -306,8 +307,9 @@ const Navbar = () => {
               <Link
                 href="/maid/becomemaid"
                 className="text-white hover:border-b-2 border-white py-2"
+                onClick={() => setIsOpen(false)}
               >
-                Become chef
+                Become Maid
               </Link>
             )}
             {username && (

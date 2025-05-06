@@ -14,7 +14,7 @@ const SidebarMaid = () => {
   };
 
   return (
-    <div className={`h-screen bg-gray-900 text-white transition-all duration-300 ${isOpen ? "w-64" : "w-20"}`}>
+    <div className={`min-h-screen bg-gray-900 text-white transition-all duration-300 ${isOpen ? "w-64" : "w-20"}`}>
       {/* Toggle Button */}
       <div className="flex items-center justify-between p-4">
         <button

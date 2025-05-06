@@ -37,9 +37,9 @@ const SidebarMaid = () => {
           {isOpen && <span className="text-base ml-3">Back</span>}
         </button>
 
-        <SidebarItem icon={<Home />} text="Home" href="/chef/dashboard" isOpen={isOpen} />
-        <SidebarItem icon={<BookOpen />} text="Orders" href="/chef/dashboard/chefpost" isOpen={isOpen} />
-        <SidebarItem icon={<CreditCard />} text="Payment" href="/chef/dashboard/post" isOpen={isOpen} />
+        <SidebarItem icon={<Home />} text="Home" href="/User/dashboard" isOpen={isOpen} />
+        <SidebarItem icon={<BookOpen />} text="Bookings" href="/User/dashboard/orderhistory" isOpen={isOpen} />
+        <SidebarItem icon={<CreditCard />} text="payments detials" href="/User/dashboard/post" isOpen={isOpen} />
       </nav>
     </div>
   );

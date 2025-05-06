@@ -1,30 +1,25 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+"use client";
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { FiClock, FiDollarSign, FiCalendar, FiPhone, FiMapPin, FiUser, FiCheck, FiX, FiLoader, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import SidebarMaid from '@/app/component/dashboard/SidebarMaid';
 import { jwtDecode } from 'jwt-decode';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-// Interfaces for type safety
-interface Maid {
+interface Order {
   _id: string;
-}
-
-interface User {
-  _id: string;
-  email: string;
-}
-
-interface Booking {
-  _id: string;
-  userId: User;
-  maidId: Maid;
   cuisine: {
     id: string;
     name: string;
     price: number;
+  };
+  userId: {
+    _id: string;
+    email: string;
+  };
+  maidId: {
+    _id: string;
   };
   members: {
     dietaryPreference: string;
@@ -48,350 +43,494 @@ interface Booking {
     _id: string;
   }[];
   totalAmount: number;
-  status: string;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   createdAt: string;
 }
 
 interface DecodedToken {
-  id: string;
+  userId: string;
+  email: string;
+  exp: number;
+  [key: string]: any;
 }
 
-// Utility function to format date
-const formatDate = (dateString: string): string => {
-  const options: Intl.DateTimeFormatOptions = {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  };
-  return new Date(dateString).toLocaleDateString('en-US', options);
-};
+export default function OrderDashboard() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [decodedToken, setDecodedToken] = useState<DecodedToken | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5); // Number of orders per page
 
-const MaidBookingActionPage: React.FC = () => {
-  const [booking, setBooking] = useState<Booking | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const params = useParams();
-  const router = useRouter();
-  const bookingId = params.id as string;
-
-  // Function to get maidId from token
-  const getMaidIdFromToken = (): string | null => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('Please login to access this page', {
-          position: 'top-right',
-          autoClose: 3000,
-        });
-        router.push('/login');
-        return null;
-      }
-      const decoded: DecodedToken = jwtDecode(token);
-      if (!decoded.id) {
-        toast.error('Invalid token format', {
-          position: 'top-right',
-          autoClose: 3000,
-        });
-        return null;
-      }
-      return decoded.id;
-    } catch (error) {
-      console.error('Error decoding token:', error);
-      toast.error('Session expired. Please login again', {
-        position: 'top-right',
-        autoClose: 3000,
-      });
-      localStorage.removeItem('token');
-      router.push('/login');
-      return null;
-    }
-  };
-
-  // Fetch booking details
+  // First useEffect: Decode the token
   useEffect(() => {
-    const fetchBooking = async () => {
-      const maidId = getMaidIdFromToken();
-      if (!maidId || !bookingId) return;
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      try {
+        const decoded = jwtDecode<DecodedToken>(storedToken);
+        console.log('Decoded token:', decoded);
+        setDecodedToken(decoded);
+        setToken(storedToken);
+        // Check if token is expired
+        const currentTime = Date.now() / 1000;
+        if (decoded.exp < currentTime) {
+          setError('Token has expired');
+          localStorage.removeItem('token');
+          setToken(null);
+          setDecodedToken(null);
+        }
+      } catch (err) {
+        setError('Invalid token');
+        console.error('Token decoding failed:', err);
+        setToken(null);
+        setDecodedToken(null);
+      }
+    } else {
+      setError('No token found in localStorage');
+    }
+  }, []);
+
+  // Second useEffect: Fetch orders after decodedToken is set
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!decodedToken || !token) {
+        setLoading(false);
+        return;
+      }
 
       try {
-        setIsFetching(true);
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No token found. Please log in.');
-        }
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/book/${bookingId}`, {
-          method: 'GET',
+        const maidId = decodedToken.id; // Corrected to use userId
+        console.log('Fetching orders for maidId:', maidId);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/book/${maidId}`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
         });
-        const result = await response.json();
-
-        if (!response.ok || !result) {
-          throw new Error(result.message || 'Failed to fetch booking');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch orders: ${response.status} ${response.statusText}`);
         }
-
-        // Verify maidId matches the booking's maidId
-        if (result.maidId._id !== maidId) {
-          throw new Error('Unauthorized: You are not assigned to this booking');
-        }
-
-        setBooking(result);
-        setError(null);
-      } catch (err: any) {
-        setError(err.message || 'Error fetching booking');
-        toast.error(err.message || 'Error fetching booking', {
-          position: 'top-right',
-          autoClose: 3000,
-        });
+        const data = await response.json();
+        setOrders(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
       } finally {
-        setIsFetching(false);
+        setLoading(false);
       }
     };
 
-    if (bookingId) {
-      fetchBooking();
-    }
-  }, [bookingId]);
+    fetchOrders();
+  }, [decodedToken, token]);
 
-  // Handle booking actions (accept/reject)
-  const handleAction = async (action: 'accepted' | 'rejected') => {
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No token found. Please log in.');
-      }
+  const filteredOrders = statusFilter === 'all' 
+    ? orders 
+    : orders.filter(order => order.status === statusFilter);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/book/${bookingId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: action }),
-      });
+  // Pagination logic
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.message || `Failed to ${action} booking`);
-      }
-
-      setBooking((prev) => (prev ? { ...prev, status: action } : prev));
-      toast.success(`Booking ${action} successfully!`, {
-        position: 'top-right',
-        autoClose: 3000,
-      });
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to update booking status', {
-        position: 'top-right',
-        autoClose: 3000,
-      });
-    } finally {
-      setIsLoading(false);
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
     }
   };
 
-  // Render loading state
-  if (isFetching) {
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const updateOrderStatus = async (orderId: string, newStatus: 'confirmed' | 'completed' | 'cancelled') => {
+    if (!token) {
+      setError('No valid token available');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/book/status/${orderId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update order status');
+      }
+
+      setOrders(orders.map(order => 
+        order._id === orderId ? { ...order, status: newStatus } : order
+      ));
+      
+      if (selectedOrder?._id === orderId) {
+        setSelectedOrder({ ...selectedOrder, status: newStatus });
+      }
+
+      // Show toast message when the maid accepts the order
+      if (newStatus === 'confirmed') {
+        toast.success('Order accepted successfully!', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update order');
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const options: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  const formatTime = (timeString: string) => {
+    return timeString.replace('AM', ' am').replace('PM', ' pm');
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'completed': return 'bg-blue-100 text-blue-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-yellow-100 text-yellow-800';
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50 text-gray-500">
         <SidebarMaid />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-lg text-gray-600">Loading booking details...</p>
+        <div className="flex-1 flex items-center justify-center text-gray-800">
+          <div className="text-center">
+            <FiLoader className="animate-spin h-12 w-12 text-amber-600 mx-auto" />
+            <p className="mt-4 text-lg font-medium text-gray-700">Loading orders...</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Render error state
-  if (error || !booking) {
+  if (error) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-50 text-gray-600">
         <SidebarMaid />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-lg text-red-600">{error || 'Booking not found'}</p>
+        <div className="flex-1 flex items-center justify-center text-gray-800">
+          <div className="text-center p-6 bg-white rounded-lg shadow-md max-w-md">
+            <div className="text-red-500 text-4xl mb-4">⚠️</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading orders</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 text-gray-500">
       <SidebarMaid />
-      <div className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
-        <ToastContainer />
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Booking Details</h1>
-            <div className="mt-2 flex justify-center items-center space-x-3">
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  booking.status === 'pending'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : booking.status === 'accepted'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-              </span>
-              <span className="text-sm text-gray-500">
-                Booked on {formatDate(booking.createdAt)}
-              </span>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            {/* Booking Details Section */}
-            <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Booking Information</h3>
-            </div>
-            <div className="px-4 py-5 sm:p-6 grid grid-cols-1 gap-8 sm:grid-cols-2">
-              {/* Cuisine */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-500">Cuisine</h4>
-                <p className="mt-1 text-sm text-gray-900 font-semibold">{booking.cuisine.name}</p>
-                {booking.cuisine.price > 0 && (
-                  <p className="mt-1 text-sm text-gray-500">₹{booking.cuisine.price.toFixed(2)}</p>
+      <div className="flex-1">
+        <header className="bg-white shadow">
+          <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl font-bold text-gray-900">Order Management</h1>
+              <div className="flex items-center space-x-4">
+                {decodedToken && (
+                  <div className="text-sm text-gray-600">
+                    Logged in as: {decodedToken.email}
+                  </div>
                 )}
-              </div>
-
-              {/* Date & Time */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-500">Date & Time</h4>
-                <p className="mt-1 text-sm text-gray-900">{formatDate(booking.time.date)}</p>
-                <p className="mt-1 text-sm text-gray-900">{booking.time.time.join(', ')}</p>
-              </div>
-
-              {/* Location */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-500">Location</h4>
-                <p className="mt-1 text-sm text-gray-900">{booking.time.address}</p>
-                <p className="mt-1 text-sm text-gray-900">Phone: {booking.time.phoneNumber}</p>
-              </div>
-
-              {/* Members */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-500">Members</h4>
-                <div className="mt-1 space-y-2">
-                  {booking.members.map((member) => (
-                    <div key={member._id} className="text-sm">
-                      <p className="text-gray-900 font-medium">
-                        {member.dietaryPreference} (Qty: {member.mealQuantity})
-                      </p>
-                      {member.allergies && (
-                        <p className="text-gray-600">Allergies: {member.allergies}</p>
-                      )}
-                      {member.specialRequests && (
-                        <p className="text-gray-600">Requests: {member.specialRequests}</p>
-                      )}
-                    </div>
-                  ))}
+                <div className="relative">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="all">All Orders</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {filteredOrders.length} {filteredOrders.length === 1 ? 'Order' : 'Orders'}
                 </div>
               </div>
             </div>
-
-            {/* Food Items Section */}
-            <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-              <h3 className="text-lg font-medium text-gray-900">Food Items</h3>
-            </div>
-            <div className="px-4 py-5 sm:p-6">
-              <div className="overflow-hidden border border-gray-200 rounded-lg">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Item
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Quantity
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Price
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Total
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {booking.confirmedFoods.map((food) => (
-                      <tr key={food._id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {food.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {food.quantity}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          ₹{food.price.toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          ₹{(food.price * food.quantity).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Payment Summary Section */}
-            <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-gray-900">Payment Summary</h3>
-                <span className="text-xl font-bold text-gray-900">
-                  ₹{booking.totalAmount.toFixed(2)}
-                </span>
-              </div>
-            </div>
-
-            {/* Action Buttons (Conditional) */}
-            {booking.status === 'pending' && (
-              <div className="border-t border-gray-200 px-4 py-4 bg-gray-50 text-right sm:px-6">
-                <button
-                  type="button"
-                  onClick={() => handleAction('accepted')}
-                  disabled={isLoading}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-300"
-                >
-                  {isLoading ? 'Processing...' : 'Accept Booking'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleAction('rejected')}
-                  disabled={isLoading}
-                  className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-red-300"
-                >
-                  {isLoading ? 'Processing...' : 'Reject Booking'}
-                </button>
-              </div>
-            )}
           </div>
-        </div>
+        </header>
+
+        <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Order List */}
+            <div className="lg:col-span-2 space-y-4">
+              {paginatedOrders.length === 0 ? (
+                <div className="bg-white rounded-lg shadow p-6 text-center">
+                  <div className="text-gray-400 mb-4">🍽️</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No orders found</h3>
+                  <p className="text-gray-500">There are currently no orders matching your criteria.</p>
+                </div>
+              ) : (
+                <>
+                  {paginatedOrders.map((order) => (
+                    <motion.div
+                      key={order._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className={`bg-white rounded-lg shadow overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-md ${
+                        selectedOrder?._id === order._id ? 'ring-2 ring-amber-500' : ''
+                      }`}
+                      onClick={() => setSelectedOrder(order)}
+                    >
+                      <div className="p-4 sm:p-6">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {order.cuisine.name} Cuisine
+                            </h3>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Order #{order._id.slice(-6).toUpperCase()}
+                            </p>
+                          </div>
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(order.status)}`}>
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </span>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-2 gap-4">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <FiCalendar className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-500" />
+                            {formatDate(order.time.date)}
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <FiDollarSign className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-500" />
+                            ${order.totalAmount.toFixed(2)}
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <FiUser className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-500" />
+                            {order.members.reduce((sum, member) => sum + member.mealQuantity, 0)} meals
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <FiClock className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-500" />
+                            {formatTime(order.time.time[0])}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                  {/* Pagination Controls */}
+                  <div className="flex justify-between items-center mt-4">
+                    <button
+                      onClick={handlePreviousPage}
+                      disabled={currentPage === 1}
+                      className={`flex items-center px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors ${
+                        currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      <FiChevronLeft className="mr-2" />
+                      Previous
+                    </button>
+                    <span className="text-sm text-gray-600">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      onClick={handleNextPage}
+                      disabled={currentPage === totalPages}
+                      className={`flex items-center px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors ${
+                        currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      Next
+                      <FiChevronRight className="ml-2" />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Order Details */}
+            <div className="lg:col-span-1">
+              {selectedOrder ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="bg-white rounded-lg shadow overflow-hidden sticky top-6"
+                >
+                  <div className="p-4 sm:p-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900">
+                          Order Details
+                        </h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                          #{selectedOrder._id.slice(-6).toUpperCase()}
+                        </p>
+                      </div>
+                      <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedOrder.status)}`}>
+                        {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
+                      </span>
+                    </div>
+
+                    <div className="mt-6 space-y-6">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-2">Cuisine Information</h3>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <div className="flex justify-between">
+                            <span className="font-medium">{selectedOrder.cuisine.name}</span>
+                            <span>${selectedOrder.cuisine.price.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-2">Customer Information</h3>
+                        <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Email:</span>
+                            <span className="font-medium">{selectedOrder.userId.email}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Phone:</span>
+                            <span className="font-medium">{selectedOrder.time.phoneNumber}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Address:</span>
+                            <p className="font-medium mt-1">{selectedOrder.time.address}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-2">Delivery Time</h3>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <FiCalendar className="text-gray-500" />
+                            <span className="font-medium">{formatDate(selectedOrder.time.date)}</span>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-2">
+                            <FiClock className="text-gray-500" />
+                            <div className="space-x-2">
+                              {selectedOrder.time.time.map((timeSlot, index) => (
+                                <span key={index} className="font-medium">
+                                  {formatTime(timeSlot)}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-2">Order Items</h3>
+                        <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                          {selectedOrder.confirmedFoods.map((food) => (
+                            <div key={food._id} className="flex justify-between">
+                              <div>
+                                <span className="font-medium">{food.name}</span>
+                                <span className="text-gray-500 text-sm ml-2">x{food.quantity}</span>
+                              </div>
+                              <span>${(food.price * food.quantity).toFixed(2)}</span>
+                            </div>
+                          ))}
+                          <div className="border-t border-gray-200 pt-3 flex justify-between font-bold">
+                            <span>Total</span>
+                            <span>${selectedOrder.totalAmount.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-2">Members</h3>
+                        <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                          {selectedOrder.members.map((member, index) => (
+                            <div key={member._id}>
+                              <div className="font-medium">Member {index + 1}</div>
+                              <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
+                                <div>
+                                  <span className="text-gray-600">Preference:</span>
+                                  <div className="font-medium capitalize">{member.dietaryPreference.toLowerCase()}</div>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600">Allergies:</span>
+                                  <div className="font-medium">{member.allergies || 'None'}</div>
+                                </div>
+                                <div className="col-span-2">
+                                  <span className="text-gray-600">Requests:</span>
+                                  <div className="font-medium">{member.specialRequests || 'None'}</div>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600">Quantity:</span>
+                                  <div className="font-medium">{member.mealQuantity}</div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {selectedOrder.status === 'pending' && (
+                        <div className="flex space-x-3 pt-2">
+                          <button
+                            onClick={() => updateOrderStatus(selectedOrder._id, 'confirmed')}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md flex items-center justify-center"
+                          >
+                            <FiCheck className="mr-2" />
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => updateOrderStatus(selectedOrder._id, 'cancelled')}
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md flex items-center justify-center"
+                          >
+                            <FiX className="mr-2" />
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <div className="bg-white rounded-lg shadow p-6 text-center">
+                  <div className="text-gray-400 mb-4">👈</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">Select an order</h3>
+                  <p className="text-gray-500">Choose an order from the list to view details</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
       </div>
+      <ToastContainer />
     </div>
   );
-};
-
-export default MaidBookingActionPage;
+}

@@ -8,7 +8,7 @@ const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <div className={`h-screen bg-gray-900 text-white transition-all duration-300 ${isOpen ? "w-64" : "w-20"}`}>
+    <div className={`min-h-screen bg-gray-900 text-white transition-all duration-300 ${isOpen ? "w-64" : "w-20"}`}>
       {/* Toggle Button */}
       <button
         className="p-4 focus:outline-none"
@@ -24,6 +24,8 @@ const Sidebar = () => {
         
         <SidebarItem icon={<ChefHat />} text="Maid Status" href="/Admin/maidstatus" isOpen={isOpen} />
         <SidebarItem icon={<ChefHat />} text="chef form" href="/Admin/chef" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="orders" href="/Admin/orders" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="refunds" href="/Admin/refund" isOpen={isOpen} />
      
       </nav>
     </div>
