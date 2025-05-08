@@ -34,6 +34,7 @@ export default function RecipeForm() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -58,15 +59,74 @@ export default function RecipeForm() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMessage(null);
+    setSubmitSuccess(false);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setSubmitSuccess(true);
-    setIsSubmitting(false);
+    try {
+      const prepTimeNum = Number(formData.prep_time);
+      const cookTimeNum = Number(formData.cook_time);
+      const servingsNum = Number(formData.servings);
+
+      if (isNaN(prepTimeNum) || prepTimeNum < 0) {
+        throw new Error('Prep time must be a positive number');
+      }
+      if (isNaN(cookTimeNum) || cookTimeNum < 0) {
+        throw new Error('Cook time must be a positive number');
+      }
+      if (isNaN(servingsNum) || servingsNum < 1) {
+        throw new Error('Servings must be a positive number');
+      }
+
+      const formDataToSend = new FormData();
+      formDataToSend.append('recipe_name', formData.recipe_name);
+      formDataToSend.append('category_type', formData.category_type);
+      formDataToSend.append('instructions', formData.instructions);
+      formDataToSend.append('date_time', formData.date_time || new Date().toISOString());
+      formDataToSend.append('cuisine_type', formData.cuisine_type);
+      formDataToSend.append('prep_time', prepTimeNum.toString());
+      formDataToSend.append('cook_time', cookTimeNum.toString());
+      formDataToSend.append('servings', servingsNum.toString());
+
+      const ingredientsArray = formData.ingredients
+        .split('\n')
+        .map(item => item.trim())
+        .filter(item => item !== '');
+      if (ingredientsArray.length === 0) {
+        throw new Error('At least one ingredient is required');
+      }
+      formDataToSend.append('ingredients', JSON.stringify(ingredientsArray));
+
+      if (formData.file) {
+        formDataToSend.append('image', formData.file);
+      }
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('http://localhost:5000/api/chefposts', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formDataToSend,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        throw new Error(errorData.error || 'Failed to submit recipe');
+      }
+
+      setSubmitSuccess(true);
+    } catch (error: any) {
+      setErrorMessage(error.message || 'An error occurred while submitting the recipe');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -89,7 +149,7 @@ export default function RecipeForm() {
   };
 
   return (
-    <div className="flex min-h-screen bg-amber-50">
+    <div className="flex min-h-screen bg-amber-50 text-gray-800">
       <Sidebarchef />
       <motion.div 
         className="flex-1 py-12 px-4 sm:px-6 lg:px-8 bg-cover bg-center"
@@ -122,6 +182,19 @@ export default function RecipeForm() {
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   Recipe submitted successfully! It's now cooking in our database!
+                </motion.div>
+              )}
+
+              {errorMessage && (
+                <motion.div 
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                  className="p-4 bg-red-100 text-red-800 rounded-lg flex items-center border-l-4 border-red-500"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  {errorMessage}
                 </motion.div>
               )}
 
@@ -183,40 +256,43 @@ export default function RecipeForm() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 font-serif">Prep Time</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-serif">Prep Time (minutes)*</label>
                   <input
-                    type="text"
+                    type="number"
                     name="prep_time"
                     value={formData.prep_time}
                     onChange={handleChange}
+                    required
                     className="w-full px-4 py-3 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 bg-amber-50"
-                    placeholder="e.g. 30 mins"
+                    placeholder="e.g. 30"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 font-serif">Cook Time</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-serif">Cook Time (minutes)*</label>
                   <input
-                    type="text"
+                    type="number"
                     name="cook_time"
                     value={formData.cook_time}
                     onChange={handleChange}
+                    required
                     className="w-full px-4 py-3 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 bg-amber-50"
-                    placeholder="e.g. 1 hour"
+                    placeholder="e.g. 60"
                   />
                 </div>
               </motion.div>
 
               <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 font-serif">Servings</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-serif">Servings*</label>
                   <input
-                    type="text"
+                    type="number"
                     name="servings"
                     value={formData.servings}
                     onChange={handleChange}
+                    required
                     className="w-full px-4 py-3 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 bg-amber-50"
-                    placeholder="e.g. 4 people"
+                    placeholder="e.g. 4"
                   />
                 </div>
 
@@ -305,7 +381,7 @@ export default function RecipeForm() {
                         <div className="flex text-sm text-gray-600 justify-center">
                           <label
                             htmlFor="file-upload"
-                            className="relative cursor-pointer bg-white rounded-md font-medium text-amber-600 hover:text-amber-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-amber-500 px-3 py-1 border border-amber-300"
+                            className="relative cursor-pointer bg-white rounded-md font-medium text-amber-600 hover:text-amber-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-amber-500 px-3 py-1 border border-amber- personally300"
                           >
                             <span>Upload Image</span>
                             <input
