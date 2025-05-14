@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import Sidebaruser from '@/app/component/dashboard/Sidebaruser';
-import { jwtDecode } from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode';
+import { FiArrowRight } from 'react-icons/fi';
 
 type Booking = {
   _id: string;
@@ -48,6 +49,7 @@ type Booking = {
 
 interface DecodedToken {
   userId: string;
+  id?: string;
   [key: string]: any;
 }
 
@@ -68,7 +70,7 @@ export default function BookingHistory() {
         }
 
         const decoded: DecodedToken = jwtDecode(token);
-        const userId = decoded.id;
+        const userId = decoded.id || decoded.userId;
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/book/user/${userId}`, {
           headers: {
@@ -91,7 +93,6 @@ export default function BookingHistory() {
     fetchBookings();
   }, []);
 
-  // Get current bookings for pagination
   const indexOfLastBooking = currentPage * bookingsPerPage;
   const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
   const currentBookings = bookings.slice(indexOfFirstBooking, indexOfLastBooking);
@@ -123,6 +124,13 @@ export default function BookingHistory() {
     }
   };
 
+  const getStatusStyle = (status: string, currentStatus: string) => {
+    if (status.toLowerCase() === currentStatus.toLowerCase()) {
+      return getStatusColor(status);
+    }
+    return 'bg-gray-200 text-gray-500';
+  };
+
   const paginate = (pageNumber: number) => {
     if (pageNumber > 0 && pageNumber <= totalPages) {
       setCurrentPage(pageNumber);
@@ -131,10 +139,10 @@ export default function BookingHistory() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-100">
         <Sidebaruser />
         <main className="flex-1 p-6 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
         </main>
       </div>
     );
@@ -142,15 +150,16 @@ export default function BookingHistory() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-gray-100">
         <Sidebaruser />
         <main className="flex-1 p-6 flex items-center justify-center">
-          <div className="text-red-500 text-center">
-            <p>Error loading bookings:</p>
-            <p>{error}</p>
+          <div className="text-center p-8 bg-white rounded-2xl shadow-lg max-w-md">
+            <div className="text-red-500 text-4xl mb-4">⚠️</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Error loading bookings</h3>
+            <p className="text-gray-600 mb-6">{error}</p>
             <button 
               onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors"
             >
               Retry
             </button>
@@ -161,7 +170,7 @@ export default function BookingHistory() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-100 font-sans">
       <Sidebaruser />
       
       <main className="flex-1 p-6">
@@ -172,16 +181,16 @@ export default function BookingHistory() {
 
         <div className="max-w-6xl mx-auto">
           <div className="mb-6 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-800">Booking History</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Booking History</h1>
             {bookings.length > 0 && (
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-gray-600">
                 Page {currentPage} of {totalPages}
               </div>
             )}
           </div>
 
           {bookings.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+            <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
               <svg
                 className="mx-auto h-12 w-12 text-gray-400"
                 fill="none"
@@ -195,7 +204,7 @@ export default function BookingHistory() {
                   d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                 />
               </svg>
-              <h3 className="mt-2 text-lg font-medium text-gray-900">
+              <h3 className="mt-2 text-lg font-semibold text-gray-900">
                 No bookings found
               </h3>
               <p className="mt-1 text-gray-500">
@@ -204,7 +213,7 @@ export default function BookingHistory() {
               <div className="mt-6">
                 <button
                   onClick={() => router.push('/book')}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="inline-flex items-center px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors"
                 >
                   Book Now
                 </button>
@@ -216,13 +225,13 @@ export default function BookingHistory() {
                 {currentBookings.map((booking) => (
                   <div
                     key={booking._id}
-                    className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200"
+                    className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200"
                   >
                     <div className="p-6">
                       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                         <div>
                           <div className="flex items-center gap-3 mb-2">
-                            <h2 className="text-xl font-semibold text-gray-800">
+                            <h2 className="text-xl font-semibold text-gray-900">
                               {booking.cuisine.name} Cuisine
                             </h2>
                             <span
@@ -239,11 +248,38 @@ export default function BookingHistory() {
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-gray-900">
-                            ₹{booking.totalAmount}
+                            ₹{booking.totalAmount.toFixed(2)}
                           </p>
                           <p className="text-sm text-gray-500">
                             {booking.confirmedFoods.length} items
                           </p>
+                        </div>
+                      </div>
+
+                      {/* Progress Indicator */}
+                      <div className="mt-6">
+                        <h3 className="text-sm font-medium text-gray-500 mb-3">Booking Status</h3>
+                        <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusStyle('Pending', booking.status)}`}
+                            >
+                              Pending
+                            </span>
+                            <FiArrowRight className="text-gray-400" />
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusStyle('Confirmed', booking.status)}`}
+                            >
+                              Confirmed
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusStyle('Cancelled', booking.status)}`}
+                            >
+                              Cancelled
+                            </span>
+                          </div>
                         </div>
                       </div>
 
@@ -252,7 +288,7 @@ export default function BookingHistory() {
                           <h3 className="text-sm font-medium text-gray-500 mb-2">
                             Booking Details
                           </h3>
-                          <div className="space-y-1">
+                          <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
                             <p className="text-sm text-gray-900">
                               <span className="font-medium">Date:</span>{' '}
                               {formatDate(booking.time.date)}
@@ -276,7 +312,7 @@ export default function BookingHistory() {
                           <h3 className="text-sm font-medium text-gray-500 mb-2">
                             Members ({booking.members.length})
                           </h3>
-                          <div className="space-y-2">
+                          <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
                             {booking.members.map((member, index) => (
                               <div key={member._id} className="text-sm">
                                 <p className="text-gray-900">
@@ -303,7 +339,7 @@ export default function BookingHistory() {
                           <h3 className="text-sm font-medium text-gray-500 mb-2">
                             Ordered Items
                           </h3>
-                          <div className="space-y-2">
+                          <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
                             {booking.confirmedFoods.map((food) => (
                               <div
                                 key={food._id}
@@ -313,7 +349,7 @@ export default function BookingHistory() {
                                   {food.name} × {food.quantity}
                                 </span>
                                 <span className="text-gray-600">
-                                  ₹{food.price * food.quantity}
+                                  ₹{(food.price * food.quantity).toFixed(2)}
                                 </span>
                               </div>
                             ))}
@@ -321,28 +357,16 @@ export default function BookingHistory() {
                         </div>
                       </div>
                     </div>
-
-                    <div className="bg-gray-50 px-6 py-3 flex justify-end">
-                      <button
-                        onClick={() => {
-                          console.log('View details for booking:', booking._id);
-                        }}
-                        className="text-sm font-medium text-blue-600 hover:text-blue-500"
-                      >
-                        View Details
-                      </button>
-                    </div>
                   </div>
                 ))}
               </div>
 
-              {/* Pagination controls */}
               {bookings.length > bookingsPerPage && (
                 <div className="mt-8 flex justify-between items-center">
                   <button
                     onClick={() => paginate(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded-md ${currentPage === 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                    className={`px-4 py-2 rounded-full text-white ${currentPage === 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                   >
                     Previous
                   </button>
@@ -351,7 +375,7 @@ export default function BookingHistory() {
                       <button
                         key={number}
                         onClick={() => paginate(number)}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${currentPage === number ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${currentPage === number ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                       >
                         {number}
                       </button>
@@ -360,7 +384,7 @@ export default function BookingHistory() {
                   <button
                     onClick={() => paginate(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className={`px-4 py-2 rounded-md ${currentPage === totalPages ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                    className={`px-4 py-2 rounded-full text-white ${currentPage === totalPages ? 'bg-gray-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                   >
                     Next
                   </button>

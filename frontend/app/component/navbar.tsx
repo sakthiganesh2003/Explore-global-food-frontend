@@ -23,7 +23,6 @@ const Navbar = () => {
       if (token) {
         try {
           const decoded = JSON.parse(atob(token.split('.')[1]));
-          console.log('Decoded Token:', decoded);
           setUsername(decoded.name || decoded.username || storedUsername || '');
           setUserRole(decoded.role || '');
         } catch (error) {
@@ -76,9 +75,9 @@ const Navbar = () => {
     setIsDropdownOpen(false); // Close user dropdown if open
   };
 
-  // Determine visibility of Become Chef and Become Maid links
-  const showBecomeChef = username && userRole !== 'chef';
-  const showBecomeMaid = username && userRole !== 'maid';
+  // Visibility logic for role-specific links
+  const showBecomeChef = username && userRole === 'chef'; // Show "Become Chef" if logged in and is a chef
+  const showBecomeMaid = username && userRole === 'maid'; // Show "Become Maid" if logged in and is a maid
 
   // Determine dashboard link based on user role
   const getDashboardLink = () => {
@@ -90,7 +89,7 @@ const Navbar = () => {
       case 'chef':
         return '/chef/dashboard';
       default:
-        return username ? '/User/dashboard' : '/'; // User Dashboard for logged-in users without specific role
+        return username ? '/User/dashboard' : '/';
     }
   };
 
@@ -104,7 +103,7 @@ const Navbar = () => {
       case 'chef':
         return 'Chef Dashboard';
       default:
-        return username ? 'User Dashboard' : 'Dashboard'; // User Dashboard for logged-in users without specific role
+        return username ? 'User Dashboard' : 'Dashboard';
     }
   };
 
@@ -124,7 +123,7 @@ const Navbar = () => {
           <Link href="/explore" className="text-white hover:border-b-2 border-white">
             Explore
           </Link>
-          <Link href="/chef" className="text-white hover:border-b-2 border-white">
+          <Link href="/chef/recipespost" className="text-white hover:border-b-2 border-white">
             Chef Dish
           </Link>
           <Link href="/maid" className="text-white hover:border-b-2 border-white">
@@ -160,7 +159,6 @@ const Navbar = () => {
 
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                  {/* Dashboard based on role */}
                   <Link
                     href={getDashboardLink()}
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -168,7 +166,6 @@ const Navbar = () => {
                   >
                     {getDashboardLabel()}
                   </Link>
-                  {/* Conditionally render Become Chef */}
                   {showBecomeChef && (
                     <Link
                       href="/chef/becomechef"
@@ -178,7 +175,6 @@ const Navbar = () => {
                       Become Chef
                     </Link>
                   )}
-                  {/* Conditionally render Become Maid */}
                   {showBecomeMaid && (
                     <Link
                       href="/maid/becomemaid"
@@ -215,14 +211,14 @@ const Navbar = () => {
                     User Signin
                   </Link>
                   <Link
-                    href="/maid/login/signup"
+                    href="/maid/login/login"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setIsSigninOpen(false)}
                   >
                     Maid Signin
                   </Link>
                   <Link
-                    href="/chef/login/signup"
+                    href="/chef/login/login"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setIsSigninOpen(false)}
                   >
@@ -282,7 +278,6 @@ const Navbar = () => {
             >
               Cook
             </Link>
-            {/* Dashboard based on role */}
             {username && (
               <Link
                 href={getDashboardLink()}
@@ -292,17 +287,15 @@ const Navbar = () => {
                 {getDashboardLabel()}
               </Link>
             )}
-            {/* Conditionally render Become Chef */}
             {showBecomeChef && (
               <Link
-                href="/chef/becomechef"
+                href="/frontend/chef/becomechef"
                 className="text-white hover:border-b-2 border-white py-2"
                 onClick={() => setIsOpen(false)}
               >
                 Become Chef
               </Link>
             )}
-            {/* Conditionally render Become Maid */}
             {showBecomeMaid && (
               <Link
                 href="/maid/becomemaid"

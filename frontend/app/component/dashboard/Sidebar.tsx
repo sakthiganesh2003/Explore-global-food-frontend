@@ -26,6 +26,8 @@ const Sidebar = () => {
         <SidebarItem icon={<ChefHat />} text="chef form" href="/Admin/chef" isOpen={isOpen} />
         <SidebarItem icon={<ChefHat />} text="orders" href="/Admin/orders" isOpen={isOpen} />
         <SidebarItem icon={<ChefHat />} text="refunds" href="/Admin/refund" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="Users" href="/Admin/users" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="chefposts" href="/Admin/chefposts" isOpen={isOpen} />
      
       </nav>
     </div>

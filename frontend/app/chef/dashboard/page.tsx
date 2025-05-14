@@ -7,11 +7,11 @@ interface FormData {
   recipe_name: string;
   category_type: string;
   instructions: string;
-  date_time: string;
   cuisine_type: string;
   file: File | null;
   previewImage: string | null;
-  ingredients: string;
+  fileType: string;
+  ingredients: string[];
   prep_time: string;
   cook_time: string;
   servings: string;
@@ -22,16 +22,15 @@ export default function RecipeForm() {
     recipe_name: '',
     category_type: '',
     instructions: '',
-    date_time: '',
     cuisine_type: '',
     file: null,
     previewImage: null,
-    ingredients: '',
+    fileType: '',
+    ingredients: [''],
     prep_time: '',
     cook_time: '',
     servings: ''
   });
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -41,15 +40,37 @@ export default function RecipeForm() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleIngredientChange = (index: number, value: string) => {
+    const newIngredients = [...formData.ingredients];
+    newIngredients[index] = value;
+    setFormData(prev => ({ ...prev, ingredients: newIngredients }));
+  };
+
+  const addIngredient = () => {
+    setFormData(prev => ({ ...prev, ingredients: [...prev.ingredients, ''] }));
+  };
+
+  const removeIngredient = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      ingredients: prev.ingredients.filter((_, i) => i !== index)
+    }));
+  };
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (file.size > 50 * 1024 * 1024) {
+        setErrorMessage('File size exceeds 50MB limit');
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData(prev => ({
           ...prev,
           file,
-          previewImage: reader.result as string
+          previewImage: reader.result as string,
+          fileType: file.type
         }));
       };
       reader.readAsDataURL(file);
@@ -77,23 +98,21 @@ export default function RecipeForm() {
         throw new Error('Servings must be a positive number');
       }
 
-      const formDataToSend = new FormData();
-      formDataToSend.append('recipe_name', formData.recipe_name);
-      formDataToSend.append('category_type', formData.category_type);
-      formDataToSend.append('instructions', formData.instructions);
-      formDataToSend.append('date_time', formData.date_time || new Date().toISOString());
-      formDataToSend.append('cuisine_type', formData.cuisine_type);
-      formDataToSend.append('prep_time', prepTimeNum.toString());
-      formDataToSend.append('cook_time', cookTimeNum.toString());
-      formDataToSend.append('servings', servingsNum.toString());
-
       const ingredientsArray = formData.ingredients
-        .split('\n')
         .map(item => item.trim())
         .filter(item => item !== '');
       if (ingredientsArray.length === 0) {
         throw new Error('At least one ingredient is required');
       }
+
+      const formDataToSend = new FormData();
+      formDataToSend.append('recipe_name', formData.recipe_name);
+      formDataToSend.append('category_type', formData.category_type);
+      formDataToSend.append('instructions', formData.instructions);
+      formDataToSend.append('cuisine_type', formData.cuisine_type);
+      formDataToSend.append('prep_time', prepTimeNum.toString());
+      formDataToSend.append('cook_time', cookTimeNum.toString());
+      formDataToSend.append('servings', servingsNum.toString());
       formDataToSend.append('ingredients', JSON.stringify(ingredientsArray));
 
       if (formData.file) {
@@ -102,10 +121,12 @@ export default function RecipeForm() {
 
       const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('No authentication token found');
+        setErrorMessage('Please log in to submit a recipe');
+        return;
       }
 
-      const response = await fetch('http://localhost:5000/api/chefposts', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/chefposts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -115,11 +136,24 @@ export default function RecipeForm() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Error response:', errorData);
         throw new Error(errorData.error || 'Failed to submit recipe');
       }
 
       setSubmitSuccess(true);
+      setFormData({
+        recipe_name: '',
+        category_type: '',
+        instructions: '',
+        cuisine_type: '',
+        file: null,
+        previewImage: null,
+        fileType: '',
+        ingredients: [''],
+        prep_time: '',
+        cook_time: '',
+        servings: ''
+      });
+      setTimeout(() => setSubmitSuccess(false), 3000);
     } catch (error: any) {
       setErrorMessage(error.message || 'An error occurred while submitting the recipe');
     } finally {
@@ -207,6 +241,7 @@ export default function RecipeForm() {
                     value={formData.recipe_name}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
                     className="w-full px-4 py-3 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 bg-amber-50"
                     placeholder="e.g. Grandma's Apple Pie"
                   />
@@ -221,6 +256,7 @@ export default function RecipeForm() {
                     value={formData.category_type}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
                     className="w-full px-4 py-3 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 bg-amber-50"
                   >
                     <option value="">Select...</option>
@@ -240,6 +276,7 @@ export default function RecipeForm() {
                     value={formData.cuisine_type}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
                     className="w-full px-4 py-3 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 bg-amber-50"
                   >
                     <option value="">Select...</option>
@@ -263,6 +300,7 @@ export default function RecipeForm() {
                     value={formData.prep_time}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
                     className="w-full px-4 py-3 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 bg-amber-50"
                     placeholder="e.g. 30"
                   />
@@ -276,6 +314,7 @@ export default function RecipeForm() {
                     value={formData.cook_time}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
                     className="w-full px-4 py-3 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 bg-amber-50"
                     placeholder="e.g. 60"
                   />
@@ -291,37 +330,46 @@ export default function RecipeForm() {
                     value={formData.servings}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
                     className="w-full px-4 py-3 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 bg-amber-50"
                     placeholder="e.g. 4"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1 font-serif">Date Created</label>
-                  <input
-                    type="datetime-local"
-                    name="date_time"
-                    value={formData.date_time}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 bg-amber-50"
                   />
                 </div>
               </motion.div>
 
               <motion.div variants={itemVariants}>
                 <label className="block text-sm font-medium text-gray-700 mb-1 font-serif">Ingredients*</label>
-                <textarea
-                  name="ingredients"
-                  value={formData.ingredients}
-                  onChange={handleChange}
-                  required
-                  rows={4}
-                  className="w-full px-4 py-3 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 bg-amber-50 font-mono"
-                  placeholder="List each ingredient on a new line:
-- 2 cups flour
-- 1 tsp salt
-- 3 eggs..."
-                />
+                {formData.ingredients.map((ingredient, index) => (
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={ingredient}
+                      onChange={(e) => handleIngredientChange(index, e.target.value)}
+                      required
+                      disabled={isSubmitting}
+                      className="flex-1 px-4 py-3 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 bg-amber-50"
+                      placeholder="e.g. 2 cups flour"
+                    />
+                    {formData.ingredients.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeIngredient(index)}
+                        disabled={isSubmitting}
+                        className="text-red-500 hover:text-red-600"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addIngredient}
+                  disabled={isSubmitting}
+                  className="text-amber-600 hover:text-amber-700"
+                >
+                  + Add Ingredient
+                </button>
               </motion.div>
 
               <motion.div variants={itemVariants}>
@@ -331,6 +379,7 @@ export default function RecipeForm() {
                   value={formData.instructions}
                   onChange={handleChange}
                   required
+                  disabled={isSubmitting}
                   rows={6}
                   className="w-full px-4 py-3 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 bg-amber-50"
                   placeholder="Detailed step-by-step instructions..."
@@ -338,7 +387,7 @@ export default function RecipeForm() {
               </motion.div>
 
               <motion.div variants={itemVariants}>
-                <label className="block text-sm font-medium text-gray-700 mb-1 font-serif">Recipe Image</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1 font-serif">Recipe Media</label>
                 <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-amber-400 rounded-xl hover:border-amber-500 transition-all duration-300 bg-amber-50">
                   <div className="space-y-1 text-center">
                     {formData.previewImage ? (
@@ -347,14 +396,25 @@ export default function RecipeForm() {
                         animate={{ opacity: 1 }}
                         className="relative"
                       >
-                        <img
-                          src={formData.previewImage}
-                          alt="Preview"
-                          className="mx-auto h-48 w-auto object-cover rounded-lg shadow-md border-2 border-white"
-                        />
+                        {formData.fileType.startsWith('video/') ? (
+                          <video
+                            src={formData.previewImage}
+                            controls
+                            loading="lazy"
+                            className="mx-auto h-48 w-auto object-cover rounded-lg shadow-md border-2 border-white"
+                          />
+                        ) : (
+                          <img
+                            src={formData.previewImage}
+                            alt="Preview"
+                            loading="lazy"
+                            className="mx-auto h-48 w-auto object-cover rounded-lg shadow-md border-2 border-white"
+                          />
+                        )}
                         <button
                           type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, previewImage: null, file: null }))}
+                          onClick={() => setFormData(prev => ({ ...prev, previewImage: null, file: null, fileType: '' }))}
+                          disabled={isSubmitting}
                           className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -372,7 +432,7 @@ export default function RecipeForm() {
                           aria-hidden="true"
                         >
                           <path
-                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-rn4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
                             strokeWidth={2}
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -381,20 +441,21 @@ export default function RecipeForm() {
                         <div className="flex text-sm text-gray-600 justify-center">
                           <label
                             htmlFor="file-upload"
-                            className="relative cursor-pointer bg-white rounded-md font-medium text-amber-600 hover:text-amber-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-amber-500 px-3 py-1 border border-amber- personally300"
+                            className="relative cursor-pointer bg-white rounded-md font-medium text-amber-600 hover:text-amber-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-amber-500 px-3 py-1 border border-amber-300"
                           >
-                            <span>Upload Image</span>
+                            <span>Upload an image or video</span>
                             <input
                               id="file-upload"
                               name="file"
                               type="file"
-                              accept="image/*"
+                              accept="image/jpeg,image/png,image/webp,video/mp4"
                               onChange={handleFileChange}
+                              disabled={isSubmitting}
                               className="sr-only"
                             />
                           </label>
                         </div>
-                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                        <p className="text-xs text-gray-500">PNG, JPG, WEBP, MP4 up to 50MB</p>
                       </>
                     )}
                   </div>
