@@ -33,7 +33,7 @@ export default function MaidDashboard() {
     description: "Professional chef",
   });
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState<Partial<Maid>>({});
+  const [editData, setEditData] = useState<Partial<Maid> & { image?: string | File }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -124,11 +124,10 @@ export default function MaidDashboard() {
     fetchMaidProfile();
   }, []);
 
-  const toggleActiveStatus = async () => {
+  const activateProfile = async () => {
     const userId = getUserIdFromToken();
     if (!userId) return;
 
-    const newStatus = !maid.isActive;
     try {
       const response = await fetch('http://localhost:3000/api/maid-dashboard/toggle-status', {
         method: 'PUT',
@@ -136,18 +135,18 @@ export default function MaidDashboard() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify({ isActive: newStatus }),
+        body: JSON.stringify({ isActive: true }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update status");
+        throw new Error("Failed to activate profile");
       }
 
-      setMaid(prev => ({ ...prev, isActive: newStatus }));
-      toast.success(`Status updated: ${newStatus ? 'Active' : 'Inactive'}`);
+      setMaid(prev => ({ ...prev, isActive: true }));
+      toast.success("Profile activated");
     } catch (error) {
-      toast.error("Failed to update status");
-      console.error("Status update error:", error);
+      toast.error("Failed to activate profile");
+      console.error("Activation error:", error);
     }
   };
 
@@ -172,7 +171,7 @@ export default function MaidDashboard() {
     const file = e.target.files?.[0];
     if (file) {
       const fileUrl = URL.createObjectURL(file);
-      setEditData(prev => ({ ...prev, image: fileUrl }));
+      setEditData(prev => ({ ...prev, image: file }));
     }
   };
 
@@ -223,7 +222,7 @@ export default function MaidDashboard() {
       formData.append('rating', editData.rating?.toString() || '0');
       formData.append('experience', editData.experience || '');
       formData.append('description', editData.description || '');
-      if (editData.image && typeof editData.image !== "string" && editData.image instanceof File) {
+      if (editData.image && typeof editData.image !== "string") {
         formData.append('image', editData.image);
       }
 
@@ -252,7 +251,7 @@ export default function MaidDashboard() {
       }));
       setIsEditing(false);
       toast.success("Profile updated successfully");
-      fetchMaidProfile(); // Refresh profile
+      fetchMaidProfile();
     } catch (error) {
       toast.error("Failed to update profile");
       console.error("Profile update error:", error);
@@ -303,7 +302,6 @@ export default function MaidDashboard() {
     <div className="min-h-screen bg-gray-50 flex">
       <SidebarMaid />
       <div className="flex-1 p-6 text-gray-800">
-        {/* Profile Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-6">
@@ -376,12 +374,14 @@ export default function MaidDashboard() {
                   </>
                 ) : (
                   <>
-                    <button
-                      onClick={toggleActiveStatus}
-                      className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-                    >
-                      {maid.isActive ? 'Deactivate' : 'Activate'}
-                    </button>
+                    {!maid.isActive && (
+                      <button
+                        onClick={activateProfile}
+                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                      >
+                        Activate
+                      </button>
+                    )}
                     <button
                       onClick={startEditing}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -442,7 +442,7 @@ export default function MaidDashboard() {
                     aria-label="Remove specialty"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012  activateProfile0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
                   </button>
                 </div>
