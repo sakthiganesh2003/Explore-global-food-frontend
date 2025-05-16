@@ -9,11 +9,8 @@ type UserProfile = {
   image: string;
   phone: string;
   address: {
-    street: string;
     city: string;
-    state: string;
     country: string;
-    postalCode: string;
   };
   birthDate: string;
   gender: string;
@@ -29,11 +26,8 @@ export default function ProfilePage() {
     image: 'https://randomuser.me/api/portraits/men/1.jpg',
     phone: '+1 (555) 123-4567',
     address: {
-      street: '123 Main St',
       city: 'New York',
-      state: 'NY',
       country: 'United States',
-      postalCode: '10001',
     },
     birthDate: '1990-05-15',
     gender: 'Male',
@@ -248,23 +242,6 @@ export default function ProfilePage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-500">Street Address</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="address.street"
-                        value={user.address.street}
-                        onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus网友
-
-                        focus:ring-1 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="p-2 text-gray-900">{user.address.street}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
                     <label className="block text-sm font-medium text-gray-500">City</label>
                     {isEditing ? (
                       <input
@@ -280,21 +257,6 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-500">State/Province</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="address.state"
-                        value={user.address.state}
-                        onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="p-2 text-gray-900">{user.address.state}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
                     <label className="block text-sm font-medium text-gray-500">Country</label>
                     {isEditing ? (
                       <input
@@ -306,21 +268,6 @@ export default function ProfilePage() {
                       />
                     ) : (
                       <p className="p-2 text-gray-900">{user.address.country}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-500">Postal Code</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="address.postalCode"
-                        value={user.address.postalCode}
-                        onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="p-2 text-gray-900">{user.address.postalCode}</p>
                     )}
                   </div>
                 </div>

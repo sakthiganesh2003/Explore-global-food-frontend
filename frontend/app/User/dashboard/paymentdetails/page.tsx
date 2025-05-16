@@ -1,463 +1,349 @@
-"use client";
-import { useState, useEffect, useRef } from 'react';
-import { FiSearch, FiDollarSign, FiX, FiFilter, FiArrowLeft, FiUpload, FiFileText } from 'react-icons/fi';
-import { FaRegCreditCard } from 'react-icons/fa';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import Sidebar from '@/app/component/dashboard/Sidebaruser';
+'use client';
 
-interface User {
-  _id: string;
-  email: string;
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { jwtDecode } from 'jwt-decode';
+import Sidebaruser from '@/app/component/dashboard/Sidebaruser';
+
+// TypeScript interfaces
+interface PaymentDetails {
+  gateway: string;
+  orderId: string;
+  paymentId: string;
+  method: string;
+  bank: string | null;
+  wallet: string | null;
+  status: string;
+  capturedAt: string;
 }
 
-interface Booking {
+interface ModeOfPayment {
   _id: string;
+  modeOfPayment: string;
+  displayName: string;
+  bookingId: string;
+  details: PaymentDetails;
+  isActive: boolean;
+  processingFee: number;
+  createdAt: string;
+  updatedAt: string;
+  order: number;
+  __v: number;
+}
+
+interface CustomerResponse {
+  id: string;
+  entity: string;
+  amount: number;
+  currency: string;
+  status: string;
+  order_id: string;
+  invoice_id: string | null;
+  international: boolean;
+  method: string;
+  amount_refunded: number;
+  refund_status: string | null;
+  captured: boolean;
+  description: string;
+  card_id: string | null;
+  bank: string | null;
+  wallet: string | null;
+  vpa: string;
+  email: string;
+  contact: string;
+  notes: {
+    type: string;
+    booking: string;
+  };
+  fee: number;
+  tax: number;
+  error_code: string | null;
+  error_description: string | null;
+  error_source: string | null;
+  error_step: string | null;
+  error_reason: string | null;
+  acquirer_data: {
+    rrn: string;
+    upi_transaction_id: string;
+  };
+  created_at: number;
+  upi: {
+    vpa: string;
+  };
 }
 
 interface Payment {
   _id: string;
-  bookingId: Booking;
-  userId: User;
+  modeOfPaymentId: ModeOfPayment;
+  bookingId: string;
   amount: number;
-  paymentStatus?: 'paid' | 'unpaid';
-  paymentProof?: string;
+  currency: string;
+  paymentStatus: string;
+  paymentType: string;
+  installmentNumber: number;
+  isPartial: boolean;
+  customerResponse: CustomerResponse;
+  payId: string;
+  completedAt: string;
   createdAt: string;
+  updatedAt: string;
+  order: number;
+  __v: number;
 }
 
-const PaymentsPage = () => {
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
-  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [paymentPhoto, setPaymentPhoto] = useState<File | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<'paid' | 'unpaid'>('unpaid');
-  const [currentPage, setCurrentPage] = useState(1);
-  const paymentsPerPage = 10;
-  const fileInputRef = useRef<HTMLInputElement>(null);
+interface ApiResponse {
+  success: boolean;
+  message: string;
+  payments: Payment[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
 
-  useEffect(() => {
-    fetchPayments();
-  }, []);
+interface DecodedToken {
+  id: string;
+  email?: string;
+  name?: string;
+  [key: string]: any;
+}
 
-  const fetchPayments = async () => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch payments');
-      }
-      const data = await response.json();
-      console.log('API Response:', data);
-      setPayments(data);
-      setFilteredPayments(data);
-    } catch (error) {
-      console.error('Error fetching payments:', error);
-      toast.error('Failed to load payments');
-    }
+const fetchPaymentHistory = async (id: string, token: string): Promise<ApiResponse> => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/success/${id}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    cache: 'no-store'
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch payment history');
+  }
+
+  return response.json();
+};
+
+const PaymentTable: React.FC<{ payments: Payment[] }> = ({ payments }) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  useEffect(() => {
-    filterPayments();
-  }, [activeFilter, searchTerm, payments]);
-
-  const filterPayments = () => {
-    let filtered = [...payments];
-
-    switch (activeFilter) {
-      case 'paid':
-        filtered = filtered.filter(p => p.paymentStatus === 'paid');
-        break;
-      case 'unpaid':
-        filtered = filtered.filter(p => p.paymentStatus === 'unpaid');
-        break;
-      default:
-        break;
-    }
-
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(payment =>
-        payment.userId.email.toLowerCase().includes(term) ||
-        payment._id.toLowerCase().includes(term) ||
-        payment.bookingId._id.toLowerCase().includes(term)
-      );
-    }
-
-    setFilteredPayments(filtered);
-    setCurrentPage(1);
-  };
-
-  const handleUpdatePayment = async (paymentId: string) => {
-    try {
-      const formData = new FormData();
-      formData.append('paymentId', paymentId);
-      formData.append('paymentStatus', paymentStatus);
-      if (paymentPhoto) {
-        formData.append('paymentProof', paymentPhoto);
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/update`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        toast.success('Payment updated successfully');
-        fetchPayments();
-        setIsModalOpen(false);
-        setPaymentPhoto(null);
-      } else {
-        throw new Error('Failed to update payment');
-      }
-    } catch (error) {
-      console.error('Error updating payment:', error);
-      toast.error('Failed to update payment');
-    }
-  };
-
-  const openPaymentDetails = (payment: Payment) => {
-    setSelectedPayment(payment);
-    setPaymentPhoto(null);
-    setPaymentStatus(payment.paymentStatus || 'unpaid');
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedPayment(null);
-    setPaymentPhoto(null);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setPaymentPhoto(e.target.files[0]);
-    }
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const getPaymentStatusClass = (status: string | undefined) => {
-    if (!status) return 'bg-gray-100 text-gray-800';
-    switch (status) {
-      case 'paid':
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
         return 'bg-green-100 text-green-800';
-      default:
+      case 'failed':
         return 'bg-red-100 text-red-800';
-    }
-  };
-
-  const capitalizeStatus = (status: string | undefined) => {
-    if (!status) return 'Unknown';
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
-
-  // Pagination logic
-  const indexOfLastPayment = currentPage * paymentsPerPage;
-  const indexOfFirstPayment = indexOfLastPayment - paymentsPerPage;
-  const currentPayments = filteredPayments.slice(indexOfFirstPayment, indexOfLastPayment);
-  const totalPages = Math.ceil(filteredPayments.length / paymentsPerPage);
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(prev => prev + 1);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50 font-sans">
-      <Sidebar />
-      <div className="flex-1 p-6 text-gray-800">
-        <div className="max-w-7xl mx-auto">
-          {/* Header Section */}
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Payments Management</h1>
-            <p className="text-gray-600 mt-2">Manage customer payment details</p>
-
-            {/* Filter and Search Bar */}
-            <div className="mt-6 flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiSearch className="text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search payments..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <FiFilter className="text-gray-500" />
-                <select
-                  value={activeFilter}
-                  onChange={(e) => setActiveFilter(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment ID</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {payments.map((payment) => (
+            <tr key={payment._id} className="hover:bg-gray-50">
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <div className="truncate max-w-xs">{payment.payId}</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {(payment.amount).toLocaleString('en-IN', {
+                  style: 'currency',
+                  currency: payment.currency || 'INR',
+                  minimumFractionDigits: 2
+                })}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
+                {payment.customerResponse.method}
+                {payment.customerResponse.vpa && (
+                  <div className="text-xs text-gray-500">VPA: {payment.customerResponse.vpa}</div>
+                )}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(payment.paymentStatus)}`}>
+                  {payment.paymentStatus}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {formatDate(payment.completedAt)}
+              </td>
+              <td className="px-6 py-4 text-sm text-gray-500">
+                <button
+                  className="text-blue-600 hover:text-blue-900"
+                  onClick={() => {
+                    // Implement modal or expandable row for details
+                    console.log('View details for', payment._id);
+                  }}
                 >
-                  <option value="all">All Payments</option>
-                  <option value="paid">Paid</option>
-                  <option value="unpaid">Unpaid</option>
-                </select>
-              </div>
-            </div>
+                  View
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const PaymentHistoryPage: React.FC = () => {
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userInfo, setUserInfo] = useState<DecodedToken | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const loadPayments = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('Authentication required. Please log in.');
+        }
+
+        const decoded: DecodedToken = jwtDecode(token);
+        setUserInfo(decoded);
+
+        if (!decoded.id) {
+          throw new Error('Invalid user information in token');
+        }
+
+        const data = await fetchPaymentHistory(decoded.id, token);
+        if (data.success) {
+          setPayments(data.payments);
+        } else {
+          throw new Error(data.message || 'Failed to load payment history');
+        }
+      } catch (err: any) {
+        setError(err.message);
+        if (err.message.includes('Authentication') || err.message.includes('Invalid')) {
+          localStorage.removeItem('token');
+          router.push('/login');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPayments();
+  }, [router]);
+
+  return (
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebaruser />
+      
+      <div className="flex-1 p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Payment History</h1>
+            {userInfo && (
+              <p className="text-gray-600 mt-2">
+                {userInfo.name || userInfo.email ? `Welcome back, ${userInfo.name || userInfo.email}` : ''}
+              </p>
+            )}
           </div>
 
-          {/* Payments Table */}
-          {filteredPayments.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-              <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <FiDollarSign className="text-gray-400 text-3xl" />
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
               </div>
-              <h3 className="text-xl font-medium text-gray-700 mb-2">No payments found</h3>
-              <p className="text-gray-500">
-                {searchTerm ? 'Try a different search term' : 'There are no payments matching your current filters'}
-              </p>
+            </div>
+          ) : payments.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 className="mt-2 text-lg font-medium text-gray-900">No payments found</h3>
+              <p className="mt-1 text-sm text-gray-500">You haven't made any payments yet.</p>
+              <div className="mt-6">
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Go to Dashboard
+                </button>
+              </div>
             </div>
           ) : (
             <>
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment ID</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking ID</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proof</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {currentPayments.map((payment) => (
-                        <tr key={payment._id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            #{payment._id.slice(-6).toUpperCase()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            #{payment.bookingId._id.slice(-6).toUpperCase()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {payment.userId.email}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            ₹{payment.amount.toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusClass(payment.paymentStatus)}`}>
-                              {capitalizeStatus(payment.paymentStatus)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {payment.paymentProof ? (
-                              <a
-                                href={payment.paymentProof}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-indigo-600 hover:underline flex items-center"
-                              >
-                                <FiFileText className="mr-1" />
-                                View
-                              </a>
-                            ) : (
-                              <span className="text-gray-500">None</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <button
-                              onClick={() => openPaymentDetails(payment)}
-                              className="px-4 py-2 bg-indigo-600 text-white rounded-full text-sm font-medium hover:bg-indigo-700 transition-colors"
-                            >
-                              Manage Payment
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              <div className="mb-4 flex justify-between items-center">
+                <div className="text-sm text-gray-500">
+                  Showing <span className="font-medium">{payments.length}</span> payments
+                </div>
+                <div>
+                  <select
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                    defaultValue="all"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                    <option value="failed">Failed</option>
+                  </select>
                 </div>
               </div>
-              <div className="mt-8 flex justify-between items-center">
-                <button
-                  onClick={handlePreviousPage}
-                  disabled={currentPage === 1}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    currentPage === 1
-                      ? 'bg-gray-300 text-gray-400 cursor-not-allowed'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  }`}
-                >
-                  Previous Page
-                </button>
-                <span className="text-sm text-gray-600">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    currentPage === totalPages
-                      ? 'bg-gray-300 text-gray-400 cursor-not-allowed'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  }`}
-                >
-                  Next Page
-                </button>
+              
+              <PaymentTable payments={payments} />
+              
+              <div className="mt-4 flex justify-between items-center">
+                <div className="text-sm text-gray-500">
+                  Page 1 of 1
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    disabled
+                    className="px-3 py-1 rounded border bg-gray-100 text-gray-400 cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    disabled
+                    className="px-3 py-1 rounded border bg-gray-100 text-gray-400 cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </>
-          )}
-
-          {/* Payment Details Modal */}
-          {isModalOpen && selectedPayment && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                <div className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <button
-                      onClick={closeModal}
-                      className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
-                    >
-                      <FiArrowLeft className="text-xl" />
-                    </button>
-                    <h2 className="text-2xl font-bold text-gray-800 flex-1 text-center">
-                      Payment Details
-                    </h2>
-                    <button
-                      onClick={closeModal}
-                      className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
-                    >
-                      <FiX className="text-xl" />
-                    </button>
-                  </div>
-
-                  <div className="space-y-6">
-                    {/* Payment Information */}
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                        <FaRegCreditCard className="mr-2 text-indigo-500" />
-                        Payment Information
-                      </h3>
-                      <div className="grid grid-cols-1 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-500">Payment ID</p>
-                          <p className="font-medium">#{selectedPayment._id.slice(-6).toUpperCase()}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Booking ID</p>
-                          <p className="font-medium">#{selectedPayment.bookingId._id.slice(-6).toUpperCase()}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Customer Email</p>
-                          <p className="font-medium">{selectedPayment.userId.email}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Amount</p>
-                          <p className="font-medium">₹{selectedPayment.amount.toFixed(2)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Status</p>
-                          <p className={`font-medium capitalize ${getPaymentStatusClass(selectedPayment.paymentStatus)}`}>
-                            {capitalizeStatus(selectedPayment.paymentStatus)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Update Payment Status */}
-                    <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
-                      <h3 className="text-lg font-semibold text-indigo-800 mb-3 flex items-center">
-                        <FaRegCreditCard className="mr-2 text-indigo-500" />
-                        Update Payment
-                      </h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Payment Status</label>
-                          <div className="flex flex-wrap gap-3">
-                            <button
-                              onClick={() => setPaymentStatus('paid')}
-                              className={`px-4 py-2 rounded-lg ${paymentStatus === 'paid' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-                            >
-                              Paid
-                            </button>
-                            <button
-                              onClick={() => setPaymentStatus('unpaid')}
-                              className={`px-4 py-2 rounded-lg ${paymentStatus === 'unpaid' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-                            >
-                              Unpaid
-                            </button>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Payment Proof (Screenshot/Photo)</label>
-                          <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                            accept="image/*"
-                            className="hidden"
-                          />
-                          <button
-                            onClick={triggerFileInput}
-                            className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center"
-                          >
-                            <FiUpload className="mr-2" />
-                            {paymentPhoto ? paymentPhoto.name : 'Upload Payment Proof'}
-                          </button>
-                          {paymentPhoto && (
-                            <div className="mt-2 text-sm text-green-600 flex items-center">
-                              <span>File selected: {paymentPhoto.name}</span>
-                            </div>
-                          )}
-                          {selectedPayment.paymentProof && !paymentPhoto && (
-                            <div className="mt-2">
-                              <p className="text-sm text-gray-500">Current payment proof:</p>
-                              <a
-                                href={selectedPayment.paymentProof}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-indigo-600 hover:underline text-sm flex items-center"
-                              >
-                                <FiFileText className="mr-1" />
-                                View Payment Proof
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Submit Button */}
-                    <div className="flex justify-end gap-4">
-                      <button
-                        onClick={closeModal}
-                        className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => handleUpdatePayment(selectedPayment._id)}
-                        className="px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-                      >
-                        Update Payment
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           )}
         </div>
       </div>
@@ -465,4 +351,4 @@ const PaymentsPage = () => {
   );
 };
 
-export default PaymentsPage;
+export default PaymentHistoryPage;

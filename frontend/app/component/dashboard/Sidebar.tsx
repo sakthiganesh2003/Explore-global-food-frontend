@@ -19,7 +19,7 @@ const Sidebar = () => {
 
       {/* Navigation Links */}
       <nav className="flex flex-col space-y-4 mt-4 px-2">
-        <SidebarItem icon={<Home />} text="Home" href="/dashboard" isOpen={isOpen} />
+        <SidebarItem icon={<Home />} text="Home" href="/Admin" isOpen={isOpen} />
         <SidebarItem icon={<Utensils />} text="Maid From" href="/Admin/Booking" isOpen={isOpen} />
         
         <SidebarItem icon={<ChefHat />} text="Maid Status" href="/Admin/maidstatus" isOpen={isOpen} />
@@ -28,6 +28,7 @@ const Sidebar = () => {
         <SidebarItem icon={<ChefHat />} text="refunds" href="/Admin/refund" isOpen={isOpen} />
         <SidebarItem icon={<ChefHat />} text="Users" href="/Admin/users" isOpen={isOpen} />
         <SidebarItem icon={<ChefHat />} text="chefposts" href="/Admin/chefposts" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="payment history" href="/Admin/paymenthistory" isOpen={isOpen} />
      
       </nav>
     </div>
