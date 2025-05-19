@@ -3,8 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import Sidebaruser from '@/app/component/dashboard/Sidebaruser';
-import {jwtDecode} from 'jwt-decode';
-import { FiArrowRight } from 'react-icons/fi';
+import { jwtDecode } from 'jwt-decode';
 
 type Booking = {
   _id: string;
@@ -26,7 +25,6 @@ type Booking = {
     allergies: string;
     specialRequests: string;
     mealQuantity: number;
-    _id: string;
   }>;
   time: {
     date: string;
@@ -48,7 +46,7 @@ type Booking = {
 };
 
 interface DecodedToken {
-  userId: string;
+  userId?: string;
   id?: string;
   [key: string]: any;
 }
@@ -58,7 +56,8 @@ export default function BookingHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const bookingsPerPage = 3;
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const bookingsPerPage = 5;
   const router = useRouter();
 
   useEffect(() => {
@@ -72,6 +71,10 @@ export default function BookingHistory() {
         const decoded: DecodedToken = jwtDecode(token);
         const userId = decoded.id || decoded.userId;
 
+        if (!userId) {
+          throw new Error('Invalid token: User ID not found');
+        }
+
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/book/user/${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -81,7 +84,7 @@ export default function BookingHistory() {
         if (!response.ok) {
           throw new Error('Failed to fetch bookings');
         }
-        const data = await response.json();
+        const data: Booking[] = await response.json();
         setBookings(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -98,20 +101,20 @@ export default function BookingHistory() {
   const currentBookings = bookings.slice(indexOfFirstBooking, indexOfLastBooking);
   const totalPages = Math.ceil(bookings.length / bookingsPerPage);
 
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+  const formatDate = (dateString: string): string => {
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
     };
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
-  const formatTime = (timeString: string) => {
+  const formatTime = (timeString: string): string => {
     return timeString.replace('-', ' to ');
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): string => {
     switch (status.toLowerCase()) {
       case 'confirmed':
         return 'bg-green-100 text-green-800';
@@ -124,17 +127,18 @@ export default function BookingHistory() {
     }
   };
 
-  const getStatusStyle = (status: string, currentStatus: string) => {
-    if (status.toLowerCase() === currentStatus.toLowerCase()) {
-      return getStatusColor(status);
-    }
-    return 'bg-gray-200 text-gray-500';
-  };
-
   const paginate = (pageNumber: number) => {
     if (pageNumber > 0 && pageNumber <= totalPages) {
       setCurrentPage(pageNumber);
     }
+  };
+
+  const openDetails = (booking: Booking) => {
+    setSelectedBooking(booking);
+  };
+
+  const closeDetails = () => {
+    setSelectedBooking(null);
   };
 
   if (loading) {
@@ -157,7 +161,7 @@ export default function BookingHistory() {
             <div className="text-red-500 text-4xl mb-4">⚠️</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Error loading bookings</h3>
             <p className="text-gray-600 mb-6">{error}</p>
-            <button 
+            <button
               onClick={() => window.location.reload()}
               className="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors"
             >
@@ -172,7 +176,6 @@ export default function BookingHistory() {
   return (
     <div className="flex min-h-screen bg-gray-100 font-sans">
       <Sidebaruser />
-      
       <main className="flex-1 p-6">
         <Head>
           <title>Booking History | MyApp</title>
@@ -221,152 +224,292 @@ export default function BookingHistory() {
             </div>
           ) : (
             <>
-              <div className="space-y-6">
-                {currentBookings.map((booking) => (
-                  <div
-                    key={booking._id}
-                    className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200"
-                  >
-                    <div className="p-6">
-                      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-                        <div>
-                          <div className="flex items-center gap-3 mb-2">
-                            <h2 className="text-xl font-semibold text-gray-900">
-                              {booking.cuisine.name} Cuisine
-                            </h2>
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                                booking.status
-                              )}`}
-                            >
-                              {booking.status}
-                            </span>
+              <div className="bg-white rounded-2xl shadow-sm overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Cuisine
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Time
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Items
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {currentBookings.map((booking) => (
+                      <tr key={booking._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {booking.cuisine.name}
                           </div>
-                          <p className="text-gray-600">
-                            Booked on {formatDate(booking.createdAt)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-gray-900">
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {formatDate(booking.time.date)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {booking.time.time.map(formatTime).join(', ')}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                              booking.status
+                            )}`}
+                          >
+                            {booking.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
                             ₹{booking.totalAmount.toFixed(2)}
-                          </p>
-                          <p className="text-sm text-gray-500">
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
                             {booking.confirmedFoods.length} items
-                          </p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button
+                            onClick={() => openDetails(booking)}
+                            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Modal for Booking Details */}
+              {selectedBooking && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-2xl shadow-lg max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+                    <div className="p-6">
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-semibold text-gray-900">
+                          Booking Details - {selectedBooking.cuisine.name}
+                        </h2>
+                        <button
+                          onClick={closeDetails}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          <svg
+                            className="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {/* Booking Details Table */}
+                      <div className="mb-6">
+                        <h3 className="text-sm font-medium text-gray-500 mb-2">Booking Details</h3>
+                        <div className="bg-gray-50 rounded-lg overflow-hidden">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-100">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Field
+                                </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Value
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              <tr>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Date</td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                  {formatDate(selectedBooking.time.date)}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Time</td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                  {selectedBooking.time.time.map(formatTime).join(', ')}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Address</td>
+                                <td className="px-4 py-2 text-sm text-gray-900">
+                                  {selectedBooking.time.address}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Phone</td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                  {selectedBooking.time.phoneNumber}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">Booked on</td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                  {formatDate(selectedBooking.createdAt)}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
                         </div>
                       </div>
 
-                      {/* Progress Indicator */}
-                      <div className="mt-6">
-                        <h3 className="text-sm font-medium text-gray-500 mb-3">Booking Status</h3>
-                        <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <span
-                              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusStyle('Pending', booking.status)}`}
-                            >
-                              Pending
-                            </span>
-                            <FiArrowRight className="text-gray-400" />
-                            <span
-                              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusStyle('Confirmed', booking.status)}`}
-                            >
-                              Confirmed
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span
-                              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusStyle('Cancelled', booking.status)}`}
-                            >
-                              Cancelled
-                            </span>
-                          </div>
+                      {/* Members Table */}
+                      <div className="mb-6">
+                        <h3 className="text-sm font-medium text-gray-500 mb-2">
+                          Members ({selectedBooking.members.length})
+                        </h3>
+                        <div className="bg-gray-50 rounded-lg overflow-hidden">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-100">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Member
+                                </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Dietary Preference
+                                </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Allergies
+                                </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Special Requests
+                                </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Meals
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {selectedBooking.members.map((member, index) => (
+                                <tr key={index}>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    Member {index + 1}
+                                  </td>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                    {member.dietaryPreference}
+                                  </td>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                    {member.allergies || 'None'}
+                                  </td>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                    {member.specialRequests || 'None'}
+                                  </td>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                    {member.mealQuantity}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       </div>
 
-                      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-2">
-                            Booking Details
-                          </h3>
-                          <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
-                            <p className="text-sm text-gray-900">
-                              <span className="font-medium">Date:</span>{' '}
-                              {formatDate(booking.time.date)}
-                            </p>
-                            <p className="text-sm text-gray-900">
-                              <span className="font-medium">Time:</span>{' '}
-                              {booking.time.time.map(formatTime).join(', ')}
-                            </p>
-                            <p className="text-sm text-gray-900">
-                              <span className="font-medium">Address:</span>{' '}
-                              {booking.time.address}
-                            </p>
-                            <p className="text-sm text-gray-900">
-                              <span className="font-medium">Phone:</span>{' '}
-                              {booking.time.phoneNumber}
-                            </p>
-                          </div>
+                      {/* Ordered Items Table */}
+                      <div className="mb-6">
+                        <h3 className="text-sm font-medium text-gray-500 mb-2">Ordered Items</h3>
+                        <div className="bg-gray-50 rounded-lg overflow-hidden">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-100">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Item
+                                </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Quantity
+                                </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Price
+                                </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Total
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {selectedBooking.confirmedFoods.map((food) => (
+                                <tr key={food._id}>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                    {food.name}
+                                  </td>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                    {food.quantity}
+                                  </td>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                    ₹{food.price.toFixed(2)}
+                                  </td>
+                                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                    ₹{(food.price * food.quantity).toFixed(2)}
+                                  </td>
+                                </tr>
+                              ))}
+                              <tr>
+                                <td
+                                  colSpan={3}
+                                  className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 text-right"
+                                >
+                                  Total
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  ₹{selectedBooking.totalAmount.toFixed(2)}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
                         </div>
+                      </div>
 
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-2">
-                            Members ({booking.members.length})
-                          </h3>
-                          <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
-                            {booking.members.map((member, index) => (
-                              <div key={member._id} className="text-sm">
-                                <p className="text-gray-900">
-                                  <span className="font-medium">
-                                    Member {index + 1}:
-                                  </span>{' '}
-                                  {member.dietaryPreference}
-                                </p>
-                                <p className="text-gray-600">
-                                  Allergies: {member.allergies || 'None'}
-                                </p>
-                                <p className="text-gray-600">
-                                  Requests: {member.specialRequests || 'None'}
-                                </p>
-                                <p className="text-gray-600">
-                                  Meals: {member.mealQuantity}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500 mb-2">
-                            Ordered Items
-                          </h3>
-                          <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
-                            {booking.confirmedFoods.map((food) => (
-                              <div
-                                key={food._id}
-                                className="flex justify-between text-sm"
-                              >
-                                <span className="text-gray-900">
-                                  {food.name} × {food.quantity}
-                                </span>
-                                <span className="text-gray-600">
-                                  ₹{(food.price * food.quantity).toFixed(2)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+                      <div className="mt-6 flex justify-end">
+                        <button
+                          onClick={closeDetails}
+                          className="px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors"
+                        >
+                          Close
+                        </button>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
 
               {bookings.length > bookingsPerPage && (
                 <div className="mt-8 flex justify-between items-center">
                   <button
                     onClick={() => paginate(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded-full text-white ${currentPage === 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                    className={`px-4 py-2 rounded-full text-white ${
+                      currentPage === 1
+                        ? 'bg-gray-300 cursor-not-allowed'
+                        : 'bg-indigo-600 hover:bg-indigo-700'
+                    }`}
                   >
                     Previous
                   </button>
@@ -375,7 +518,11 @@ export default function BookingHistory() {
                       <button
                         key={number}
                         onClick={() => paginate(number)}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${currentPage === number ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          currentPage === number
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
                       >
                         {number}
                       </button>
@@ -384,7 +531,11 @@ export default function BookingHistory() {
                   <button
                     onClick={() => paginate(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className={`px-4 py-2 rounded-full text-white ${currentPage === totalPages ? 'bg-gray-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                    className={`px-4 py-2 rounded-full text-white ${
+                      currentPage === totalPages
+                        ? 'bg-gray-300 cursor-not-allowed'
+                        : 'bg-indigo-600 hover:bg-indigo-700'
+                    }`}
                   >
                     Next
                   </button>

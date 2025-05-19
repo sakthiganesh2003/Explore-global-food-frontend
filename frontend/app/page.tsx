@@ -23,7 +23,7 @@ export default function Home() {
       <Navbar />
 
       {/* 2. Hero Section (Full Viewport) */}
-      <section className="relative h-screen">
+      <section className="relative h-screen p-0 border-spacing-1">
         <Hero />
         <motion.div 
           style={{ y: backgroundY }}

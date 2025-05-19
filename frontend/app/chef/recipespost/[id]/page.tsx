@@ -1,6 +1,8 @@
 // app/chef/recipespost/[id]/page.tsx
 import { notFound } from 'next/navigation';
 import Head from 'next/head';
+import Navbar from '@/app/component/navbar';
+import Footer from '@/app/component/Footer';
 
 // Define TypeScript interface for Recipe
 interface Recipe {
@@ -85,6 +87,7 @@ export default async function RecipePage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
+      < Navbar/>
       <Head>
         <title>{recipe.recipe_name || 'Recipe'} | Food App</title>
         <meta name="description" content={`Recipe for ${recipe.recipe_name || 'unknown'}`} />
@@ -168,6 +171,7 @@ export default async function RecipePage({ params }: PageProps) {
           </div>
         </div>
       </main>
+      < Footer/>
     </div>
   );
 }

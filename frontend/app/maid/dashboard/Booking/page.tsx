@@ -210,98 +210,97 @@ export default function OrderDashboard() {
   };
 
   const handleOrderAction = async (
-    orderId: string,
-    action: "confirm" | "reject",
-    amount?: number
-  ) => {
-    if (!token) {
-      setError("No valid token available");
-      toast.error("No valid token available", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      return;
-    }
+  orderId: string,
+  action: "confirm" | "reject",
+  amount?: number
+) => {
+  if (!token) {
+    setError("No valid token available");
+    toast.error("No valid token available", {
+      position: "top-right",
+      autoClose: 3000,
+    });
+    return;
+  }
 
-    try {
-      if (action === "confirm") {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/book/status/${orderId}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ status: "confirmed" }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to confirm order");
-        }
-
-        setOrders(
-          orders.map((order) =>
-            order._id === orderId ? { ...order, status: "confirmed" } : order
-          )
-        );
-
-        if (selectedOrder?._id === orderId) {
-          setSelectedOrder({ ...selectedOrder, status: "confirmed" });
-        }
-
-        toast.success("Order accepted successfully!", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-      } else if (action === "reject") {
-        if (!amount) {
-          throw new Error("Amount is required for refund");
-        }
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/refunds`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            bookingId: orderId,
-            amount,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to create refund request");
-        }
-
-        setOrders(
-          orders.map((order) =>
-            order._id === orderId ? { ...order, status: "cancelled" } : order
-          )
-        );
-
-        if (selectedOrder?._id === orderId) {
-          setSelectedOrder({ ...selectedOrder, status: "cancelled" });
-        }
-
-        toast.success("Refund request created successfully!", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+  try {
+    // Update booking status (confirm or reject)
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/book/status/${orderId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: action === "confirm" ? "confirmed" : "cancelled" }),
       }
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to process order action";
-      setError(errorMessage);
-      toast.error(errorMessage, {
-        position: "top-right",
-        autoClose: 3000,
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to update order status");
+    }
+
+    // If rejecting, also create a refund requestlong
+    if (action === "reject") {
+      if (!amount) {
+        throw new Error("Amount is required for refund");
+      }
+
+      const refundResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/refunds`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          bookingId: orderId,
+          amount,
+        }),
+      });
+
+      if (!refundResponse.ok) {
+        const errorData = await refundResponse.json();
+        throw new Error(errorData.error || "Failed to create refund request");
+      }
+    }
+
+    // Update local state
+    setOrders(
+      orders.map((order) =>
+        order._id === orderId
+          ? { ...order, status: action === "confirm" ? "confirmed" : "cancelled" }
+          : order
+      )
+    );
+
+    if (selectedOrder?._id === orderId) {
+      setSelectedOrder({
+        ...selectedOrder,
+        status: action === "confirm" ? "confirmed" : "cancelled",
       });
     }
-  };
+
+    toast.success(
+      action === "confirm"
+        ? "Order accepted successfully!"
+        : "Order rejected and refund request created!",
+      {
+        position: "top-right",
+        autoClose: 3000,
+      }
+    );
+  } catch (err) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Failed to process order action";
+    setError(errorMessage);
+    toast.error(errorMessage, {
+      position: "top-right",
+      autoClose: 3000,
+    });
+  }
+};
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = {

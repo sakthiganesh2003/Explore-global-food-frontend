@@ -21,6 +21,9 @@ interface DecodedToken {
   role?: string;
 }
 
+// Centralized default image path
+const DEFAULT_IMAGE = "/chef1.jpg";
+
 export default function MaidDashboard() {
   const [maid, setMaid] = useState<Maid>({
     id: "",
@@ -28,7 +31,7 @@ export default function MaidDashboard() {
     specialties: [],
     rating: 0,
     experience: "",
-    image: "/chef1.jpg",
+    image: DEFAULT_IMAGE, // Use default image
     isActive: false,
     description: "Professional chef",
   });
@@ -41,7 +44,7 @@ export default function MaidDashboard() {
   const getUserIdFromToken = (): string | null => {
     if (typeof window === "undefined") return null;
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
         toast.error("Please login to access this page");
         router.push("/login");
@@ -56,7 +59,7 @@ export default function MaidDashboard() {
     } catch (error) {
       console.error("Error decoding token:", error);
       toast.error("Session expired. Please login again");
-      localStorage.removeItem('token');
+      localStorage.removeItem("token");
       router.push("/login");
       return null;
     }
@@ -65,48 +68,48 @@ export default function MaidDashboard() {
   const fetchMaidProfile = async () => {
     const userId = getUserIdFromToken();
     if (!userId) return;
-  
+
     setLoading(true);
     setError(null);
-  
+
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        throw new Error('No token found. Please log in.');
+        throw new Error("No token found. Please log in.");
       }
-  
-      console.log('Sending request with token:', token);
+
+      console.log("Sending request with token:", token);
       const response = await fetch(`http://localhost:5000/api/maid/${userId}`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
-  
+
       if (response.status === 404) {
         setError("Profile not found. Please complete your profile setup.");
         setLoading(false);
         return;
       }
-  
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to fetch profile");
       }
-  
+
       const result = await response.json();
       if (!result?.success) {
         throw new Error(result?.message || "Invalid profile data");
       }
-  
+
       setMaid({
         id: result.data.id,
         fullName: result.data.fullName || "New Maid",
         specialties: result.data.specialties || [],
         rating: result.data.rating || 0,
         experience: result.data.experience || "",
-        image: result.data.image || "/chef1.jpg",
+        image: result.data.image || DEFAULT_IMAGE, // Use default image if none provided
         isActive: result.data.isActive || false,
         description: result.data.description || "Professional chef",
       });
@@ -129,20 +132,23 @@ export default function MaidDashboard() {
     if (!userId) return;
 
     try {
-      const response = await fetch('http://localhost:3000/api/maid-dashboard/toggle-status', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ isActive: true }),
-      });
+      const response = await fetch(
+        "http://localhost:3000/api/maid-dashboard/toggle-status",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ isActive: true }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to activate profile");
       }
 
-      setMaid(prev => ({ ...prev, isActive: true }));
+      setMaid((prev) => ({ ...prev, isActive: true }));
       toast.success("Profile activated");
     } catch (error) {
       toast.error("Failed to activate profile");
@@ -157,32 +163,33 @@ export default function MaidDashboard() {
       specialties: [...maid.specialties],
       experience: maid.experience,
       rating: maid.rating,
-      image: maid.image,
+      image: maid.image, // Initialize with current image
     });
     setIsEditing(true);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setEditData(prev => ({ ...prev, [name]: value }));
+    setEditData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const fileUrl = URL.createObjectURL(file);
-      setEditData(prev => ({ ...prev, image: file }));
+      setEditData((prev) => ({ ...prev, image: file }));
     }
   };
 
   const handleSpecialtyChange = (index: number, value: string) => {
     const newSpecialties = [...(editData.specialties || [])];
     newSpecialties[index] = value;
-    setEditData(prev => ({ ...prev, specialties: newSpecialties }));
+    setEditData((prev) => ({ ...prev, specialties: newSpecialties }));
   };
 
   const addSpecialty = () => {
-    setEditData(prev => ({
+    setEditData((prev) => ({
       ...prev,
       specialties: [...(prev.specialties || []), ""],
     }));
@@ -191,7 +198,7 @@ export default function MaidDashboard() {
   const removeSpecialty = (index: number) => {
     const newSpecialties = [...(editData.specialties || [])];
     newSpecialties.splice(index, 1);
-    setEditData(prev => ({ ...prev, specialties: newSpecialties }));
+    setEditData((prev) => ({ ...prev, specialties: newSpecialties }));
   };
 
   const saveChanges = async () => {
@@ -217,37 +224,45 @@ export default function MaidDashboard() {
       }
 
       const formData = new FormData();
-      formData.append('fullName', editData.fullName || '');
-      formData.append('specialties', editData.specialties?.filter(s => s.trim()).join(','));
-      formData.append('rating', editData.rating?.toString() || '0');
-      formData.append('experience', editData.experience || '');
-      formData.append('description', editData.description || '');
+      formData.append("fullName", editData.fullName || "");
+      formData.append(
+        "specialties",
+        editData.specialties?.filter((s) => s.trim()).join(",")
+      );
+      formData.append("rating", editData.rating?.toString() || "0");
+      formData.append("experience", editData.experience || "");
+      formData.append("description", editData.description || "");
       if (editData.image && typeof editData.image !== "string") {
-        formData.append('image', editData.image);
+        formData.append("image", editData.image);
+      } else {
+        formData.append("image", editData.image || DEFAULT_IMAGE); // Fallback to default
       }
 
-      const response = await fetch('http://localhost:3000/api/maid-dashboard/profile', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: formData,
-      });
+      const response = await fetch(
+        "http://localhost:3000/api/maid-dashboard/profile",
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update profile');
+        throw new Error(errorData.message || "Failed to update profile");
       }
 
       const updatedData = await response.json();
-      setMaid(prev => ({
+      setMaid((prev) => ({
         ...prev,
         fullName: updatedData.data.fullName || prev.fullName,
         description: updatedData.data.description || prev.description,
         specialties: updatedData.data.specialties || prev.specialties,
         experience: updatedData.data.experience || prev.experience,
         rating: updatedData.data.rating || prev.rating,
-        image: updatedData.data.image || prev.image,
+        image: updatedData.data.image || DEFAULT_IMAGE, // Use default if no image
       }));
       setIsEditing(false);
       toast.success("Profile updated successfully");
@@ -279,7 +294,7 @@ export default function MaidDashboard() {
         <SidebarMaid />
         <div className="flex-1 p-6 flex flex-col items-center justify-center">
           <div className="text-red-500 text-lg mb-4">{error}</div>
-          <button 
+          <button
             onClick={() => fetchMaidProfile()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
@@ -306,12 +321,16 @@ export default function MaidDashboard() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-6">
               <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200">
-                <img 
-                  src={maid.image} 
+                <img
+                  src={
+                    typeof editData.image === "string" && isEditing
+                      ? editData.image
+                      : maid.image || DEFAULT_IMAGE // Fallback to default
+                  }
                   alt={maid.fullName}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/chef1.jpg";
+                    (e.target as HTMLImageElement).src = DEFAULT_IMAGE; // Fallback on error
                   }}
                 />
               </div>
@@ -339,7 +358,12 @@ export default function MaidDashboard() {
                 )}
                 <div className="flex items-center mt-2 gap-2">
                   <span className="flex items-center text-yellow-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                     <span className="ml-1">{maid.rating.toFixed(1)}</span>
@@ -351,9 +375,15 @@ export default function MaidDashboard() {
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="flex items-center gap-2">
-                <span className={`h-3 w-3 rounded-full ${maid.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                <span
+                  className={`h-3 w-3 rounded-full ${
+                    maid.isActive ? "bg-green-500" : "bg-gray-400"
+                  }`}
+                ></span>
                 <span className="text-sm font-medium">
-                  {maid.isActive ? 'Available for bookings' : 'Not accepting bookings'}
+                  {maid.isActive
+                    ? "Available for bookings"
+                    : "Not accepting bookings"}
                 </span>
               </div>
               <div className="flex gap-2">
@@ -418,8 +448,17 @@ export default function MaidDashboard() {
                 onClick={addSpecialty}
                 className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 Add Specialty
               </button>
@@ -441,8 +480,17 @@ export default function MaidDashboard() {
                     className="p-2 text-red-500 hover:text-red-700 rounded-full hover:bg-red-50"
                     aria-label="Remove specialty"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012  activateProfile0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -452,7 +500,7 @@ export default function MaidDashboard() {
             <div className="flex flex-wrap gap-2">
               {maid.specialties.length > 0 ? (
                 maid.specialties.map((specialty, index) => (
-                  <span 
+                  <span
                     key={index}
                     className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
                   >
@@ -481,28 +529,66 @@ export default function MaidDashboard() {
               <option value="5+ years">5+ years</option>
             </select>
           ) : (
-            <p className="text-gray-700">{maid.experience || "No experience specified"}</p>
+            <p className="text-gray-700">
+              {maid.experience || "No experience specified"}
+            </p>
           )}
         </div>
-        <div className={`p-4 rounded-lg ${maid.isActive ? 'bg-green-50' : 'bg-gray-100'}`}>
+        <div
+          className={`p-4 rounded-lg ${
+            maid.isActive ? "bg-green-50" : "bg-gray-100"
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-full ${maid.isActive ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-600'}`}>
+            <div
+              className={`p-2 rounded-full ${
+                maid.isActive
+                  ? "bg-green-100 text-green-600"
+                  : "bg-gray-200 text-gray-600"
+              }`}
+            >
               {maid.isActive ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               )}
             </div>
             <div>
-              <h3 className="font-medium">{maid.isActive ? 'You are available for bookings' : 'You are not accepting bookings'}</h3>
+              <h3 className="font-medium">
+                {maid.isActive
+                  ? "You are available for bookings"
+                  : "You are not accepting bookings"}
+              </h3>
               <p className="text-sm text-gray-600">
-                {maid.isActive 
-                  ? 'Clients can see your profile and book your services'
-                  : 'Your profile will not be shown to clients'}
+                {maid.isActive
+                  ? "Clients can see your profile and book your services"
+                  : "Your profile will not be shown to clients"}
               </p>
             </div>
           </div>

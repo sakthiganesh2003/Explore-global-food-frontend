@@ -158,41 +158,52 @@ const AdminDashboard = () => {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredApplications.map((app) => (
-                  <div 
-                    key={app._id}
-                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                    onClick={() => setSelectedApp(app)}
-                  >
-                    <div className="p-6">
-                      <div className="flex justify-between items-start">
-                        <h2 className="text-xl font-semibold">{app.fullName}</h2>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          app.status === 'approved' ? 'bg-green-100 text-green-800' :
-                          app.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {app.status}
-                        </span>
-                      </div>
-                      <p className="text-gray-600 mt-1">{app.email}</p>
-                      <p className="text-gray-600">{app.phone}</p>
-                      
-                      <div className="mt-4">
-                        <p className="text-sm">
-                          <span className="font-medium">Experience:</span> {app.experience}
-                        </p>
-                        <p className="text-sm mt-1">
-                          <span className="font-medium">Specialties:</span> {app.specialties.join(', ')}
-                        </p>
-                        <p className="text-sm mt-1 text-gray-500">
-                          Applied: {new Date(app.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white rounded-lg shadow-md">
+                  <thead>
+                    <tr className="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                      <th className="py-3 px-6 text-left">Name</th>
+                      <th className="py-3 px-6 text-left">Email</th>
+                      <th className="py-3 px-6 text-left">Phone</th>
+                      <th className="py-3 px-6 text-left">Experience</th>
+                      <th className="py-3 px-6 text-left">Specialties</th>
+                      <th className="py-3 px-6 text-left">Status</th>
+                      <th className="py-3 px-6 text-left">Applied</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-600 text-sm">
+                    {filteredApplications.map((app) => (
+                      <tr
+                        key={app._id}
+                        className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                        onClick={() => setSelectedApp(app)}
+                      >
+                        <td className="py-3 px-6">{app.fullName}</td>
+                        <td className="py-3 px-6">{app.email}</td>
+                        <td className="py-3 px-6">{app.phone}</td>
+                        <td className="py-3 px-6">{app.experience}</td>
+                        <td className="py-3 px-6">{app.specialties.join(', ')}</td>
+                        <td className="py-3 px-6">
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              app.status === 'approved'
+                                ? 'bg-green-100 text-green-800'
+                                : app.status === 'rejected'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}
+                          >
+                            {app.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-6">
+                          {new Date(app.createdAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
               {/* Pagination */}

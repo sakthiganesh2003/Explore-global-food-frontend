@@ -38,8 +38,11 @@ const SidebarMaid = () => {
         </button>
 
         <SidebarItem icon={<Home />} text="Home" href="/chef/dashboard" isOpen={isOpen} />
-        <SidebarItem icon={<BookOpen />} text="recipes" href="/chef/dashboard/recipes" isOpen={isOpen} />
-        <SidebarItem icon={<CreditCard />} text="Payment" href="/chef/dashboard/post" isOpen={isOpen} />
+        {/* <SidebarItem icon={<CreditCard />} text="chef profile" href="/chef/dashboard/profile" isOpen={isOpen} /> */}
+        {/* <SidebarItem icon={<BookOpen />} text="recipes" href="/chef/dashboard/recipes" isOpen={isOpen} /> */}
+        <SidebarItem icon={<CreditCard />} text="chef post" href="/chef/dashboard/chefpost" isOpen={isOpen} />
+        <SidebarItem icon={<CreditCard />} text="status" href="/chef/dashboard/status" isOpen={isOpen} />
+        
       </nav>
     </div>
   );
