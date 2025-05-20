@@ -5,6 +5,13 @@ import Head from 'next/head';
 import Sidebaruser from '@/app/component/dashboard/Sidebaruser';
 import { jwtDecode } from 'jwt-decode';
 
+// Define types for the data structures
+type Feedback = {
+  rating: number;
+  comment: string;
+  createdAt: string;
+};
+
 type Booking = {
   _id: string;
   cuisine: {
@@ -43,6 +50,7 @@ type Booking = {
   totalAmount: number;
   status: string;
   createdAt: string;
+  feedback?: Feedback;
 };
 
 interface DecodedToken {
@@ -57,9 +65,15 @@ export default function BookingHistory() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [feedbackRating, setFeedbackRating] = useState<number>(0);
+  const [feedbackComment, setFeedbackComment] = useState<string>('');
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [feedbackSuccess, setFeedbackSuccess] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Loading state for feedback submission
   const bookingsPerPage = 5;
   const router = useRouter();
 
+  // Fetch bookings on component mount
   useEffect(() => {
     const fetchBookings = async () => {
       try {
@@ -70,7 +84,6 @@ export default function BookingHistory() {
 
         const decoded: DecodedToken = jwtDecode(token);
         const userId = decoded.id || decoded.userId;
-
         if (!userId) {
           throw new Error('Invalid token: User ID not found');
         }
@@ -96,11 +109,74 @@ export default function BookingHistory() {
     fetchBookings();
   }, []);
 
+  // Submit feedback to the API
+  const submitFeedback = async (bookingId: string) => {
+    if (feedbackRating === 0) {
+      setFeedbackError('Please select a rating');
+      return;
+    }
+    if (!feedbackComment.trim()) {
+      setFeedbackError('Please provide a comment');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const decoded: DecodedToken = jwtDecode(token);
+      const userId = decoded.id || decoded.userId;
+      if (!userId) {
+        throw new Error('Invalid token: User ID not found');
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId, // Include userId as per API request
+          bookingId,
+          rating: feedbackRating,
+          comment: feedbackComment,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to submit feedback (Status: ${response.status})`);
+      }
+
+      const updatedBooking = await response.json();
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking._id === bookingId ? { ...booking, feedback: updatedBooking.feedback } : booking
+        )
+      );
+      setFeedbackSuccess('Feedback submitted successfully');
+      setFeedbackRating(0);
+      setFeedbackComment('');
+      setFeedbackError(null);
+      setTimeout(() => setFeedbackSuccess(null), 3000);
+    } catch (err) {
+      setFeedbackError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Pagination logic
   const indexOfLastBooking = currentPage * bookingsPerPage;
   const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
   const currentBookings = bookings.slice(indexOfFirstBooking, indexOfLastBooking);
   const totalPages = Math.ceil(bookings.length / bookingsPerPage);
 
+  // Format date for display
   const formatDate = (dateString: string): string => {
     const options: Intl.DateTimeFormatOptions = {
       year: 'numeric',
@@ -110,10 +186,12 @@ export default function BookingHistory() {
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
+  // Format time for display
   const formatTime = (timeString: string): string => {
     return timeString.replace('-', ' to ');
   };
 
+  // Get status color for UI
   const getStatusColor = (status: string): string => {
     switch (status.toLowerCase()) {
       case 'confirmed':
@@ -127,20 +205,32 @@ export default function BookingHistory() {
     }
   };
 
+  // Handle pagination
   const paginate = (pageNumber: number) => {
     if (pageNumber > 0 && pageNumber <= totalPages) {
       setCurrentPage(pageNumber);
     }
   };
 
+  // Open booking details modal
   const openDetails = (booking: Booking) => {
     setSelectedBooking(booking);
+    setFeedbackRating(0);
+    setFeedbackComment('');
+    setFeedbackError(null);
+    setFeedbackSuccess(null);
   };
 
+  // Close booking details modal
   const closeDetails = () => {
     setSelectedBooking(null);
+    setFeedbackRating(0);
+    setFeedbackComment('');
+    setFeedbackError(null);
+    setFeedbackSuccess(null);
   };
 
+  // Loading state
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-100">
@@ -152,6 +242,7 @@ export default function BookingHistory() {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="flex min-h-screen bg-gray-100">
@@ -485,6 +576,104 @@ export default function BookingHistory() {
                             </tbody>
                           </table>
                         </div>
+                      </div>
+
+                      {/* Feedback Section */}
+                      <div className="mb-6">
+                        <h3 className="text-sm font-medium text-gray-500 mb-2">Feedback</h3>
+                        {selectedBooking.feedback ? (
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="flex items-center mb-2">
+                              <div className="text-sm font-medium text-gray-900">Rating:</div>
+                              <div className="flex ml-2">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <svg
+                                    key={star}
+                                    className={`h-5 w-5 ${
+                                      star <= selectedBooking.feedback!.rating
+                                        ? 'text-yellow-400'
+                                        : 'text-gray-300'
+                                    }`}
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.97a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.357 2.44a1 1 0 00-.364 1.118l1.287 3.97c.3.921-.755 1.688-1.538 1.118l-3.357-2.44a1 1 0 00-1.175 0l-3.357 2.44c-.783.57-1.838-.197-1.538-1.118l1.287-3.97a1 1 0 00-.364-1.118L2.236 9.397c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.97z" />
+                                  </svg>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="text-sm text-gray-900">
+                              <span className="font-medium">Comment:</span> {selectedBooking.feedback.comment}
+                            </div>
+                            <div className="text-sm text-gray-500 mt-1">
+                              Submitted on {formatDate(selectedBooking.feedback.createdAt)}
+                            </div>
+                          </div>
+                        ) : selectedBooking.status.toLowerCase() === 'confirmed' ? (
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="mb-4">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Rating
+                              </label>
+                              <div className="flex">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <button
+                                    key={star}
+                                    onClick={() => setFeedbackRating(star)}
+                                    className={`h-6 w-6 ${
+                                      star <= feedbackRating ? 'text-yellow-400' : 'text-gray-300'
+                                    }`}
+                                    disabled={isSubmitting}
+                                  >
+                                    <svg
+                                      className="h-full w-full"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.97a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.357 2.44a1 1 0 00-.364 1.118l1.287 3.97c.3.921-.755 1.688-1.538 1.118l-3.357-2.44a1 1 0 00-1.175 0l-3.357 2.44c-.783.57-1.838-.197-1.538-1.118l1.287-3.97a1 1 0 00-.364-1.118L2.236 9.397c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.97z" />
+                                    </svg>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="mb-4">
+                              <label
+                                htmlFor="feedbackComment"
+                                className="block text-sm font-medium text-gray-700 mb-1"
+                              >
+                                Comment
+                              </label>
+                              <textarea
+                                id="feedbackComment"
+                                value={feedbackComment}
+                                onChange={(e) => setFeedbackComment(e.target.value)}
+                                className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                rows={4}
+                                placeholder="Share your feedback..."
+                                disabled={isSubmitting}
+                              ></textarea>
+                            </div>
+                            {feedbackError && (
+                              <div className="text-red-500 text-sm mb-2">{feedbackError}</div>
+                            )}
+                            {feedbackSuccess && (
+                              <div className="text-green-500 text-sm mb-2">{feedbackSuccess}</div>
+                            )}
+                            <button
+                              onClick={() => submitFeedback(selectedBooking._id)}
+                              disabled={isSubmitting}
+                              className={`px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors ${
+                                isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                            >
+                              {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-gray-500">
+                            Feedback can only be submitted for confirmed bookings.
+                          </div>
+                        )}
                       </div>
 
                       <div className="mt-6 flex justify-end">

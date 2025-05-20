@@ -30,6 +30,7 @@ const Sidebar = () => {
         <SidebarItem icon={<ChefHat />} text="chefposts" href="/Admin/chefposts" isOpen={isOpen} />
         <SidebarItem icon={<ChefHat />} text="payment history" href="/Admin/paymenthistory" isOpen={isOpen} />
         <SidebarItem icon={<ChefHat />} text="maid earnings" href="/Admin/maidearnings" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="feedback" href="/Admin/feedback" isOpen={isOpen} />
      
       </nav>
     </div>
