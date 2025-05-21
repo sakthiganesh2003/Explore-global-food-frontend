@@ -6,6 +6,7 @@ interface TimeSlotType {
   time: string[];
   address: string;
   phoneNumber: string;
+  pincode: string;
 }
 
 interface TimeProps {
@@ -17,11 +18,13 @@ const Time = ({ onSelect }: TimeProps) => {
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
   const [address, setAddress] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [pincode, setPincode] = useState('');
   const [errors, setErrors] = useState({
     date: '',
     times: '',
     address: '',
     phone: '',
+    pincode: '',
   });
 
   // Mocked available time slots
@@ -31,8 +34,45 @@ const Time = ({ onSelect }: TimeProps) => {
     evening: ['4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'],
   };
 
+  // Function to convert time string (e.g., "8:00 AM") to Date object for comparison
+  const parseTimeToDate = (time: string, date: string) => {
+    const [timePart, period] = time.split(' ');
+    let [hours, minutes] = timePart.split(':').map(Number);
+    if (period === 'PM' && hours !== 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+    const timeDate = new Date(date);
+    timeDate.setHours(hours, minutes, 0, 0);
+    return timeDate;
+  };
+
+  // Get current time and calculate the minimum allowed time (current time + 4 hours)
+  const now = new Date();
+  const minAllowedTime = new Date(now.getTime() + 4 * 60 * 60 * 1000); // Add 4 hours
+
+  // Filter time slots based on current time + 4 hours
+  const isFutureTimeSlot = (time: string, date: string) => {
+    const timeDate = parseTimeToDate(time, date);
+    return timeDate >= minAllowedTime;
+  };
+
+  // Filter available time slots for the selected date
+  const getFilteredTimeSlots = (date: string) => {
+    if (!date || date !== new Date().toISOString().split('T')[0]) {
+      // If no date selected or date is not today, show all time slots
+      return availableTimeSlots;
+    }
+    return {
+      morning: availableTimeSlots.morning.filter((time) => isFutureTimeSlot(time, date)),
+      afternoon: availableTimeSlots.afternoon.filter((time) => isFutureTimeSlot(time, date)),
+      evening: availableTimeSlots.evening.filter((time) => isFutureTimeSlot(time, date)),
+    };
+  };
+
+  const filteredTimeSlots = getFilteredTimeSlots(selectedDate);
+
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedDate(e.target.value);
+    setSelectedTimes([]); // Reset selected times when date changes
     setErrors({ ...errors, date: '' });
   };
 
@@ -55,6 +95,7 @@ const Time = ({ onSelect }: TimeProps) => {
       times: '',
       address: '',
       phone: '',
+      pincode: '',
     };
 
     if (!selectedDate) {
@@ -85,6 +126,16 @@ const Time = ({ onSelect }: TimeProps) => {
       valid = false;
     }
 
+    if (!pincode.trim()) {
+      newErrors.pincode = 'Pincode is required';
+      toast.error(newErrors.pincode);
+      valid = false;
+    } else if (!/^\d{6}$/.test(pincode)) {
+      newErrors.pincode = 'Please enter a valid 6-digit pincode';
+      toast.error(newErrors.pincode);
+      valid = false;
+    }
+
     setErrors(newErrors);
     return valid;
   };
@@ -97,6 +148,7 @@ const Time = ({ onSelect }: TimeProps) => {
       time: selectedTimes,
       address,
       phoneNumber,
+      pincode,
     };
 
     onSelect(timeData);
@@ -106,7 +158,8 @@ const Time = ({ onSelect }: TimeProps) => {
     setSelectedTimes([]);
     setAddress('');
     setPhoneNumber('');
-    setErrors({ date: '', times: '', address: '', phone: '' });
+    setPincode('');
+    setErrors({ date: '', times: '', address: '', phone: '', pincode: '' });
   };
 
   return (
@@ -130,6 +183,25 @@ const Time = ({ onSelect }: TimeProps) => {
           placeholder="Enter your full address"
         />
         {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
+      </div>
+
+      {/* Pincode Input */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700">Pincode *</label>
+        <input
+          type="text"
+          value={pincode}
+          onChange={(e) => {
+            setPincode(e.target.value);
+            setErrors({ ...errors, pincode: '' });
+          }}
+          className={`mt-1 block w-full px-3 py-3 border ${
+            errors.pincode ? 'border-red-500' : 'border-gray-300'
+          } rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 text-gray-800`}
+          placeholder="Enter your 6-digit pincode"
+          maxLength={6}
+        />
+        {errors.pincode && <p className="mt-1 text-sm text-red-600">{errors.pincode}</p>}
       </div>
 
       {/* Phone Number Input */}
@@ -177,31 +249,41 @@ const Time = ({ onSelect }: TimeProps) => {
           className={`mt-1 block w-full px-3 py-3 border ${
             errors.times ? 'border-red-500' : 'border-gray-300'
           } rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 text-gray-800`}
+          disabled={!selectedDate} // Disable if no date is selected
         >
           <option value="">Select a time slot</option>
-          <optgroup label="Morning">
-            {availableTimeSlots.morning.map((time, index) => (
-              <option key={index} value={time}>
-                {time}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Afternoon">
-            {availableTimeSlots.afternoon.map((time, index) => (
-              <option key={index} value={time}>
-                {time}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Evening">
-            {availableTimeSlots.evening.map((time, index) => (
-              <option key={index} value={time}>
-                {time}
-              </option>
-            ))}
-          </optgroup>
+          {filteredTimeSlots.morning.length > 0 && (
+            <optgroup label="Morning">
+              {filteredTimeSlots.morning.map((time, index) => (
+                <option key={index} value={time}>
+                  {time}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {filteredTimeSlots.afternoon.length > 0 && (
+            <optgroup label="Afternoon">
+              {filteredTimeSlots.afternoon.map((time, index) => (
+                <option key={index} value={time}>
+                  {time}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {filteredTimeSlots.evening.length > 0 && (
+            <optgroup label="Evening">
+              {filteredTimeSlots.evening.map((time, index) => (
+                <option key={index} value={time}>
+                  {time}
+                </option>
+              ))}
+            </optgroup>
+          )}
         </select>
         {errors.times && <p className="mt-1 text-sm text-red-600">{errors.times}</p>}
+        {selectedDate && filteredTimeSlots.morning.length === 0 && filteredTimeSlots.afternoon.length === 0 && filteredTimeSlots.evening.length === 0 && (
+          <p className="mt-1 text-sm text-red-600">No available time slots for the selected date.</p>
+        )}
       </div>
 
       {/* Display Selected Time Slots */}

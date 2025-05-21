@@ -1,165 +1,110 @@
+"use client";
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { toast } from 'react-hot-toast';
 
 interface Maid {
-  _id: string; // Added _id for unique key
+  _id: string;
   userId: string;
   fullName: string;
-  cuisine?: string[];
   specialties: string[];
   rating: number;
   experience: string | number;
   image?: string;
   bio?: string;
-  services?: string[];
-  languages?: string[];
   active: boolean;
+  location?: {
+    cityName: string;
+    pincode: string;
+  };
+  distance?: number;
 }
 
 const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
   const [selectedMaid, setSelectedMaid] = useState<Maid | null>(null);
   const [filter, setFilter] = useState('');
+  const [pincodeFilter, setPincodeFilter] = useState('');
   const [maids, setMaids] = useState<Maid[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-
-  const maidsPerPage = 16;
+  const maidsPerPage = 12;
 
   useEffect(() => {
-    console.log('Fetching maids data');
-
-    let isMounted = true;
-
     const fetchMaids = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/maids/maids`);
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('Authentication required');
+
+        const res = await fetch('http://localhost:5000/api/maids/maids', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!res.ok) throw new Error('Failed to fetch maids');
 
         const data = await res.json();
-        console.log('API response:', data);
+        const processedMaids = data.map((maid: any) => ({
+          _id: maid._id,
+          userId: maid.userId,
+          fullName: maid.fullName || 'Professional Maid',
+          specialties: maid.specialties?.filter((s: string) => s) || [],
+          rating: Number(maid.rating) || 0,
+          experience: maid.experience || 'Not specified',
+          image: maid.image || '/maid-default.jpg',
+          bio: maid.bio || 'Experienced professional',
+          active: maid.active !== false,
+          location: maid.location,
+          distance: maid.distance,
+        }));
 
-        if (isMounted) {
-          const normalizedMaids = data.map((maid: any) => {
-            const specialties = [
-              ...(maid.cuisine || []).filter((c: string | null) => c !== null),
-              ...(maid.specialties || []).filter((s: string | null) => s !== null),
-            ].filter(Boolean);
-
-            return {
-              _id: maid._id, // Include _id for unique key
-              userId: maid.userId || maid._id, // Prioritize userId, fallback to _id
-              fullName: maid.fullName || maid.name || 'Unknown',
-              specialties: specialties.length > 0 ? specialties : ['General Housekeeping'],
-              rating: maid.rating || 0,
-              experience:
-                typeof maid.experience === 'string' && !isNaN(parseInt(maid.experience))
-                  ? parseInt(maid.experience)
-                  : maid.experience || '0',
-              image: formatImageUrl(maid.image),
-              bio: maid.bio,
-              services: maid.services,
-              languages: maid.languages,
-              active: maid.active !== false,
-            };
-          });
-
-          setMaids(normalizedMaids);
-        }
+        setMaids(processedMaids);
       } catch (error) {
-        console.error('Fetch error:', error);
-        toast.error('Failed to load maids. Please try again later.', {
-          position: 'top-center',
-        });
+        toast.error(error instanceof Error ? error.message : 'Network error');
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     fetchMaids();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   const formatImageUrl = (url?: string) => {
-    if (!url) return '/chef-placeholder.jpg';
-    if (url.startsWith('http')) return url;
-    if (url.startsWith('/')) return url;
-    return `/${url}`;
+    if (!url) return '/maid-default.jpg';
+    return url.startsWith('http') ? url : `/${url}`;
   };
 
   const getFilteredMaids = () => {
-    const activeMaids = maids.filter((maid) => maid.active === true);
-    if (!filter) return activeMaids;
-    return activeMaids.filter((maid) =>
-      maid.specialties?.some(
-        (specialty) => specialty && specialty.toLowerCase().includes(filter.toLowerCase())
-      )
-    );
+    return maids
+      .filter((maid) => maid.active)
+      .filter((maid) => {
+        const matchesSpecialty =
+          !filter ||
+          maid.specialties.some((s) => s.toLowerCase().includes(filter.toLowerCase()));
+
+        const matchesPincode =
+          !pincodeFilter || maid.location?.pincode?.includes(pincodeFilter);
+
+        return matchesSpecialty && matchesPincode;
+      })
+      .sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
   };
 
   const handleMaidSelect = (maid: Maid) => {
     setSelectedMaid(maid);
     setShowDetails(true);
-    toast.success(`${maid.fullName} selected`, {
-      icon: '👩‍🍳',
-      position: 'top-center',
-      duration: 1500,
-      style: {
-        background: '#4BB543',
-        color: '#fff',
-      },
-    });
+    toast.success(`Viewing ${maid.fullName}'s profile`);
   };
 
   const handleBookMaid = () => {
     if (selectedMaid) {
-      toast.promise(
-        new Promise((resolve) => {
-          setTimeout(() => {
-            onNext(selectedMaid);
-            resolve(true);
-          }, 1000);
-        }),
-        {
-          loading: `Booking ${selectedMaid.fullName}...`,
-          success: (
-            <div className="flex items-center gap-2">
-              <span className="text-green-500">✓</span>
-              <div>
-                <p className="font-bold">{selectedMaid.fullName} selected!</p>
-                <p className="text-sm">Proceeding to the next step...</p>
-              </div>
-            </div>
-          ),
-          error: `Failed to book ${selectedMaid.fullName}`,
-        },
-        {
-          position: 'bottom-right',
-          duration: 4000,
-          style: {
-            minWidth: '300px',
-          },
-        }
-      );
-      setShowDetails(false);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+      toast.promise(Promise.resolve(onNext(selectedMaid)), {
+        loading: 'Processing booking...',
+        success: 'Booking confirmed!',
+        error: 'Failed to complete booking',
+      });
     }
   };
 
@@ -170,228 +115,340 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
     currentPage * maidsPerPage
   );
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        <span className="ml-3">Loading maids...</span>
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="text-gray-500 p-4 max-w-6xl mx-auto min-h-screen">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Choose Your Maid</h2>
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8 text-gray-800">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-extrabold text-center text-gray-900 mb-12">
+          Find Your Perfect Cook
+        </h1>
 
-      {showDetails && selectedMaid ? (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 scrollbar-rounded">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-2xl font-bold text-gray-800">{selectedMaid.fullName}</h3>
-                <p className="text-gray-600">
-                  ⭐ {selectedMaid.rating} | {selectedMaid.experience}{' '}
-                  {typeof selectedMaid.experience === 'number' ? 'years' : ''} experience
-                </p>
-              </div>
-              <button
-                onClick={() => setShowDetails(false)}
-                className="text-gray-400 hover:text-gray-600 p-1 transition-colors"
-                aria-label="Close details"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="mt-6 w-32 h-32 mx-auto relative rounded-full overflow-hidden border-2 border-gray-200 shadow-sm">
-              <Image
-                src={selectedMaid.image || '/chef-placeholder.jpg'}
-                alt={`Photo of ${selectedMaid.fullName}`}
-                layout="fill"
-                objectFit="cover"
-                className="rounded-full"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/chef-placeholder.jpg';
-                }}
+        {/* Search Filters */}
+        <div className="bg-white p-8 rounded-2xl shadow-lg mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Specialty
+              </label>
+              <input
+                type="text"
+                placeholder="Cooking, Cleaning, etc."
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="w-full p-4 border border-gray-200 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition-all"
               />
             </div>
-
-            <div className="mt-6 space-y-6">
-              {selectedMaid.specialties && selectedMaid.specialties.length > 0 && (
-                <div>
-                  <p className="font-semibold mb-2 text-gray-700">Specializes in:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedMaid.specialties.map((specialty, i) => (
-                      <span
-                        key={i}
-                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm shadow-sm"
-                      >
-                        {specialty}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedMaid.languages && selectedMaid.languages.length > 0 && (
-                <div>
-                  <p className="font-semibold mb-2 text-gray-700">Languages:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedMaid.languages.map((language, i) => (
-                      <span
-                        key={i}
-                        className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm shadow-sm"
-                      >
-                        {language}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedMaid.bio && (
-                <div>
-                  <p className="font-semibold mb-2 text-gray-700">About:</p>
-                  <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">{selectedMaid.bio}</p>
-                </div>
-              )}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Pincode
+              </label>
+              <input
+                type="text"
+                placeholder="Enter pincode"
+                value={pincodeFilter}
+                onChange={(e) => setPincodeFilter(e.target.value)}
+                maxLength={6}
+                className="w-full p-4 border border-gray-200 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+              />
             </div>
-
-            <div className="flex justify-center mt-8">
+            <div className="flex items-end">
               <button
-                onClick={handleBookMaid}
-                className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-md"
+                onClick={() => {
+                  setFilter('');
+                  setPincodeFilter('');
+                  setCurrentPage(1);
+                }}
+                className="w-full py-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-semibold"
               >
-                Select {selectedMaid.fullName}
+                Reset Filters
               </button>
             </div>
           </div>
         </div>
-      ) : (
-        <div>
-          <div className="mb-6 max-w-md mx-auto">
-            <input
-              type="text"
-              placeholder="Filter by specialties (Cooking, Cleaning, Childcare...)"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="p-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm bg-white"
-            />
-          </div>
 
-          {filteredMaids.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg shadow-md">
-              <p className="text-lg mb-2 text-gray-600">
-                {filter
-                  ? 'No active maids found matching your criteria'
-                  : 'No active maids available at the moment'}
-              </p>
+        {/* Results Count and Pagination */}
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-8">
+          <p className="text-gray-600 font-medium">
+            Showing {filteredMaids.length} available maids
+          </p>
+          {totalPages > 1 && (
+            <div className="flex items-center space-x-2 mt-4 sm:mt-0">
               <button
-                onClick={() => setFilter('')}
-                className="mt-2 text-blue-600 hover:underline font-medium"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-white border border-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors"
               >
-                Clear filters and show all maids
+                Previous
+              </button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => handlePageChange(i + 1)}
+                  className={`px-4 py-2 rounded-lg border transition-colors ${
+                    currentPage === i + 1
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-white border border-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors"
+              >
+                Next
               </button>
             </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {paginatedMaids.map((maid) => (
-                  <div
-                    key={maid._id} // Use _id instead of userId for unique key
-                    className="bg-white p-5 rounded-lg shadow-md cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col border border-gray-100"
-                    onClick={() => handleMaidSelect(maid)}
-                  >
-                    <div className="flex items-center mb-4">
-                      <div className="w-16 h-16 relative rounded-full overflow-hidden mr-4 flex-shrink-0">
-                        <Image
-                          src={maid.image || '/chef-placeholder.jpg'}
-                          alt={`Photo of ${maid.fullName}`}
-                          layout="fill"
-                          objectFit="cover"
-                          className="rounded-full"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = '/chef-placeholder.jpg';
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-lg text-gray-800">{maid.fullName}</h3>
-                        <div className="flex items-center text-yellow-500">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <span key={i}>{i < Math.floor(maid.rating) ? '★' : '☆'}</span>
-                          ))}
-                          <span className="text-gray-500 ml-1 text-sm">({maid.rating})</span>
-                        </div>
-                      </div>
+          )}
+        </div>
+
+        {/* Maids Grid */}
+        {filteredMaids.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
+            <h3 className="text-2xl font-semibold text-gray-800 mb-3">
+              No maids found matching your criteria
+            </h3>
+            <p className="text-gray-500 mb-6">
+              Try adjusting your filters or check back later
+            </p>
+            <button
+              onClick={() => {
+                setFilter('');
+                setPincodeFilter('');
+                setCurrentPage(1);
+              }}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
+            >
+              Show All Maids
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {paginatedMaids.map((maid) => (
+              <div
+                key={maid._id}
+                className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-1 cursor-pointer"
+                onClick={() => handleMaidSelect(maid)}
+              >
+                <div className="relative h-56 w-full">
+                  <Image
+                    src={formatImageUrl(maid.image)}
+                    alt={maid.fullName}
+                    fill
+                    className="object-cover rounded-t-2xl"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/maid-default.jpg';
+                    }}
+                  />
+                </div>
+                <div className="p-5">
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-xl font-bold text-gray-900">{maid.fullName}</h3>
+                    <div className="flex items-center bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full">
+                      <span>★</span>
+                      <span className="ml-1 font-medium">{maid.rating.toFixed(1)}</span>
                     </div>
+                  </div>
 
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-600 mb-2">
-                        <span className="font-semibold">Experience:</span> {maid.experience}{' '}
-                        {typeof maid.experience === 'number' ? 'years' : ''}
-                      </p>
+                  <div className="mt-3 flex items-center text-gray-600">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span>{maid.experience} experience</span>
+                  </div>
 
-                      {maid.specialties && maid.specialties.length > 0 && (
-                        <div>
-                          <p className="font-semibold text-sm mb-1 text-gray-700">Specialties:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {maid.specialties.slice(0, 3).map((specialty, i) => (
-                              <span
-                                key={i}
-                                className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs"
-                              >
-                                {specialty}
-                              </span>
-                            ))}
-                            {maid.specialties.length > 3 && (
-                              <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
-                                +{maid.specialties.length - 3}
-                              </span>
+                  {maid.location && (
+                    <div className="mt-2 flex items-center text-gray-600">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                      <span>
+                        {maid.location.cityName}, {maid.location.pincode}
+                        {maid.distance && ` • ${maid.distance} km`}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {maid.specialties.slice(0, 3).map((specialty, i) => (
+                      <span
+                        key={i}
+                        className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium"
+                      >
+                        {specialty}
+                      </span>
+                    ))}
+                    {maid.specialties.length > 3 && (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm font-medium">
+                        +{maid.specialties.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Maid Details Modal */}
+        {showDetails && selectedMaid && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="relative h-72 w-full">
+                <Image
+                  src={formatImageUrl(selectedMaid.image)}
+                  alt={selectedMaid.fullName}
+                  fill
+                  className="object-cover rounded-t-2xl"
+                />
+                <button
+                  onClick={() => setShowDetails(false)}
+                  className="absolute top-4 right-4 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                >
+                  <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="p-8">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-3xl font-extrabold text-gray-900">{selectedMaid.fullName}</h2>
+                    <div className="flex items-center mt-2">
+                      <div className="flex text-yellow-400 text-lg">
+                        {[...Array(5)].map((_, i) => (
+                          <span key={i}>{i < Math.floor(selectedMaid.rating) ? '★' : '☆'}</span>
+                        ))}
+                      </div>
+                      <span className="ml-2 text-gray-600 font-medium">{selectedMaid.rating.toFixed(1)}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleBookMaid}
+                    className="px-8 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold"
+                  >
+                    Book Now
+                  </button>
+                </div>
+
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4">Details</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center">
+                        <svg
+                          className="w-6 h-6 text-gray-500 mr-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <span>{selectedMaid.experience} experience</span>
+                      </div>
+
+                      {selectedMaid.location && (
+                        <div className="flex items-start">
+                          <svg
+                            className="w-6 h-6 text-gray-500 mr-3 mt-0.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                          <div>
+                            <p className="font-medium">{selectedMaid.location.cityName}</p>
+                            <p className="text-sm text-gray-600">Pincode: {selectedMaid.location.pincode}</p>
+                            {selectedMaid.distance && (
+                              <p className="text-sm text-indigo-600">
+                                Approx. {selectedMaid.distance} km from you
+                              </p>
                             )}
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
 
-              {totalPages > 1 && (
-                <div className="flex justify-between items-center mt-8">
-                  <button
-                    onClick={handlePrevPage}
-                    disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      currentPage === 1
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                  >
-                    Previous
-                  </button>
-                  <span className="text-gray-600">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <button
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      currentPage === totalPages
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                  >
-                    Next
-                  </button>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4">Specialties</h3>
+                    <div className="flex flex-wrap gap-3">
+                      {selectedMaid.specialties.map((specialty, i) => (
+                        <span
+                          key={i}
+                          className="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-full font-medium"
+                        >
+                          {specialty}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
+
+                <div className="mt-8">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">About</h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    {selectedMaid.bio || 'Professional maid with extensive experience in household services.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

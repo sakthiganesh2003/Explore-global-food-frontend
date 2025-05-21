@@ -229,7 +229,7 @@ const FeedbackPage = () => {
                 disabled={page === totalPages}
                 aria-label="Go to last page"
                 className={`px-4 py-2 rounded-md flex items-center space-x-1 ${
-                  page === totalPages ? 'bg-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  page === totalPages ? 'bg-gray-5s00 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
                 }`}
               >
                 <span>Last</span>

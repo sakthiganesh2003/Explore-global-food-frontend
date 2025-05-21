@@ -11,6 +11,8 @@ interface Maid {
   specialties: string[];
   rating: number;
   experience: string;
+  servicesLocation: string;
+  pincode: string;
   image: string;
   isActive: boolean;
   description: string;
@@ -21,8 +23,7 @@ interface DecodedToken {
   role?: string;
 }
 
-// Centralized default image path
-const DEFAULT_IMAGE = "/chef1.jpg";
+const DEFAULT_IMAGE = "/maid-default.jpg";
 
 export default function MaidDashboard() {
   const [maid, setMaid] = useState<Maid>({
@@ -31,9 +32,11 @@ export default function MaidDashboard() {
     specialties: [],
     rating: 0,
     experience: "",
-    image: DEFAULT_IMAGE, // Use default image
+    servicesLocation: "",
+    pincode: "",
+    image: DEFAULT_IMAGE,
     isActive: false,
-    description: "Professional chef",
+    description: "Professional maid",
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Maid> & { image?: string | File }>({});
@@ -78,8 +81,8 @@ export default function MaidDashboard() {
         throw new Error("No token found. Please log in.");
       }
 
-      console.log("Sending request with token:", token);
-      const response = await fetch(`http://localhost:5000/api/maid/${userId}`, {
+      console.log("Fetching profile for userId:", userId);
+      const response = await fetch(`http://localhost:5000/api/maid/profile/${userId}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -109,9 +112,11 @@ export default function MaidDashboard() {
         specialties: result.data.specialties || [],
         rating: result.data.rating || 0,
         experience: result.data.experience || "",
-        image: result.data.image || DEFAULT_IMAGE, // Use default image if none provided
+        servicesLocation: result.data.servicesLocation || "",
+        pincode: result.data.pincode || "",
+        image: result.data.image || DEFAULT_IMAGE,
         isActive: result.data.isActive || false,
-        description: result.data.description || "Professional chef",
+        description: result.data.description || "Professional maid",
       });
     } catch (error) {
       console.error("Fetch error:", error);
@@ -132,27 +137,26 @@ export default function MaidDashboard() {
     if (!userId) return;
 
     try {
-      const response = await fetch(
-        "http://localhost:3000/api/maid-dashboard/toggle-status",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({ isActive: true }),
-        }
-      );
+      console.log("Toggling profile status for userId:", userId);
+      const response = await fetch("http://localhost:5000/api/maid/toggle-status", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to activate profile");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to toggle profile status");
       }
 
-      setMaid((prev) => ({ ...prev, isActive: true }));
-      toast.success("Profile activated");
+      const result = await response.json();
+      setMaid((prev) => ({ ...prev, isActive: result.data.isActive }));
+      toast.success(`Profile ${result.data.isActive ? "activated" : "deactivated"}`);
     } catch (error) {
-      toast.error("Failed to activate profile");
-      console.error("Activation error:", error);
+      console.error("Toggle status error:", error);
+      toast.error("Failed to toggle profile status");
     }
   };
 
@@ -163,7 +167,9 @@ export default function MaidDashboard() {
       specialties: [...maid.specialties],
       experience: maid.experience,
       rating: maid.rating,
-      image: maid.image, // Initialize with current image
+      servicesLocation: maid.servicesLocation,
+      pincode: maid.pincode,
+      image: maid.image,
     });
     setIsEditing(true);
   };
@@ -206,6 +212,7 @@ export default function MaidDashboard() {
     if (!userId) return;
 
     try {
+      // Validation
       if (!editData.fullName?.trim()) {
         toast.error("Name is required");
         return;
@@ -214,12 +221,20 @@ export default function MaidDashboard() {
         toast.error("Experience is required");
         return;
       }
-      if (!editData.rating) {
-        toast.error("Rating is required");
+      if (editData.rating === undefined || editData.rating < 0 || editData.rating > 5) {
+        toast.error("Rating must be between 0 and 5");
         return;
       }
-      if (!editData.specialties?.length) {
-        toast.error("At least one specialty is required");
+      if (!editData.specialties?.some((s) => s.trim())) {
+        toast.error("At least one non-empty specialty is required");
+        return;
+      }
+      if (!editData.servicesLocation?.trim()) {
+        toast.error("Service location is required");
+        return;
+      }
+      if (!editData.pincode || !/^\d{6}$/.test(editData.pincode)) {
+        toast.error("Pincode must be a 6-digit number");
         return;
       }
 
@@ -227,34 +242,40 @@ export default function MaidDashboard() {
       formData.append("fullName", editData.fullName || "");
       formData.append(
         "specialties",
-        editData.specialties?.filter((s) => s.trim()).join(",")
+        editData.specialties?.filter((s) => s.trim()).join(",") || ""
       );
       formData.append("rating", editData.rating?.toString() || "0");
       formData.append("experience", editData.experience || "");
+      formData.append("servicesLocation", editData.servicesLocation || "");
+      formData.append("pincode", editData.pincode || "");
       formData.append("description", editData.description || "");
       if (editData.image && typeof editData.image !== "string") {
         formData.append("image", editData.image);
-      } else {
-        formData.append("image", editData.image || DEFAULT_IMAGE); // Fallback to default
       }
 
-      const response = await fetch(
-        "http://localhost:3000/api/maid-dashboard/profile",
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: formData,
-        }
-      );
+      console.log("Sending PUT request to:", "http://localhost:5000/api/maid/profile");
+      console.log("Token:", localStorage.getItem("token"));
+      console.log("FormData:", Object.fromEntries(formData));
+
+      const response = await fetch(`http://localhost:5000/api/maid/profile/${userId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: formData,
+      });
+
+      console.log("Response status:", response.status);
+      console.log("Response ok:", response.ok);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update profile");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to update profile (Status: ${response.status})`);
       }
 
       const updatedData = await response.json();
+      console.log("Response data:", updatedData);
+
       setMaid((prev) => ({
         ...prev,
         fullName: updatedData.data.fullName || prev.fullName,
@@ -262,14 +283,18 @@ export default function MaidDashboard() {
         specialties: updatedData.data.specialties || prev.specialties,
         experience: updatedData.data.experience || prev.experience,
         rating: updatedData.data.rating || prev.rating,
-        image: updatedData.data.image || DEFAULT_IMAGE, // Use default if no image
+        servicesLocation: updatedData.data.servicesLocation || prev.servicesLocation,
+        pincode: updatedData.data.pincode || prev.pincode,
+        image: updatedData.data.image || DEFAULT_IMAGE,
+        isActive: updatedData.data.isActive || prev.isActive,
       }));
       setIsEditing(false);
       toast.success("Profile updated successfully");
       fetchMaidProfile();
     } catch (error) {
-      toast.error("Failed to update profile");
       console.error("Profile update error:", error);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error(message);
     }
   };
 
@@ -325,12 +350,12 @@ export default function MaidDashboard() {
                   src={
                     typeof editData.image === "string" && isEditing
                       ? editData.image
-                      : maid.image || DEFAULT_IMAGE // Fallback to default
+                      : maid.image || DEFAULT_IMAGE
                   }
                   alt={maid.fullName}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = DEFAULT_IMAGE; // Fallback on error
+                    (e.target as HTMLImageElement).src = DEFAULT_IMAGE;
                   }}
                 />
               </div>
@@ -404,14 +429,12 @@ export default function MaidDashboard() {
                   </>
                 ) : (
                   <>
-                    {!maid.isActive && (
-                      <button
-                        onClick={activateProfile}
-                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-                      >
-                        Activate
-                      </button>
-                    )}
+                    <button
+                      onClick={activateProfile}
+                      className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                    >
+                      {maid.isActive ? "Deactivate" : "Activate"}
+                    </button>
                     <button
                       onClick={startEditing}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -442,7 +465,7 @@ export default function MaidDashboard() {
         </div>
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Cuisine Specialties</h2>
+            <h2 className="text-xl font-semibold">Specialties</h2>
             {isEditing && (
               <button
                 onClick={addSpecialty}
@@ -469,11 +492,11 @@ export default function MaidDashboard() {
               {(editData.specialties || []).map((specialty, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <input
-                    type="text"
+                    type="text" // Fixed typo from "attext"
                     value={specialty}
                     onChange={(e) => handleSpecialtyChange(index, e.target.value)}
                     className="flex-1 p-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
-                    placeholder="Add cuisine specialty"
+                    placeholder="Add specialty"
                   />
                   <button
                     onClick={() => removeSpecialty(index)}
@@ -510,6 +533,50 @@ export default function MaidDashboard() {
               ) : (
                 <p className="text-gray-500">No specialties added yet</p>
               )}
+            </div>
+          )}
+        </div>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Service Details</h2>
+          {isEditing ? (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Service Location
+                </label>
+                <input
+                  type="text"
+                  name="servicesLocation"
+                  value={editData.servicesLocation || ""}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                  placeholder="Enter service location"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Pincode
+                </label>
+                <input
+                  type="text"
+                  name="pincode"
+                  value={editData.pincode || ""}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                  placeholder="Enter 6-digit pincode"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-gray-700">
+                <span className="font-medium">Service Location:</span>{" "}
+                {maid.servicesLocation || "Not specified"}
+              </p>
+              <p className="text-gray-700">
+                <span className="font-medium">Pincode:</span>{" "}
+                {maid.pincode || "Not specified"}
+              </p>
             </div>
           )}
         </div>

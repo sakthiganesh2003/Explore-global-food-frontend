@@ -1,15 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { jwtDecode } from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode'; // Use default import for jwt-decode
+
+// Declare Razorpay type to avoid 'any' and TypeScript errors
+interface RazorpayOptions {
+  key: string;
+  order_id: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  handler: (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => void;
+  prefill: { contact: string };
+  theme: { color: string };
+}
+
+interface RazorpayInstance {
+  open: () => void;
+}
+
+interface RazorpayConstructor {
+  new (options: RazorpayOptions): RazorpayInstance;
+}
+
+declare global {
+  interface Window {
+    Razorpay: RazorpayConstructor;
+  }
+}
+
+interface LocationType {
+  cityName: string;
+  pincode: string;
+}
 
 interface MaidType {
+  _id: string;
   userId: string;
   fullName: string;
   specialties: string[];
   rating: number;
   experience: string | number;
   image?: string;
-  cuisine?: string[];
+  bio?: string;
+  active?: boolean;
+  location?: LocationType;
+  distance?: number;
 }
 
 interface MemberType {
@@ -25,6 +61,7 @@ interface TimeType {
   time: string[];
   address: string;
   phoneNumber: string;
+  pincode: string;
 }
 
 interface FoodType {
@@ -45,7 +82,7 @@ interface CuisineType {
 
 interface FormDataType {
   maid: MaidType | null;
-  maidId: string | null; // maidId is userId from Maid collection (references User schema)
+  maidId: string | null;
   cuisine: CuisineType | null;
   members: MemberType[];
   time: TimeType | null;
@@ -60,7 +97,7 @@ interface FinalReviewProps {
 
 interface DecodedToken {
   id: string;
-  [key: string]: any;
+  [key: string]: unknown; // Use 'unknown' instead of 'any' for better type safety
 }
 
 const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMembers }) => {
@@ -80,7 +117,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
     };
   }, []);
 
-  const renderRatingStars = (rating: number) => {
+  const renderRatingStars = (rating: number): JSX.Element[] => {
     return Array(5)
       .fill(0)
       .map((_, i) => (
@@ -90,7 +127,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
       ));
   };
 
-  const calculateTotal = () => {
+  const calculateTotal = (): string => {
     let total = 0;
     if (formData.cuisine?.price) {
       total += formData.cuisine.price;
@@ -103,20 +140,20 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
     return total.toFixed(2);
   };
 
-  const handleRemoveMember = (indexToRemove: number) => {
+  const handleRemoveMember = (indexToRemove: number): void => {
     if (updateMembers) {
       const updatedMembers = formData.members.filter((_, index) => index !== indexToRemove);
       updateMembers(updatedMembers);
     }
   };
 
-  const initiatePayment = async (bookingId: string) => {
+  const initiatePayment = async (bookingId: string): Promise<void> => {
     try {
       const response = await fetch('http://localhost:5000/api/payments/initiate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
         },
         body: JSON.stringify({
           bookingId,
@@ -129,20 +166,20 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
         throw new Error(data.message || 'Failed to initiate payment');
       }
 
-      const options = {
+      const options: RazorpayOptions = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY || 'rzp_test_2HTK1FzohCF9N2',
         order_id: data.order.id,
         amount: data.order.amount,
         currency: 'INR',
         name: 'Maid Booking Service',
         description: `Payment for booking ID: ${bookingId}`,
-        handler: async function (response: any) {
+        handler: async (response) => {
           try {
             const verifyResponse = await fetch('http://localhost:5000/api/payments/verify', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('token')}`,
+                Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
               },
               body: JSON.stringify({
                 orderId: response.razorpay_order_id,
@@ -174,15 +211,19 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
         },
       };
 
-      const razorpay = new (window as any).Razorpay(options);
-      razorpay.open();
+      if (typeof window.Razorpay !== 'undefined') {
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      } else {
+        throw new Error('Razorpay script not loaded');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to initiate payment');
       setPaymentStatus(null);
     }
   };
 
-  const handleConfirmBooking = async () => {
+  const handleConfirmBooking = async (): Promise<void> => {
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -194,27 +235,36 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
       return;
     }
 
-    const token = localStorage.getItem('token');
-    let userId = '';
+    if (
+      formData.time?.pincode &&
+      formData.maid?.location?.pincode &&
+      formData.time.pincode !== formData.maid.location.pincode
+    ) {
+      setError("The maid's service area does not match your pincode.");
+      setLoading(false);
+      return;
+    }
 
-    if (token) {
-      try {
-        const decoded: DecodedToken = jwtDecode(token);
-        userId = decoded.id;
-      } catch (err) {
-        setError('Invalid or expired token. Please log in again.');
-        setLoading(false);
-        return;
-      }
-    } else {
+    const token = localStorage.getItem('token');
+    if (!token) {
       setError('No authentication token found. Please log in.');
+      setLoading(false);
+      return;
+    }
+
+    let userId: string;
+    try {
+      const decoded = jwtDecode<DecodedToken>(token);
+      userId = decoded.id;
+    } catch (err) {
+      setError('Invalid or expired token. Please log in again.');
       setLoading(false);
       return;
     }
 
     const payload = {
       userId,
-      maidId: formData.maidId, // Send maidId instead of maid
+      maidId: formData.maidId,
       cuisine: {
         id: formData.cuisine?.id || '',
         name: formData.cuisine?.name || '',
@@ -231,6 +281,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
         time: formData.time?.time || [],
         address: formData.time?.address || '',
         phoneNumber: formData.time?.phoneNumber || '',
+        pincode: formData.time?.pincode || '',
       },
       confirmedFoods: formData.confirmedFoods.map((food) => ({
         id: food.id,
@@ -262,12 +313,8 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
         throw new Error(result.message || 'Failed to create booking');
       }
 
-      // Try multiple possible locations for booking ID
-      const bookingId =
-        result.booking?._id ||
-        result._id ||
-        result.data?._id ||
-        result.id;
+      const bookingId: string | undefined =
+        result.booking?._id || result._id || result.data?._id || result.id;
 
       if (!bookingId) {
         console.error('Booking ID not found in response:', result);
@@ -276,7 +323,6 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
         );
       }
 
-      // Initiate payment with the booking ID
       await initiatePayment(bookingId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
@@ -316,6 +362,21 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
                 Experience: {formData.maid.experience}{' '}
                 {typeof formData.maid.experience === 'number' ? 'years' : ''}
               </p>
+              {formData.maid.location?.cityName && (
+                <p className="text-gray-600 mt-1">
+                  <span className="font-medium">Location:</span> {formData.maid.location.cityName}
+                </p>
+              )}
+              {formData.maid.location?.pincode && (
+                <p className="text-gray-600 mt-1">
+                  <span className="font-medium">Pincode:</span> {formData.maid.location.pincode}
+                </p>
+              )}
+              {formData.maid.distance !== undefined && (
+                <p className="text-gray-600 mt-1">
+                  <span className="font-medium">Distance:</span> {formData.maid.distance} km
+                </p>
+              )}
               {formData.maid.specialties?.length > 0 && (
                 <div className="mt-2">
                   <p className="text-sm font-medium text-gray-600">Specialties:</p>
@@ -342,7 +403,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
             <div>
               <div className="flex justify-between items-center mb-2">
                 <p className="font-medium text-gray-800">{formData.cuisine.name}</p>
-                {formData.cuisine.price && (
+                {formData.cuisine.price !== undefined && (
                   <p className="text-gray-800 font-medium">₹{formData.cuisine.price.toFixed(2)}</p>
                 )}
               </div>
@@ -356,17 +417,10 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
                   <span className="font-medium">Description:</span> {formData.cuisine.description}
                 </p>
               )}
-              {formData.maid?.cuisine?.includes(formData.cuisine.name) && (
-                <p className="text-xs text-green-600 mt-2">
-                  ★ This maid specializes in {formData.cuisine.name} cuisine
-                </p>
-              )}
             </div>
           ) : (
-            <p className="text-gray-600">No cuisine selected</p>
-          )}
-        </div>
-
+            <p className="text-gray-600">_FORGET_ No cuisine selected</p>
+        )}
         <div className="p-4 border rounded-lg bg-gray-50">
           <h3 className="text-lg font-semibold mb-3 text-gray-700">Time</h3>
           {formData.time ? (
@@ -385,6 +439,9 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
               </p>
               <p className="text-gray-800 mt-1">
                 <span className="font-medium">Address:</span> {formData.time.address}
+              </p>
+              <p className="text-gray-800 mt-1">
+                <span className="font-medium">Pincode:</span> {formData.time.pincode}
               </p>
               <p className="text-gray-800 mt-1">
                 <span className="font-medium">Phone Number:</span> {formData.time.phoneNumber}
@@ -450,7 +507,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
                     <span className="text-gray-800">{food.name}</span>
                     <span className="text-gray-500 text-sm ml-2">(Qty: {food.quantity})</span>
                   </div>
-                  {food.price && (
+                  {food.price !== undefined && (
                     <span className="text-gray-800 font-medium">
                       ₹{(food.price * food.quantity).toFixed(2)}
                       {food.quantity > 1 && (
@@ -503,6 +560,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
           {loading ? 'Processing...' : 'Confirm and Pay'}
         </button>
       </div>
+    </div>
     </div>
   );
 };
