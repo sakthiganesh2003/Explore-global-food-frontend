@@ -62,7 +62,7 @@ const HeroSection = () => {
                   href="/maid"
                   className="inline-block bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-4 rounded-lg text-lg transition-all border-2 border-white/30 backdrop-blur-sm"
                 >
-                  Book Maid
+                  Book Cook
                 </Link>
               </motion.div>
             </motion.div>

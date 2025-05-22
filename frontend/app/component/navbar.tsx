@@ -99,7 +99,7 @@ const Navbar = () => {
       case 'admin':
         return 'Admin Dashboard';
       case 'maid':
-        return 'Maid Dashboard';
+        return 'Cook Dashboard';
       case 'chef':
         return 'Chef Dashboard';
       default:
@@ -198,7 +198,7 @@ const Navbar = () => {
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      Become Maid
+                      Become cook form
                     </Link>
                   )}
                   <button
@@ -232,7 +232,7 @@ const Navbar = () => {
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setIsSigninOpen(false)}
                   >
-                    Maid Signin
+                    Cook Signin
                   </Link>
                   <Link
                     href="/chef/login/login"

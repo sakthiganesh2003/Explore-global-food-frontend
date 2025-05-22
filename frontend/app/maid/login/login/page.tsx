@@ -106,7 +106,7 @@ const SignInComponent = () => {
             >
               <i className="fas fa-sign-in-alt text-indigo-600 fa-lg"></i> {/* Adjusted color */}
             </div>
-            <h2 className="text-xl md:text-2xl font-bold text-gray-800">Maid Signin</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800">Cook Signin</h2>
             <p className="text-gray-600 mt-2">Please sign in to continue</p>
           </div>
 

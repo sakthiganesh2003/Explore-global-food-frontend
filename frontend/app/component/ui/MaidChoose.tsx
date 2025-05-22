@@ -144,7 +144,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
               </label>
               <input
                 type="text"
-                placeholder="Cooking, Cleaning, etc."
+                placeholder="Indian, itali etc."
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 className="w-full p-4 border border-gray-200 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 transition-all"

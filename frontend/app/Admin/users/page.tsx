@@ -100,7 +100,7 @@ const UserTable = () => {
     <div className="flex min-h-screen">
       
       
-      <div className="flex-1 bg-gray-50 p-6">
+      <div className="flex-1 bg-gray-50 ">
         <ToastContainer position="top-right" autoClose={3000} />
         
         <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -202,8 +202,8 @@ const UserPage = () => {
     <div className="min-h-screen bg-gray-100 flex">
       <Sidebar />
       <div className="flex-1 flex flex-col items-center py-10">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">User Management</h1>
-        <div className="w-full max-w-5xl bg-white shadow-md rounded-lg p-6">
+        <h1 className="text-3xl text-left font-bold text-gray-800 mb-6">User Management</h1>
+        <div className="w-full max-w-9xl bg-white shadow-md rounded-lg p-6">
           <UserTable />
         </div>
       </div>

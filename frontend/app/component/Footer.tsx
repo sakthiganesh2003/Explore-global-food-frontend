@@ -142,7 +142,7 @@ const Footer = () => {
         {/* Copyright Section */}
         <div className="pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-500 text-sm">
-            © {new Date().getFullYear()} Cooking Master. All rights reserved.
+            © {new Date().getFullYear()} gegosoft. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <Link href="/privacy-policy" className="text-gray-500 hover:text-orange-500 text-sm transition-colors">

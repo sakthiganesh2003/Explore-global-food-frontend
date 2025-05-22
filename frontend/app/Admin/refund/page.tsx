@@ -101,6 +101,16 @@ const RefundsPage = () => {
     setCurrentPage(1);
   };
 
+  // Calculate summary statistics
+  const summary = {
+    totalRefunds: refunds.length,
+    totalRefundAmount: refunds.reduce((sum, refund) => sum + refund.amount, 0),
+    pendingRefunds: refunds.filter(r => r.status === 'pending').length,
+    pendingAmount: refunds.filter(r => r.status === 'pending').reduce((sum, refund) => sum + refund.amount, 0),
+    refundedRefunds: refunds.filter(r => r.status === 'refunded').length,
+    refundedAmount: refunds.filter(r => r.status === 'refunded').reduce((sum, refund) => sum + refund.amount, 0),
+  };
+
   const handleUpdateRefundProof = async (refundId: string) => {
     if (!paymentPhoto) {
       toast.error('Please upload a proof image');
@@ -199,6 +209,33 @@ const RefundsPage = () => {
           <div className="mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Refunds Management</h1>
             <p className="text-gray-600 mt-2">Manage refund requests</p>
+            {/* Summary Section */}
+            <div className="mt-6 bg-white rounded-xl shadow-sm p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-800">Total Refunds</h3>
+                <p className="text-2xl font-bold text-indigo-600">{summary.totalRefunds}</p>
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-800">Total Refund Amount</h3>
+                <p className="text-2xl font-bold text-indigo-600">₹{summary.totalRefundAmount.toFixed(2)}</p>
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-800">Pending Refunds</h3>
+                <p className="text-2xl font-bold text-yellow-600">{summary.pendingRefunds}</p>
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-800">Pending Amount</h3>
+                <p className="text-2xl font-bold text-yellow-600">₹{summary.pendingAmount.toFixed(2)}</p>
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-800">Refunded Refunds</h3>
+                <p className="text-2xl font-bold text-green-600">{summary.refundedRefunds}</p>
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-800">Refunded Amount</h3>
+                <p className="text-2xl font-bold text-green-600">₹{summary.refundedAmount.toFixed(2)}</p>
+              </div>
+            </div>
             <div className="mt-6 flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

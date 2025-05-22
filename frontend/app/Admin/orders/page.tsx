@@ -107,7 +107,6 @@ const BookingsPage: NextPage = () => {
         filtered = filtered.filter(b => b.status.toLowerCase() === 'cancelled');
         break;
       default:
-        // 'all' - no date or status filter
         break;
     }
 
@@ -122,7 +121,7 @@ const BookingsPage: NextPage = () => {
     }
 
     setFilteredBookings(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   }, [activeFilter, searchTerm, bookings]);
 
   const openBookingDetails = (booking: Booking) => {
@@ -163,7 +162,13 @@ const BookingsPage: NextPage = () => {
     }
   };
 
-  // Pagination logic
+  // Calculate summary metrics
+  const totalOrders = bookings.length;
+  const totalConfirmed = bookings.filter(b => b.status.toLowerCase() === 'confirmed').length;
+  const totalPending = bookings.filter(b => b.status.toLowerCase() === 'pending').length;
+  const totalCancelled = bookings.filter(b => b.status.toLowerCase() === 'cancelled').length;
+  const totalRevenue = bookings.reduce((sum, booking) => sum + booking.totalAmount, 0).toFixed(2);
+
   const indexOfLastBooking = currentPage * bookingsPerPage;
   const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
   const currentBookings = filteredBookings.slice(indexOfFirstBooking, indexOfLastBooking);
@@ -194,6 +199,34 @@ const BookingsPage: NextPage = () => {
           <div className="max-w-7xl mx-auto">
             <header className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900">Bookings Management</h1>
+              {/* Summary Cards */}
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col items-center text-center">
+                  <i className="fas fa-list text-indigo-600 text-2xl mb-2"></i>
+                  <h3 className="text-lg font-semibold text-gray-900">Total Orders</h3>
+                  <p className="text-2xl font-bold text-gray-700">{totalOrders}</p>
+                </div>
+                <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col items-center text-center">
+                  <i className="fas fa-check-circle text-green-600 text-2xl mb-2"></i>
+                  <h3 className="text-lg font-semibold text-gray-900">Confirmed</h3>
+                  <p className="text-2xl font-bold text-gray-700">{totalConfirmed}</p>
+                </div>
+                <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col items-center text-center">
+                  <i className="fas fa-hourglass-half text-yellow-600 text-2xl mb-2"></i>
+                  <h3 className="text-lg font-semibold text-gray-900">Pending</h3>
+                  <p className="text-2xl font-bold text-gray-700">{totalPending}</p>
+                </div>
+                <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col items-center text-center">
+                  <i className="fas fa-times-circle text-red-600 text-2xl mb-2"></i>
+                  <h3 className="text-lg font-semibold text-gray-900">Cancelled</h3>
+                  <p className="text-2xl font-bold text-gray-700">{totalCancelled}</p>
+                </div>
+                <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col items-center text-center">
+                  <i className="fas fa-rupee-sign text-blue-600 text-2xl mb-2"></i>
+                  <h3 className="text-lg font-semibold text-gray-900">Total Revenue</h3>
+                  <p className="text-2xl font-bold text-gray-700">₹{totalRevenue}</p>
+                </div>
+              </div>
               <div className="mt-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div className="flex gap-2 flex-wrap">
                   {['all', 'today', 'upcoming', 'past', 'pending', 'confirmed', 'cancelled'].map(filter => (

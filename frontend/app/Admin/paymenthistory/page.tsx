@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
 import Sidebar from '@/app/component/dashboard/Sidebar';
 
-// TypeScript interfaces for the API response
+// TypeScript interfaces (unchanged from your original code)
 interface PaymentDetails {
   gateway: string;
   orderId: string;
@@ -82,7 +82,7 @@ interface Payment {
   paymentType: string;
   installmentNumber: number;
   isPartial: boolean;
-  customerResponse?: CustomerResponse; // Made optional to handle undefined
+  customerResponse?: CustomerResponse;
   payId: string;
   completedAt: string;
   createdAt: string;
@@ -102,14 +102,13 @@ interface ApiResponse {
   };
 }
 
-// Interface for decoded JWT payload
 interface DecodedToken {
   id: string;
   exp?: number;
   [key: string]: any;
 }
 
-// API utility function
+// API utility function (unchanged)
 const fetchPaymentHistory = async (
   token: string,
   page: number = 1,
@@ -134,7 +133,6 @@ const fetchPaymentHistory = async (
   }
 
   const data = await response.json();
-  // Log payments to debug missing customerResponse
   console.log('API Response:', data);
   data.payments.forEach((payment: Payment, index: number) => {
     if (!payment.customerResponse) {
@@ -145,7 +143,7 @@ const fetchPaymentHistory = async (
   return data;
 };
 
-// Payment Table Component
+// Payment Table Component (unchanged)
 const PaymentTable: React.FC<{ payments: Payment[] }> = ({ payments }) => {
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -168,7 +166,7 @@ const PaymentTable: React.FC<{ payments: Payment[] }> = ({ payments }) => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{payment.payId}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{payment.bookingId}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {(payment.amount ).toFixed(2)}
+                  {(payment.amount).toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{payment.currency}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm capitalize">
@@ -206,6 +204,9 @@ const PaymentHistoryPage: React.FC = () => {
   const [limit] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
   const [sort, setSort] = useState<string>('date-desc');
+  const [totalPayment, setTotalPayment] = useState<number>(0);
+  const [pendingPayments, setPendingPayments] = useState<{ count: number; amount: number }>({ count: 0, amount: 0 });
+  const [failedPayments, setFailedPayments] = useState<{ count: number; amount: number }>({ count: 0, amount: 0 });
   const router = useRouter();
 
   useEffect(() => {
@@ -239,6 +240,24 @@ const PaymentHistoryPage: React.FC = () => {
         if (data.success) {
           setPayments(data.payments);
           setTotal(data.pagination.total);
+
+          // Calculate metrics
+          const completed = data.payments
+            .filter((p) => p.paymentStatus === 'completed')
+            .reduce((sum, p) => sum + p.amount, 0);
+          
+          const pending = data.payments.filter((p) => p.paymentStatus === 'pending');
+          const failed = data.payments.filter((p) => p.paymentStatus === 'failed');
+
+          setTotalPayment(completed);
+          setPendingPayments({
+            count: pending.length,
+            amount: pending.reduce((sum, p) => sum + p.amount, 0),
+          });
+          setFailedPayments({
+            count: failed.length,
+            amount: failed.reduce((sum, p) => sum + p.amount, 0),
+          });
         } else {
           setError(data.message || 'Failed to load payment history');
         }
@@ -289,6 +308,30 @@ const PaymentHistoryPage: React.FC = () => {
               </select>
             </div>
           </div>
+
+          {/* Summary Section */}
+          {!loading && !error && payments.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="text-sm font-semibold text-gray-600">Total Payments</h3>
+                <p className="text-2xl font-bold text-gray-900">
+                  {(totalPayment).toFixed(2)} {payments[0]?.currency || 'INR'}
+                </p>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="text-sm font-semibold text-gray-600">Pending Payments</h3>
+                <p className="text-2xl font-bold text-gray-900">
+                  {pendingPayments.count} ({pendingPayments.amount.toFixed(2)} {payments[0]?.currency || 'INR'})
+                </p>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="text-sm font-semibold text-gray-600">Failed Payments</h3>
+                <p className="text-2xl font-bold text-gray-900">
+                  {failedPayments.count} ({failedPayments.amount.toFixed(2)} {payments[0]?.currency || 'INR'})
+                </p>
+              </div>
+            </div>
+          )}
 
           {loading && (
             <div className="flex justify-center items-center py-10">

@@ -8,7 +8,7 @@ const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <div className={`min-h-screen bg-gray-900 text-white transition-all duration-300 ${isOpen ? "w-64" : "w-20"}`}>
+    <div className={`min-h-screen fixed-max bg-gray-900 text-white transition-all duration-300 ${isOpen ? "w-64" : "w-20"}`}>
       {/* Toggle Button */}
       <button
         className="p-4 focus:outline-none"
@@ -20,16 +20,16 @@ const Sidebar = () => {
       {/* Navigation Links */}
       <nav className="flex flex-col space-y-4 mt-4 px-2">
         <SidebarItem icon={<Home />} text="Home" href="/Admin" isOpen={isOpen} />
-        <SidebarItem icon={<Utensils />} text="Maid From" href="/Admin/Booking" isOpen={isOpen} />
+        <SidebarItem icon={<Utensils />} text="Maid Form" href="/Admin/Booking" isOpen={isOpen} />
         
-        <SidebarItem icon={<ChefHat />} text="Maid Status" href="/Admin/maidstatus" isOpen={isOpen} />
-        <SidebarItem icon={<ChefHat />} text="chef form" href="/Admin/chef" isOpen={isOpen} />
-        <SidebarItem icon={<ChefHat />} text="orders" href="/Admin/orders" isOpen={isOpen} />
-        <SidebarItem icon={<ChefHat />} text="refunds" href="/Admin/refund" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="Cook Status" href="/Admin/maidstatus" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="Chef form" href="/Admin/chef" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="Orders" href="/Admin/orders" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="Refunds" href="/Admin/refund" isOpen={isOpen} />
         <SidebarItem icon={<ChefHat />} text="Users" href="/Admin/users" isOpen={isOpen} />
-        <SidebarItem icon={<ChefHat />} text="chefposts" href="/Admin/chefposts" isOpen={isOpen} />
-        <SidebarItem icon={<ChefHat />} text="payment history" href="/Admin/paymenthistory" isOpen={isOpen} />
-        <SidebarItem icon={<ChefHat />} text="maid earnings" href="/Admin/maidearnings" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="Chefposts" href="/Admin/chefposts" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="Payment history" href="/Admin/paymenthistory" isOpen={isOpen} />
+        <SidebarItem icon={<ChefHat />} text="Cook earnings" href="/Admin/maidearnings" isOpen={isOpen} />
         <SidebarItem icon={<ChefHat />} text="feedback" href="/Admin/feedback" isOpen={isOpen} />
      
       </nav>

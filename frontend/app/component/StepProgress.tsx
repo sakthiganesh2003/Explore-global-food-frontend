@@ -56,7 +56,7 @@ type FormDataType = {
   confirmedFoods: FoodItemType[];
 };
 
-const steps = ['Maid Choose', 'Select Cuisine', 'Members', 'Time', 'Final Review'] as const;
+const steps = [' Choose Cook', 'Select Cuisine', 'Members', 'Time', 'Final Review'] as const;
 
 const StepProgress = () => {
   const [currentStep, setCurrentStep] = useState<number>(0);

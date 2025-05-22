@@ -8,10 +8,16 @@ import 'react-toastify/dist/ReactToastify.css';
 
 interface DecodedToken {
   id: string;
-  role: 'maid' | 'admin'; // Specify possible roles
+  role: 'maid' | 'admin';
   exp?: number;
   email?: string;
   username?: string;
+}
+
+interface Location {
+  _id: string;
+  cityName: string;
+  pincode: string;
 }
 
 interface FormData {
@@ -23,6 +29,8 @@ interface FormData {
   bio: string;
   aadhaarPhoto: File | null;
   aadhaarNumber: string;
+  location: string;
+  pincode: string;
   bankAccountNumber: string;
   bankName: string;
   ifscCode: string;
@@ -41,6 +49,8 @@ const BecomeMaidForm = () => {
     bio: '',
     aadhaarPhoto: null,
     aadhaarNumber: '',
+    location: '',
+    pincode: '',
     bankAccountNumber: '',
     bankName: '',
     ifscCode: '',
@@ -50,8 +60,61 @@ const BecomeMaidForm = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  // Fallback locations for testing
+  const fallbackLocations: Location[] = [
+    { _id: '1', cityName: 'Madurai', pincode: '625001' },
+    { _id: '2', cityName: 'Chennai', pincode: '600001' },
+    { _id: '3', cityName: 'Bangalore', pincode: '560001' }
+  ];
 
   const cuisines = ['Indian', 'Italian', 'Chinese', 'Mexican', 'Thai', 'Japanese', 'Mediterranean', 'Other'];
+
+  // Replace with your actual backend URL
+  const API_URL = 'http://localhost:5000'; // Update this to your backend URL
+
+  // Fetch locations on component mount
+  useEffect(() => {
+    const fetchLocations = async () => {
+      setIsLoadingLocations(true);
+      const url = `${API_URL}/api/locations`;
+      console.log('Fetching locations from:', url); // Debug log
+      try {
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log('Locations response:', data); // Debug log
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid response format: Expected an array');
+        }
+        const uniqueCities = new Set(data.map(loc => loc.cityName.toLowerCase()));
+        if (uniqueCities.size < data.length) {
+          console.warn('Duplicate city names detected in locations API response');
+          toast.warn('Duplicate city names found. Contact support to fix location data.');
+        }
+        setLocations(data);
+        setLocationError(null);
+      } catch (error: any) {
+        console.error('Error fetching locations:', error);
+        setLocationError(`Failed to load locations: ${error.message}. Using fallback locations.`);
+        toast.error('Failed to load locations. Using fallback data.');
+        setLocations(fallbackLocations); // Use fallback locations
+      } finally {
+        setIsLoadingLocations(false);
+      }
+    };
+
+    fetchLocations();
+  }, []);
 
   // Check authentication on component mount
   useEffect(() => {
@@ -61,28 +124,26 @@ const BecomeMaidForm = () => {
       router.push('/login');
       return;
     }
-  
+
     try {
       const decoded: DecodedToken = jwtDecode(token);
       if (!decoded.id) {
         throw new Error('Invalid token');
       }
-  
-      // Check if user has the correct role to access this form
+
       if (decoded.role !== 'maid') {
         toast.error('You do not have permission to access this page');
         router.push('/');
         return;
       }
-  
+
       setIsLoggedIn(true);
-      
-      // Pre-fill email if available in token
+
       if (decoded.email) {
         setFormData(prev => ({
           ...prev,
-          email: decoded.email || '', // Ensure we fall back to empty string if undefined
-          fullName: decoded.username || prev.fullName // You might also want to pre-fill the name
+          email: decoded.email || '',
+          fullName: decoded.username || prev.fullName
         }));
       }
     } catch (error) {
@@ -95,7 +156,7 @@ const BecomeMaidForm = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     if (validationErrors[name]) {
       setValidationErrors(prev => {
         const newErrors = { ...prev };
@@ -103,13 +164,17 @@ const BecomeMaidForm = () => {
         return newErrors;
       });
     }
+
+    if (name === 'location') {
+      setFormData(prev => ({ ...prev, pincode: '' }));
+    }
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.[0]) return;
 
     const file = e.target.files[0];
-    
+
     if (!file.type.match('image/(jpeg|png)')) {
       toast.error('Please upload a JPEG or PNG image');
       return;
@@ -121,7 +186,7 @@ const BecomeMaidForm = () => {
     }
 
     setFormData(prev => ({ ...prev, aadhaarPhoto: file }));
-    
+
     setValidationErrors(prev => {
       const newErrors = { ...prev };
       delete newErrors.aadhaarPhoto;
@@ -144,7 +209,7 @@ const BecomeMaidForm = () => {
         ? prev.specialties.filter(item => item !== cuisine)
         : [...prev.specialties, cuisine]
     }));
-    
+
     if (validationErrors.specialties) {
       setValidationErrors(prev => {
         const newErrors = { ...prev };
@@ -165,6 +230,8 @@ const BecomeMaidForm = () => {
     if (!formData.bio.trim()) errors.bio = 'Bio is required';
     if (!formData.aadhaarPhoto) errors.aadhaarPhoto = 'Aadhaar photo is required';
     if (!formData.aadhaarNumber.trim()) errors.aadhaarNumber = 'Aadhaar number is required';
+    if (!formData.location) errors.location = 'Location is required';
+    if (!formData.pincode.trim()) errors.pincode = 'Pincode is required';
     if (!formData.accountHolderName.trim()) errors.accountHolderName = 'Account holder name is required';
     if (!formData.bankName.trim()) errors.bankName = 'Bank name is required';
     if (!formData.bankAccountNumber.trim()) errors.bankAccountNumber = 'Account number is required';
@@ -173,6 +240,7 @@ const BecomeMaidForm = () => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = 'Invalid email format';
     if (!/^\d{10}$/.test(formData.phone)) errors.phone = 'Phone must be 10 digits';
     if (!/^\d{12}$/.test(formData.aadhaarNumber)) errors.aadhaarNumber = 'Aadhaar must be 12 digits';
+    if (!/^\d{6}$/.test(formData.pincode)) errors.pincode = 'Pincode must be 6 digits';
     if (!/^\d{9,18}$/.test(formData.bankAccountNumber)) errors.bankAccountNumber = 'Invalid account number';
     if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifscCode)) errors.ifscCode = 'Invalid IFSC format';
 
@@ -182,7 +250,7 @@ const BecomeMaidForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error('Please fix all form errors');
       return;
@@ -203,29 +271,29 @@ const BecomeMaidForm = () => {
         throw new Error('Invalid token');
       }
 
-      // Prepare FormData for multipart/form-data request
       const formDataToSend = new FormData();
       formDataToSend.append('userId', decoded.id);
       formDataToSend.append('fullName', formData.fullName.trim());
       formDataToSend.append('email', formData.email.trim());
       formDataToSend.append('phone', formData.phone.trim());
       formDataToSend.append('experience', `${formData.experience} years`);
-      formDataToSend.append('specialties', JSON.stringify(formData.specialties)); // Send as JSON string
+      formDataToSend.append('specialties', JSON.stringify(formData.specialties));
       formDataToSend.append('bio', formData.bio.trim());
       if (formData.aadhaarPhoto) {
-        formDataToSend.append('aadhaarPhoto', formData.aadhaarPhoto); // File upload
+        formDataToSend.append('aadhaarPhoto', formData.aadhaarPhoto);
       }
       formDataToSend.append('aadhaarNumber', formData.aadhaarNumber.trim());
+      formDataToSend.append('location', formData.location);
+      formDataToSend.append('pincode', formData.pincode.trim());
       formDataToSend.append('bankDetails[accountNumber]', formData.bankAccountNumber.trim());
       formDataToSend.append('bankDetails[bankName]', formData.bankName.trim());
       formDataToSend.append('bankDetails[ifscCode]', formData.ifscCode.trim());
       formDataToSend.append('bankDetails[accountHolderName]', formData.accountHolderName.trim());
 
-      // Submit to backend
-      const response = await fetch('http://localhost:5000/api/formMaids', {
+      const response = await fetch(`${API_URL}/api/formMaids`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}` // No Content-Type header; FormData sets it automatically
+          'Authorization': `Bearer ${token}`
         },
         body: formDataToSend
       });
@@ -279,7 +347,7 @@ const BecomeMaidForm = () => {
                 {/* Personal Information Section */}
                 <div className="space-y-4">
                   <h2 className="text-lg font-semibold text-gray-800">Personal Information</h2>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Full Name <span className="text-red-500">*</span>
@@ -327,12 +395,62 @@ const BecomeMaidForm = () => {
                     />
                     {renderError('phone')}
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Location <span className="text-red-500">*</span>
+                    </label>
+                    {isLoadingLocations ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-indigo-500"></div>
+                        <span className="text-sm text-gray-600">Loading locations...</span>
+                      </div>
+                    ) : locationError ? (
+                      <p className="text-sm text-red-600">{locationError}</p>
+                    ) : locations.length === 0 ? (
+                      <p className="text-sm text-red-600">No locations available</p>
+                    ) : (
+                      <select
+                        name="location"
+                        value={formData.location}
+                        onChange={handleChange}
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
+                          validationErrors.location ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">Select location</option>
+                        {locations.map(location => (
+                          <option key={location._id} value={location._id}>
+                            {location.cityName}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    {renderError('location')}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Pincode <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="pincode"
+                      value={formData.pincode}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition ${
+                        validationErrors.pincode ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="123456"
+                    />
+                    {renderError('pincode')}
+                  </div>
                 </div>
 
                 {/* Verification Section */}
                 <div className="space-y-4">
                   <h2 className="text-lg font-semibold text-gray-800">Verification</h2>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Aadhaar Number <span className="text-red-500">*</span>
@@ -358,8 +476,8 @@ const BecomeMaidForm = () => {
                         type="button"
                         onClick={triggerFileInput}
                         className={`px-4 py-2 rounded-lg hover:bg-indigo-200 transition ${
-                          validationErrors.aadhaarPhoto 
-                            ? 'bg-red-100 text-red-800' 
+                          validationErrors.aadhaarPhoto
+                            ? 'bg-red-100 text-red-800'
                             : 'bg-indigo-100 text-indigo-700'
                         }`}
                       >
@@ -379,9 +497,9 @@ const BecomeMaidForm = () => {
                     {renderError('aadhaarPhoto')}
                     {previewUrl && (
                       <div className="mt-2">
-                        <img 
-                          src={previewUrl} 
-                          alt="Aadhaar preview" 
+                        <img
+                          src={previewUrl}
+                          alt="Aadhaar preview"
                           className="h-32 border rounded-lg object-contain"
                         />
                       </div>
@@ -461,7 +579,7 @@ const BecomeMaidForm = () => {
               {/* Bank Details Section */}
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-gray-800">Bank Account Details</h2>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Account Holder Name <span className="text-red-500">*</span>
@@ -534,7 +652,7 @@ const BecomeMaidForm = () => {
               <div className="pt-4">
                 <button
                   type="submit"
-                  disabled={isUploading}
+                  disabled={isUploading || isLoadingLocations}
                   className="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed transition"
                 >
                   {isUploading ? (
