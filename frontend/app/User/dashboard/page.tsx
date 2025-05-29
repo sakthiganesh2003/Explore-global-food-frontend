@@ -1,13 +1,16 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Sidebaruser from '@/app/component/dashboard/Sidebaruser';
+import { jwtDecode } from 'jwt-decode';
 
 type UserProfile = {
+  id: string;
   name: string;
   email: string;
+  role: string;
+  phone: string | null;
   image: string;
-  phone: string;
   address: {
     city: string;
     country: string;
@@ -18,22 +21,109 @@ type UserProfile = {
   joinedDate: string;
 };
 
+interface DecodedToken {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  phone: string | null;
+  iat: number;
+  exp: number;
+}
+
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<UserProfile>({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
+    id: '',
+    name: '',
+    email: '',
+    role: 'user',
+    phone: null,
     image: 'https://randomuser.me/api/portraits/men/1.jpg',
-    phone: '+1 (555) 123-4567',
     address: {
-      city: 'New York',
-      country: 'United States',
+      city: '',
+      country: '',
     },
-    birthDate: '1990-05-15',
-    gender: 'Male',
-    bio: 'Passionate about building great user experiences and solving complex problems with code.',
-    joinedDate: '2020-03-10',
+    birthDate: '',
+    gender: '',
+    bio: '',
+    joinedDate: new Date().toISOString(),
   });
+
+  // Fetch user data from API
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/profile/user/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user profile');
+      }
+
+      const data = await response.json();
+      setUser({
+        id: data.id || userId,
+        name: data.name || '',
+        email: data.email || '',
+        role: data.role || 'user',
+        phone: data.phone || null,
+        image: data.image || 'https://randomuser.me/api/portraits/men/1.jpg',
+        address: {
+          city: data.address?.city || '',
+          country: data.address?.country || '',
+        },
+        birthDate: data.birthDate || '',
+        gender: data.gender || '',
+        bio: data.bio || '',
+        joinedDate: data.joinedDate || new Date().toISOString(),
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      console.error('Error fetching user profile:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Decode token and initialize user data
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded: DecodedToken = jwtDecode(token);
+        
+        setUser(prev => ({
+          ...prev,
+          id: decoded.id,
+          name: decoded.name,
+          email: decoded.email,
+          role: decoded.role,
+          phone: decoded.phone,
+        }));
+
+        localStorage.setItem('userId', decoded.id);
+        localStorage.setItem('userName', decoded.name);
+        localStorage.setItem('userEmail', decoded.email);
+        localStorage.setItem('userRole', decoded.role);
+
+        fetchUserProfile(decoded.id);
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        setError('Failed to decode authentication token');
+        setIsLoading(false);
+      }
+    } else {
+      setError('No authentication token found');
+      setIsLoading(false);
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -63,10 +153,71 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
-    console.log('Updated user:', user);
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/profile/user/${user.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...user,
+          phone: user.phone || null, // Ensure phone is null if empty
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
+
+      const updatedUser = await response.json();
+      setUser(updatedUser);
+      setIsEditing(false);
+      
+      localStorage.setItem('userName', updatedUser.name);
+      localStorage.setItem('userEmail', updatedUser.email);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update profile');
+      console.error('Error updating profile:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 text-gray-500">
+        <Sidebaruser />
+        <main className="flex-1 p-6 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading profile...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 text-gray-500">
+        <Sidebaruser />
+        <main className="flex-1 p-6 flex items-center justify-center">
+          <div className="text-center text-red-500">
+            <p>Error loading profile: {error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-gray-500">
@@ -89,11 +240,18 @@ export default function ProfilePage() {
                   alt={`${user.name}'s profile`}
                 />
                 {isEditing && (
-                  <button className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-md border border-gray-200 hover:bg-gray-100 transition-colors">
+                  <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-md border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer">
+                    <input
+                      type="file"
+                      name="image"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                     </svg>
-                  </button>
+                  </label>
                 )}
               </div>
               <div className="flex-1 text-center sm:text-left space-y-2">
@@ -107,7 +265,7 @@ export default function ProfilePage() {
                       className="w-full p-1 border-b border-gray-300 focus:outline-none focus:border-blue-500"
                     />
                   ) : (
-                    user.name
+                    user.name || 'No name provided'
                   )}
                 </h1>
                 <p className="text-gray-600">
@@ -120,24 +278,10 @@ export default function ProfilePage() {
                       className="w-full p-1 border-b border-gray-300 focus:outline-none focus:border-blue-500"
                     />
                   ) : (
-                    user.email
+                    user.email || 'No email provided'
                   )}
                 </p>
-                <p className="text-gray-600">
-                  {isEditing ? (
-                    <input
-                      type="file"
-                      name="image"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="w-full p-1 border-b border-gray-300 focus:outline-none focus:border-blue-500"
-                    />
-                  ) : (
-                    <a href={user.image} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                      View Profile Image
-                    </a>
-                  )}
-                </p>
+                <p className="text-sm text-gray-500 capitalize">{user.role}</p>
               </div>
             </div>
           </div>
@@ -157,9 +301,10 @@ export default function ProfilePage() {
                     </button>
                     <button
                       onClick={handleSave}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                      disabled={isLoading}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm disabled:opacity-50"
                     >
-                      Save Changes
+                      {isLoading ? 'Saving...' : 'Save Changes'}
                     </button>
                   </>
                 ) : (
@@ -185,12 +330,13 @@ export default function ProfilePage() {
                       <input
                         type="tel"
                         name="phone"
-                        value={user.phone}
+                        value={user.phone || ''}
                         onChange={handleInputChange}
                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="+1 (123) 456-7890"
                       />
                     ) : (
-                      <p className="p-2 text-gray-900">{user.phone}</p>
+                      <p className="p-2 text-gray-900">{user.phone || 'Not provided'}</p>
                     )}
                   </div>
 
@@ -206,11 +352,11 @@ export default function ProfilePage() {
                       />
                     ) : (
                       <p className="p-2 text-gray-900">
-                        {new Date(user.birthDate).toLocaleDateString('en-US', {
+                        {user.birthDate ? new Date(user.birthDate).toLocaleDateString('en-US', {
                           month: '2-digit',
                           day: '2-digit',
                           year: 'numeric'
-                        })}
+                        }) : 'Not provided'}
                       </p>
                     )}
                   </div>
@@ -224,13 +370,14 @@ export default function ProfilePage() {
                         onChange={(e) => setUser({...user, gender: e.target.value})}
                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                       >
+                        <option value="">Select gender</option>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                         <option value="Other">Other</option>
                         <option value="Prefer not to say">Prefer not to say</option>
                       </select>
                     ) : (
-                      <p className="p-2 text-gray-900">{user.gender}</p>
+                      <p className="p-2 text-gray-900">{user.gender || 'Not specified'}</p>
                     )}
                   </div>
                 </div>
@@ -252,7 +399,7 @@ export default function ProfilePage() {
                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                     ) : (
-                      <p className="p-2 text-gray-900">{user.address.city}</p>
+                      <p className="p-2 text-gray-900">{user.address.city || 'Not provided'}</p>
                     )}
                   </div>
 
@@ -267,7 +414,7 @@ export default function ProfilePage() {
                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                     ) : (
-                      <p className="p-2 text-gray-900">{user.address.country}</p>
+                      <p className="p-2 text-gray-900">{user.address.country || 'Not provided'}</p>
                     )}
                   </div>
                 </div>
@@ -304,6 +451,10 @@ export default function ProfilePage() {
                       day: 'numeric'
                     })}
                   </p>
+                </div>
+                <div className="space-y-1 mt-4">
+                  <label className="block text-sm font-medium text-gray-500">User ID</label>
+                  <p className="p-2 text-gray-900 font-mono text-sm">{user.id}</p>
                 </div>
               </section>
             </div>

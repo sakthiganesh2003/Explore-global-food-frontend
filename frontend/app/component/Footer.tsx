@@ -52,25 +52,25 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="text-gray-400 hover:text-orange-500 transition-colors flex items-center">
+                <Link href="/User/about" className="text-gray-400 hover:text-orange-500 transition-colors flex items-center">
                   <span className="w-1 h-1 bg-orange-500 rounded-full mr-2"></span>
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/menu" className="text-gray-400 hover:text-orange-500 transition-colors flex items-center">
+                <Link href="/chef/recipespost" className="text-gray-400 hover:text-orange-500 transition-colors flex items-center">
                   <span className="w-1 h-1 bg-orange-500 rounded-full mr-2"></span>
-                  Our Menu
+                  Chef dishes
                 </Link>
               </li>
               <li>
-                <Link href="/chefs" className="text-gray-400 hover:text-orange-500 transition-colors flex items-center">
+                <Link href="/maid" className="text-gray-400 hover:text-orange-500 transition-colors flex items-center">
                   <span className="w-1 h-1 bg-orange-500 rounded-full mr-2"></span>
-                  Our Chefs
+                  Cooks
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-400 hover:text-orange-500 transition-colors flex items-center">
+                <Link href="/User/contactas" className="text-gray-400 hover:text-orange-500 transition-colors flex items-center">
                   <span className="w-1 h-1 bg-orange-500 rounded-full mr-2"></span>
                   Contact Us
                 </Link>
@@ -145,7 +145,7 @@ const Footer = () => {
             © {new Date().getFullYear()} gegosoft. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <Link href="/privacy-policy" className="text-gray-500 hover:text-orange-500 text-sm transition-colors">
+            <Link href="component/privacyandpolicy" className="text-gray-500 hover:text-orange-500 text-sm transition-colors">
               Privacy Policy
             </Link>
             <Link href="/terms" className="text-gray-500 hover:text-orange-500 text-sm transition-colors">

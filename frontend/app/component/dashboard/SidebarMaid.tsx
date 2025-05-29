@@ -40,7 +40,8 @@ const SidebarMaid = () => {
         <SidebarItem icon={<Home />} text="Home" href="/maid/dashboard" isOpen={isOpen} />
         <SidebarItem icon={<Home />} text="status" href="/maid/dashboard/status" isOpen={isOpen} />
         <SidebarItem icon={<BookOpen />} text="Orders" href="/maid/dashboard/Booking" isOpen={isOpen} />
-        {/* <SidebarItem icon={<CreditCard />} text="Payment" href="/maid/dashboard/Payment" isOpen={isOpen} /> */}
+         {/* <SidebarItem icon={<Home />} text="status" href="/maid/dashboard/feedback" isOpen={isOpen} /> */}
+         <SidebarItem icon={<CreditCard />} text="Feedback" href="/maid/dashboard/Payment" isOpen={isOpen} />
       </nav>
     </div>
   );

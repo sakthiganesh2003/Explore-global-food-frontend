@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { toast } from "react-hot-toast";
+import { toast, Toaster } from "react-hot-toast"; // Import Toaster
 import SidebarMaid from "@/app/component/dashboard/SidebarMaid";
 import { jwtDecode } from "jwt-decode";
 import { useRouter } from "next/navigation";
+import { users } from "lucide-react";
 
 interface Maid {
   id: string;
@@ -153,7 +154,7 @@ export default function MaidDashboard() {
 
       const result = await response.json();
       setMaid((prev) => ({ ...prev, isActive: result.data.isActive }));
-      toast.success(`Profile ${result.data.isActive ? "activated" : "deactivated"}`);
+      toast.success(`Profile ${result.data.isActive ? "activated" : "deactivated"} successfully!`);
     } catch (error) {
       console.error("Toggle status error:", error);
       toast.error("Failed to toggle profile status");
@@ -172,6 +173,7 @@ export default function MaidDashboard() {
       image: maid.image,
     });
     setIsEditing(true);
+    toast("Editing profile...");
   };
 
   const handleInputChange = (
@@ -185,6 +187,7 @@ export default function MaidDashboard() {
     const file = e.target.files?.[0];
     if (file) {
       setEditData((prev) => ({ ...prev, image: file }));
+      toast.success("Image selected for upload");
     }
   };
 
@@ -199,12 +202,14 @@ export default function MaidDashboard() {
       ...prev,
       specialties: [...(prev.specialties || []), ""],
     }));
+    toast.success("New specialty field added");
   };
 
   const removeSpecialty = (index: number) => {
     const newSpecialties = [...(editData.specialties || [])];
     newSpecialties.splice(index, 1);
     setEditData((prev) => ({ ...prev, specialties: newSpecialties }));
+    toast.success("Specialty removed");
   };
 
   const saveChanges = async () => {
@@ -300,11 +305,13 @@ export default function MaidDashboard() {
 
   const cancelEditing = () => {
     setIsEditing(false);
+    toast("Editing cancelled");
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
+        <Toaster position="top-right" reverseOrder={false} /> {/* Add Toaster */}
         <SidebarMaid />
         <div className="flex-1 p-6 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -316,6 +323,7 @@ export default function MaidDashboard() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
+        <Toaster position="top-right" reverseOrder={false} /> {/* Add Toaster */}
         <SidebarMaid />
         <div className="flex-1 p-6 flex flex-col items-center justify-center">
           <div className="text-red-500 text-lg mb-4">{error}</div>
@@ -340,6 +348,7 @@ export default function MaidDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      <Toaster position="top-right" reverseOrder={false} /> {/* Add Toaster */}
       <SidebarMaid />
       <div className="flex-1 p-6 text-gray-800">
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -429,12 +438,7 @@ export default function MaidDashboard() {
                   </>
                 ) : (
                   <>
-                    <button
-                      onClick={activateProfile}
-                      className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-                    >
-                      {maid.isActive ? "Deactivate" : "Activate"}
-                    </button>
+                   
                     <button
                       onClick={startEditing}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -492,7 +496,7 @@ export default function MaidDashboard() {
               {(editData.specialties || []).map((specialty, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <input
-                    type="text" // Fixed typo from "attext"
+                    type="text"
                     value={specialty}
                     onChange={(e) => handleSpecialtyChange(index, e.target.value)}
                     className="flex-1 p-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"

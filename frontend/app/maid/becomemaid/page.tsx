@@ -97,6 +97,7 @@ const BecomeMaidForm = () => {
           throw new Error('Invalid response format: Expected an array');
         }
         const uniqueCities = new Set(data.map(loc => loc.cityName.toLowerCase()));
+        console.log(uniqueCities)
         if (uniqueCities.size < data.length) {
           console.warn('Duplicate city names detected in locations API response');
           toast.warn('Duplicate city names found. Contact support to fix location data.');

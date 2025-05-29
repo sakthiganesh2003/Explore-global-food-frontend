@@ -224,7 +224,7 @@ const MaidsManagementPage = () => {
       <div className="flex-1 overflow-y-auto">
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">Maids Management</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Cooks Management</h1>
             <div className="flex items-center space-x-4">
               <div className="relative w-64">
                 <input
