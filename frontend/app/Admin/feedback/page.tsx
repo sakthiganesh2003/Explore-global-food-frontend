@@ -95,7 +95,7 @@ const FeedbackPage = () => {
       <div className="flex-1 p-8 justify-center">
         <div className="bg-white rounded-xl shadow-lg p-8">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Customer Feedback</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Customer Feedback</h1>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 font-medium">Items per page:</span>
               <select

@@ -82,7 +82,7 @@ interface Payment {
   paymentType: string;
   installmentNumber: number;
   isPartial: boolean;
-  customerResponse: CustomerResponse;
+  customerResponse?: CustomerResponse; // Made optional to handle undefined cases
   payId: string;
   completedAt: string;
   createdAt: string;
@@ -116,7 +116,7 @@ const fetchPaymentHistory = async (id: string, token: string): Promise<ApiRespon
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    cache: 'no-store'
+    cache: 'no-store',
   });
 
   if (!response.ok) {
@@ -134,7 +134,7 @@ const PaymentTable: React.FC<{ payments: Payment[] }> = ({ payments }) => {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -174,12 +174,12 @@ const PaymentTable: React.FC<{ payments: Payment[] }> = ({ payments }) => {
                 {(payment.amount).toLocaleString('en-IN', {
                   style: 'currency',
                   currency: payment.currency || 'INR',
-                  minimumFractionDigits: 2
+                  minimumFractionDigits: 2,
                 })}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
-                {payment.customerResponse.method}
-                {payment.customerResponse.vpa && (
+                {payment.customerResponse?.method || 'N/A'}
+                {payment.customerResponse?.vpa && (
                   <div className="text-xs text-gray-500">VPA: {payment.customerResponse.vpa}</div>
                 )}
               </td>
@@ -195,7 +195,6 @@ const PaymentTable: React.FC<{ payments: Payment[] }> = ({ payments }) => {
                 <button
                   className="text-blue-600 hover:text-blue-900"
                   onClick={() => {
-                    // Implement modal or expandable row for details
                     console.log('View details for', payment._id);
                   }}
                 >

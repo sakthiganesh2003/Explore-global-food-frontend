@@ -83,14 +83,7 @@ const cuisines: Cuisine[] = [
           { name: "Hyderabadi Biryani", price: 220, description: "Fragrant rice dish with meat and spices" }
         ]
       },
-      {
-        name: "Street Food",
-        details: [
-          { name: "Pani Puri", price: 40, description: "Crisp puris filled with spiced water", vegetarian: true, popular: true },
-          { name: "Vada Pav", price: 30, description: "Spicy potato fritter in a bun", vegetarian: true },
-          { name: "Chole Bhature", price: 120, description: "Spicy chickpeas with fried bread", vegetarian: true }
-        ]
-      }
+
     ]
   },
 ];
@@ -202,8 +195,7 @@ export default function SelectCuisine({
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
-        progress: undefined,
-        className: "!bg-white !text-gray-800 !shadow-lg !rounded-xl !p-4",
+        className: "!bg-white !text-gray-800 !shadow-md !rounded-lg !p-4 !border !border-gray-100",
       }
     );
   };
@@ -213,7 +205,7 @@ export default function SelectCuisine({
     0
   );
 
-  return (
+ return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="text-center mb-12">
@@ -233,8 +225,8 @@ export default function SelectCuisine({
               onClick={() => handleCuisineToggle(cuisine.name)}
               className={`relative rounded-xl overflow-hidden h-40 group transition-all duration-300 ${
                 selectedCuisines.includes(cuisine.name) 
-                  ? "ring-4 ring-opacity-70 ring-primary-500 transform scale-[0.98]" 
-                  : "hover:shadow-lg"
+                  ? "ring-4 ring-opacity-70 ring-indigo-500 transform scale-[0.98] shadow-lg" 
+                  : "hover:shadow-md"
               }`}
             >
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70 z-10" />
@@ -251,7 +243,7 @@ export default function SelectCuisine({
                 <div className={`h-1 w-8 mt-2 bg-gradient-to-r ${cuisine.color} rounded-full`} />
               </div>
               {selectedCuisines.includes(cuisine.name) && (
-                <div className="absolute top-3 right-3 z-20 bg-primary-500 text-white p-1 rounded-full">
+                <div className="absolute top-3 right-3 z-20 bg-indigo-600 text-white p-1 rounded-full">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -264,9 +256,9 @@ export default function SelectCuisine({
 
       {/* Menu Content */}
       {selectedCuisines.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
           {/* Tab Navigation */}
-          <div className="flex overflow-x-auto scrollbar-hide border-b">
+          <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-200">
             {selectedCuisines.map(cuisineName => {
               const cuisine = availableCuisines.find(c => c.name === cuisineName);
               return (
@@ -275,13 +267,13 @@ export default function SelectCuisine({
                   onClick={() => setActiveTab(cuisineName)}
                   className={`flex-shrink-0 px-6 py-4 font-medium text-sm uppercase tracking-wider transition-colors relative ${
                     activeTab === cuisineName
-                      ? 'text-primary-600'
+                      ? 'text-indigo-600'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   {cuisineName}
                   {activeTab === cuisineName && (
-                    <span className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-gradient-to-r ${cuisine?.color} rounded-t-full`} />
+                    <span className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-indigo-600 rounded-t-full`} />
                   )}
                 </button>
               );
@@ -300,23 +292,23 @@ export default function SelectCuisine({
                 <div key={cuisineName} className="space-y-8">
                   {/* For cuisines with categories */}
                   {cuisine.categories && (
-                    <div className="space-y-8">
+                    <div className="space-y-6">
                       {cuisine.categories.map(category => {
                         const isExpanded = expandedCategories[cuisineName]?.includes(category.name);
                         return (
-                          <div key={category.name} className="border rounded-xl overflow-hidden">
+                          <div key={category.name} className="border border-gray-200 rounded-lg overflow-hidden">
                             <div 
                               className="p-5 bg-gray-50 cursor-pointer flex justify-between items-center hover:bg-gray-100 transition-colors"
                               onClick={() => handleCategoryToggle(cuisineName, category.name)}
                             >
                               <div>
-                                <h4 className="text-xl font-semibold text-gray-800">{category.name}</h4>
+                                <h4 className="text-lg font-semibold text-gray-800">{category.name}</h4>
                                 <p className="text-sm text-gray-500 mt-1">
                                   {category.details.length} items available
                                 </p>
                               </div>
                               <svg 
-                                className={`w-6 h-6 text-gray-500 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                                className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? "rotate-180" : ""}`}
                                 fill="none" 
                                 stroke="currentColor" 
                                 viewBox="0 0 24 24" 
@@ -368,10 +360,10 @@ export default function SelectCuisine({
 
           {/* Order Summary */}
           {Object.keys(selectedFoods).length > 0 && (
-            <div className="border-t bg-white p-5 sticky bottom-0 shadow-lg">
+            <div className="border-t border-gray-200 bg-white p-5 sticky bottom-0 shadow-md">
               <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="flex items-center">
-                  <div className="bg-primary-100 text-primary-800 p-2 rounded-lg mr-3">
+                  <div className="bg-indigo-100 text-indigo-800 p-2 rounded-lg mr-3">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
@@ -386,12 +378,12 @@ export default function SelectCuisine({
                 
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Order total</p>
-                  <p className="text-2xl font-bold text-primary-600">₹{totalPrice}</p>
+                  <p className="text-2xl font-bold text-indigo-600">₹{totalPrice}</p>
                 </div>
                 
                 <button
                   onClick={handleConfirm}
-                  className="px-8 py-3 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg flex items-center"
+                  className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg flex items-center"
                 >
                   Confirm Order
                   <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -422,8 +414,8 @@ function FoodCard({
   onQuantityChange: (quantity: number) => void;
 }) {
   return (
-    <div className={`border rounded-xl overflow-hidden transition-all hover:shadow-md ${
-      isSelected ? "border-primary-300 bg-primary-50" : "border-gray-200 hover:border-gray-300 text-gray-900" 
+    <div className={`border rounded-lg overflow-hidden transition-all hover:shadow-md ${
+      isSelected ? "border-indigo-300 bg-indigo-50" : "border-gray-200 hover:border-gray-300"  
     }`}>
       <div className="p-5">
         <div className="flex justify-between items-start mb-3">
@@ -435,7 +427,7 @@ function FoodCard({
               </span>
             )}
           </div>
-          <span className="text-primary-600 font-bold text-lg">₹{food.price}</span>
+          <span className="text-indigo-600 font-bold text-lg">₹{food.price}</span>
         </div>
         
         {food.description && (
@@ -466,18 +458,18 @@ function FoodCard({
             onClick={onToggle}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               isSelected
-                ? "bg-primary-100 text-primary-700 hover:bg-primary-200"
+                ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            {isSelected ? 'Remove from order' : 'Add to order'}
+            {isSelected ? 'Remove' : 'Add to order'}
           </button>
           
           {isSelected && (
-            <div className="flex items-center bg-white rounded-lg border overflow-hidden shadow-sm">
+            <div className="flex items-center bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
               <button 
                 onClick={() => onQuantityChange(quantity - 1)}
-                className="px-3 py-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800"
+                className="px-3 py-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
@@ -488,7 +480,7 @@ function FoodCard({
               </span>
               <button 
                 onClick={() => onQuantityChange(quantity + 1)}
-                className="px-3 py-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800"
+                className="px-3 py-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

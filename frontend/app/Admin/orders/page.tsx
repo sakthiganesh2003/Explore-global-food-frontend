@@ -41,7 +41,7 @@ interface User {
 
 interface Booking {
   _id: string;
-  userId: User;
+  userId?: User | null; // Made userId optional to handle null/undefined cases
   maidId?: { _id: string };
   maid?: string;
   cuisine: Cuisine;
@@ -62,6 +62,7 @@ const BookingsPage: NextPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [error, setError] = useState<string | null>(null); // Added error state for better UX
   const bookingsPerPage = 6;
 
   useEffect(() => {
@@ -69,13 +70,18 @@ const BookingsPage: NextPage = () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/book`);
         if (!response.ok) {
-          throw new Error('Failed to fetch bookings');
+          throw new Error(`Failed to fetch bookings: ${response.statusText}`);
         }
         const data = await response.json();
+        // Validate data structure
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid data format: Expected an array of bookings');
+        }
         setBookings(data);
         setFilteredBookings(data);
       } catch (error) {
         console.error('Error fetching bookings:', error);
+        setError('Failed to load bookings. Please try again later.');
       }
     };
 
@@ -113,7 +119,7 @@ const BookingsPage: NextPage = () => {
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(booking => 
-        booking.userId.email.toLowerCase().includes(term) ||
+        (booking.userId?.email?.toLowerCase()?.includes(term) || false) ||
         booking.cuisine.name.toLowerCase().includes(term) ||
         booking.time.address.toLowerCase().includes(term) ||
         booking.time.phoneNumber.includes(term)
@@ -198,7 +204,12 @@ const BookingsPage: NextPage = () => {
         <div className="flex-1 p-6">
           <div className="max-w-7xl mx-auto">
             <header className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900">Bookings Management</h1>
+              <h1 className="text-3xl font-bold text-gray-800">Bookings Management</h1>
+              {error && (
+                <div className="mt-4 p-4 bg-red-100 text-red-800 rounded-md">
+                  {error}
+                </div>
+              )}
               {/* Summary Cards */}
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col items-center text-center">
@@ -273,8 +284,6 @@ const BookingsPage: NextPage = () => {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -290,7 +299,7 @@ const BookingsPage: NextPage = () => {
                               {booking.cuisine.name}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {booking.userId.email}
+                              {booking.userId?.email || 'N/A'} {/* Handle missing userId */}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(booking.time.date)}`}>
@@ -299,12 +308,6 @@ const BookingsPage: NextPage = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {booking.time.time.join(', ')}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-900">
-                              {booking.time.address}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {booking.time.phoneNumber}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                               ₹{booking.totalAmount.toFixed(2)}
@@ -362,13 +365,15 @@ const BookingsPage: NextPage = () => {
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                 <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">Booking Details</h2>
+                   
+
+<h2 className="text-2xl font-bold text-gray-900">Booking Details</h2>
                     <button
                       onClick={closeModal}
                       className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
                       aria-label="Close modal"
                     >
-                      <i className="fas fa-times text-gray-600 text-lg"></i>
+                      <i className="fas fa(times) text-gray-600 text-lg"></i>
                     </button>
                   </div>
                   <div className="space-y-6">
@@ -376,7 +381,7 @@ const BookingsPage: NextPage = () => {
                       <h3 className="text-lg font-semibold text-gray-900 mb-3">Customer Information</h3>
                       <div className="space-y-2 text-sm text-gray-600">
                         <p>
-                          <span className="font-medium">Email:</span> {selectedBooking.userId.email}
+                          <span className="font-medium">Email:</span> {selectedBooking.userId?.email || 'N/A'}
                         </p>
                         <p>
                           <span className="font-medium">Phone:</span> {selectedBooking.time.phoneNumber}

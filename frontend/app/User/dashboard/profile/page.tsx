@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
 import { jwtDecode } from 'jwt-decode';
-import { FiEdit, FiSave, FiX, FiUser, FiMapPin, FiTarget } from 'react-icons/fi';
+import { FiEdit, FiSave, FiX, FiUser, FiTarget } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';

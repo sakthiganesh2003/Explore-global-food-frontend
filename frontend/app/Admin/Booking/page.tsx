@@ -123,7 +123,7 @@ const AdminDashboard = () => {
       <Sidebar />
       <div className="min-h-screen bg-gray-50 p-6 text-gray-800 w-full overflow-y-auto">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-800 mb-8">Maid Applications</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-8">Cook Applications</h1>
           
           {/* Filter Controls */}
           <div className="flex flex-wrap gap-2 mb-6">

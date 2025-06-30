@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, ReactNode } from "react";
 import { jwtDecode } from "jwt-decode";
+import Sidebar from "../component/dashboard/Sidebar";
 
 const adminLayout = ({ children }: { children: ReactNode }) => {
 
@@ -36,6 +37,7 @@ useEffect(() => {
 
 return(
     <>
+    
     {children}
     </>
 )}

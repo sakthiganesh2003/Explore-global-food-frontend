@@ -100,23 +100,23 @@ const UserTable = () => {
     <div className="flex min-h-screen">
       
       
-      <div className="flex-1 bg-gray-50 ">
-        <ToastContainer position="top-right" autoClose={3000} />
-        
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-100 p-4 rounded-lg text-gray-900">
-            <h3 className="font-bold text-blue-800">Total Users</h3>
-            <p className="text-2xl">{totalUsers}</p>
-          </div>
-          <div className="bg-green-100 p-4 rounded-lg text-gray-900">
-            <h3 className="font-bold text-green-800">Total Chefs</h3>
-            <p className="text-2xl">{totalChefs}</p>
-          </div>
-          <div className="bg-purple-100 p-4 rounded-lg text-gray-900">
-            <h3 className="font-bold text-purple-800">Total Maids</h3>
-            <p className="text-2xl">{totalMaids}</p>
-          </div>
-        </div>
+                <div className="flex-1 bg-gray-50">
+            <ToastContainer position="top-right" autoClose={3000} />
+            
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white p-6 rounded-lg shadow-sm">
+                <h3 className="font-semibold text-lg text-gray-900">Total Users</h3>
+                <p className="text-2xl font-bold text-gray-700">{totalUsers}</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow-sm">
+                <h3 className="font-semibold text-lg text-gray-900">Total Chefs</h3>
+                <p className="text-2xl font-bold text-gray-700">{totalChefs}</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow-sm">
+                <h3 className="font-semibold text-lg text-gray-900">Total Cooks</h3>
+                <p className="text-2xl font-bold text-gray-700">{totalMaids}</p>
+              </div>
+              </div>
         
         <table className="min-w-full bg-white border border-gray-200">
           <thead className="bg-gray-100">
@@ -199,15 +199,15 @@ const UserTable = () => {
 
 const UserPage = () => {
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      <Sidebar />
-      <div className="flex-1 flex flex-col items-center py-10">
-        <h1 className="text-3xl text-left font-bold text-gray-800 mb-6">User Management</h1>
-        <div className="w-full max-w-9xl bg-white shadow-md rounded-lg p-6">
-          <UserTable />
+          <div className="min-h-screen bg-gray-100 flex">
+        <Sidebar />
+        <div className="flex-1 flex flex-col items-center py-10">
+          <h1 className="text-3xl text-center font-bold text-gray-800 mb-6">User Management</h1>
+          <div className="w-full max-w-9xl bg-white shadow-md rounded-lg p-6">
+            <UserTable />
+          </div>
         </div>
       </div>
-    </div>
   );
 };
 

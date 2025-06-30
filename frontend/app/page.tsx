@@ -289,7 +289,7 @@ export default function Home() {
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <button className="bg-white text-orange-500 hover:bg-gray-100 px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg">
-              Book a Table
+              Book a Now
             </button>
             <button className="border-2 border-white text-white hover:bg-white/10 px-8 py-4 rounded-full font-bold text-lg transition-all">
               Order Online

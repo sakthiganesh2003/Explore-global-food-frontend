@@ -37,7 +37,7 @@ const HeroSection = () => {
               </h1>
               
               <p className="text-xl text-gray-200 mb-10 max-w-2xl mx-auto">
-                Experience culinary excellence with our handpicked chefs and maids. 
+                Experience culinary excellence with our handpicked Chefs and Cooks. 
                 Elevate your dining moments with authentic global cuisine.
               </p>
             </motion.div>

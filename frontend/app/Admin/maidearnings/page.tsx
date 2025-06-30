@@ -5,10 +5,9 @@ import axios from 'axios';
 import Sidebar from '@/app/component/dashboard/Sidebar';
 
 interface Earning {
-  maidId: string | null;
+  maidId: string;
   maidName: string;
   totalEarnings: number;
-  completedBookings: number;
   totalBookings: number;
 }
 
@@ -23,6 +22,18 @@ export default function MaidEarningsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // Fetch earnings
   useEffect(() => {
     const fetchEarnings = async () => {
       try {
@@ -33,7 +44,7 @@ export default function MaidEarningsPage() {
           setError('Failed to fetch earnings data');
         }
       } catch (err) {
-        setError('An error occurred while fetching data');
+        setError('An error occurred while fetching earnings data');
       } finally {
         setLoading(false);
       }
@@ -42,14 +53,57 @@ export default function MaidEarningsPage() {
     fetchEarnings();
   }, []);
 
+  // Initiate payment for maid
+  const initiatePayment = async (maidId: string, maidName: string, totalEarnings: number) => {
+    try {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/initiate`);
+      const { order } = response.data;
+
+      const options = {
+        key: 'rzp_test_2HTK1FzohCF9N2', // Replace with env variable in production
+        order_id: order.id,
+        amount: order.amount,
+        currency: 'INR',
+        handler: async function (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
+          try {
+            const verifyResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/verify`, {
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+              maidId,
+            });
+            alert(`Payment successful! Payment ID: ${response.razorpay_payment_id}`);
+            console.log('Verify Payment Result:', verifyResponse.data);
+          } catch (err) {
+            setError('Payment verification failed');
+          }
+        },
+        prefill: {
+          name: maidName || 'Customer',
+          email: 'customer@example.com',
+          contact: '1234567890',
+        },
+        theme: {
+          color: '#3B82F6',
+        },
+      };
+
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+    } catch (err) {
+      console.error('Error initiating payment:', err.response?.data || err.message);
+      setError('Failed to initiate payment');
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-gray-50 ">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <main className="flex-1 p-8 ml-0 ">
+      <main className="flex-1 p-8 ml-0">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Maid Earnings Dashboard</h1>
-            <p className="text-gray-600 mt-1 md:mt-2">Overview of all maid earnings and bookings</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Cook Earnings Dashboard</h1>
+            <p className="text-gray-600 mt-1 md:mt-2">Overview of all Cook earnings and bookings</p>
           </div>
 
           {loading && (
@@ -79,18 +133,18 @@ export default function MaidEarningsPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <h3 className="mt-2 text-lg font-medium text-gray-900">No earnings data</h3>
-              <p className="mt-1 text-gray-500">There are currently no maid earnings records available.</p>
+              <p className="mt-1 text-sm text-gray-500">There are currently no Cook earnings records available.</p>
             </div>
           )}
 
           {!loading && !error && earnings.length > 0 && (
             <div className="bg-white shadow overflow-hidden sm:rounded-lg flex flex-col justify-center">
               <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 ">
-                  Maid Earnings Summary
+                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                  Cook Earnings Summary
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  A comprehensive list of all maid earnings and booking statistics.
+                  A comprehensive list of all Cook earnings and booking statistics.
                 </p>
               </div>
               <div className="overflow-x-auto">
@@ -98,7 +152,7 @@ export default function MaidEarningsPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Maid
+                        Cook
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Earnings
@@ -107,13 +161,13 @@ export default function MaidEarningsPage() {
                         Bookings
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Completion Rate
+                        Action
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {earnings.map((earning, index) => (
-                      <tr key={earning.maidId || `no-id-${index}`} className="hover:bg-gray-50">
+                      <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-4">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
@@ -123,40 +177,27 @@ export default function MaidEarningsPage() {
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">{earning.maidName}</div>
-                              <div className="text-sm text-gray-500">{earning.maidId || 'N/A'}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-4">
                           <div className="text-sm font-semibold text-green-600">
-                            ${earning.totalEarnings.toLocaleString()}
+                            ₹{earning.totalEarnings.toLocaleString()}
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="flex flex-col">
-                            <div className="flex justify-between text-sm mb-1">
-                              <span className="text-gray-500">Completed</span>
-                              <span className="font-medium">
-                                {earning.completedBookings} / {earning.totalBookings}
-                              </span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-blue-600 h-2 rounded-full" 
-                                style={{ 
-                                  width: `${(earning.completedBookings / earning.totalBookings) * 100}%` 
-                                }}
-                              ></div>
-                            </div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {earning.totalBookings}
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            ${(earning.completedBookings / earning.totalBookings) >= 0.8 ? 'bg-green-100 text-green-800' : 
-                              (earning.completedBookings / earning.totalBookings) >= 0.5 ? 'bg-yellow-100 text-yellow-800' : 
-                              'bg-red-100 text-red-800'}`}>
-                            {Math.round((earning.completedBookings / earning.totalBookings) * 100)}%
-                          </span>
+                          <button
+                            onClick={() => initiatePayment(earning.maidId, earning.maidName, earning.totalEarnings)}
+                            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                            disabled={earning.totalEarnings === 0}
+                          >
+                            Pay Now
+                          </button>
                         </td>
                       </tr>
                     ))}

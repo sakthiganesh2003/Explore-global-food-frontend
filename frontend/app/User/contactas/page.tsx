@@ -6,7 +6,6 @@ import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaPaperPlane } from "react-icons/f
 interface FormData {
   name: string;
   email: string;
-  subject: string;
   message: string;
 }
 
@@ -14,9 +13,13 @@ export default function ContactPage() {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
-    subject: "",
     message: ""
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -26,21 +29,47 @@ export default function ContactPage() {
     }));
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Add your form submission logic here
-    console.log("Form submitted:", formData);
-    alert("Thank you for your message! We'll get back to you soon.");
-    setFormData({
-      name: "",
-      email: "",
-      subject: "",
-      message: ""
-    });
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/contact/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubmitStatus({
+          success: true,
+          message: "Thank you for your message! We'll get back to you soon.",
+        });
+        setFormData({
+          name: "",
+          email: "",
+          message: ""
+        });
+      } else {
+        throw new Error(data.message || "Failed to submit form");
+      }
+    } catch (error) {
+      setSubmitStatus({
+        success: false,
+        message: error instanceof Error ? error.message : "An unexpected error occurred",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 text-gray-800">
       <Navbar />
       
       {/* Hero Section */}
@@ -49,7 +78,7 @@ export default function ContactPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Contact Us</h1>
           <p className="text-xl text-emerald-100 max-w-3xl mx-auto">
-            Have questions or feedback? We&apos;d love to hear from you!
+            Have questions or feedback? We'd love to hear from you!
           </p>
         </div>
       </div>
@@ -117,6 +146,17 @@ export default function ContactPage() {
           {/* Contact Form */}
           <div className="bg-white p-8 rounded-xl shadow-sm">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Send Us a Message</h2>
+            {submitStatus && (
+              <div
+                className={`p-4 mb-6 rounded-lg ${
+                  submitStatus.success
+                    ? "bg-emerald-100 text-emerald-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
+                {submitStatus.message}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -149,21 +189,6 @@ export default function ContactPage() {
               </div>
 
               <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                  Subject
-                </label>
-                <input
-                  type="text"
-                  id="subject"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
                 <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
                   Message
                 </label>
@@ -180,10 +205,21 @@ export default function ContactPage() {
 
               <button
                 type="submit"
-                className="flex items-center justify-center w-full py-3 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors"
+                disabled={isSubmitting}
+                className={`flex items-center justify-center w-full py-3 px-6 ${
+                  isSubmitting
+                    ? "bg-emerald-400 cursor-not-allowed"
+                    : "bg-emerald-600 hover:bg-emerald-700"
+                } text-white font-medium rounded-lg transition-colors`}
               >
-                <FaPaperPlane className="mr-2" />
-                Send Message
+                {isSubmitting ? (
+                  "Sending..."
+                ) : (
+                  <>
+                    <FaPaperPlane className="mr-2" />
+                    Send Message
+                  </>
+                )}
               </button>
             </form>
           </div>

@@ -14,7 +14,7 @@ import {
   FiChevronRight,
   FiFilter,
   FiSearch,
-  FiDollarSign
+  FiDollarSign,
 } from "react-icons/fi";
 import SidebarMaid from "@/app/component/dashboard/SidebarMaid";
 import { jwtDecode } from "jwt-decode";
@@ -33,8 +33,20 @@ interface Order {
     mealQuantity: number;
     _id: string;
   }[];
-  time: { date: string; time: string[]; address: string; phoneNumber: string; _id: string };
-  confirmedFoods: { id: string; name: string; price: number; quantity: number; _id: string }[];
+  time: {
+    date: string;
+    time: string[];
+    address: string;
+    phoneNumber: string;
+    _id: string;
+  };
+  confirmedFoods: {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    _id: string;
+  }[];
   totalAmount: number;
   status: "pending" | "confirmed" | "completed" | "cancelled";
   createdAt: string;
@@ -58,13 +70,15 @@ export default function OrderDashboard() {
     date: "all",
     search: "",
     minAmount: "",
-    maxAmount: ""
+    maxAmount: "",
   });
   const [showFilters, setShowFilters] = useState(false);
   const [decodedToken, setDecodedToken] = useState<DecodedToken | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
+  // State to track which order's confirmation box is open
+  const [confirmOrderId, setConfirmOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
@@ -99,18 +113,25 @@ export default function OrderDashboard() {
 
       try {
         const maidId = decodedToken.id;
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/book/${maidId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/book/${maidId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         if (!response.ok) {
-          throw new Error(`Failed to fetch orders: ${response.status} ${response.statusText}`);
+          throw new Error(
+            `Failed to fetch orders: ${response.status} ${response.statusText}`
+          );
         }
         const data = await response.json();
         setOrders(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An unknown error occurred");
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred"
+        );
       } finally {
         setLoading(false);
       }
@@ -135,41 +156,43 @@ export default function OrderDashboard() {
   const isThisWeek = (dateString: string) => {
     const today = new Date();
     const orderDate = new Date(dateString);
-    const diffDays = Math.floor((orderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.floor(
+      (orderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    );
     return diffDays >= 0 && diffDays <= 7;
   };
 
   const filteredOrders = orders.filter((order) => {
-    const statusMatch = 
-      filters.status === "all" || 
-      order.status === filters.status;
-    
-    const dateMatch = 
+    const statusMatch =
+      filters.status === "all" || order.status === filters.status;
+
+    const dateMatch =
       filters.date === "all" ||
       (filters.date === "today" && isToday(order.time.date)) ||
       (filters.date === "tomorrow" && isTomorrow(order.time.date)) ||
       (filters.date === "week" && isThisWeek(order.time.date));
-    
-    const searchMatch = 
+
+    const searchMatch =
       !filters.search ||
       order.cuisine.name.toLowerCase().includes(filters.search.toLowerCase()) ||
       order.userId.email.toLowerCase().includes(filters.search.toLowerCase()) ||
-      (order.userId.name && order.userId.name.toLowerCase().includes(filters.search.toLowerCase())) ||
+      (order.userId.name &&
+        order.userId.name
+          .toLowerCase()
+          .includes(filters.search.toLowerCase())) ||
       order._id.toLowerCase().includes(filters.search.toLowerCase());
-    
-    const minAmountMatch = 
-      !filters.minAmount || 
-      order.totalAmount >= Number(filters.minAmount);
-    
-    const maxAmountMatch = 
-      !filters.maxAmount || 
-      order.totalAmount <= Number(filters.maxAmount);
-    
+
+    const minAmountMatch =
+      !filters.minAmount || order.totalAmount >= Number(filters.minAmount);
+
+    const maxAmountMatch =
+      !filters.maxAmount || order.totalAmount <= Number(filters.maxAmount);
+
     return (
-      statusMatch && 
-      dateMatch && 
-      searchMatch && 
-      minAmountMatch && 
+      statusMatch &&
+      dateMatch &&
+      searchMatch &&
+      minAmountMatch &&
       maxAmountMatch
     );
   });
@@ -192,9 +215,11 @@ export default function OrderDashboard() {
     }
   };
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleFilterChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
+    setFilters((prev) => ({ ...prev, [name]: value }));
     setCurrentPage(1);
   };
 
@@ -204,103 +229,112 @@ export default function OrderDashboard() {
       date: "all",
       search: "",
       minAmount: "",
-      maxAmount: ""
+      maxAmount: "",
     });
     setCurrentPage(1);
   };
 
   const handleOrderAction = async (
-  orderId: string,
-  action: "confirm" | "reject",
-  amount?: number
-) => {
-  if (!token) {
-    setError("No valid token available");
-    toast.error("No valid token available", {
-      position: "top-right",
-      autoClose: 3000,
-    });
-    return;
-  }
-
-  try {
-    // Update booking status (confirm or reject)
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/book/status/${orderId}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: action === "confirm" ? "confirmed" : "cancelled" }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to update order status");
-    }
-
-    // If rejecting, also create a refund requestlong
-    if (action === "reject") {
-      if (!amount) {
-        throw new Error("Amount is required for refund");
-      }
-
-      const refundResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/refunds`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          bookingId: orderId,
-          amount,
-        }),
-      });
-
-      if (!refundResponse.ok) {
-        const errorData = await refundResponse.json();
-        throw new Error(errorData.error || "Failed to create refund request");
-      }
-    }
-
-    // Update local state
-    setOrders(
-      orders.map((order) =>
-        order._id === orderId
-          ? { ...order, status: action === "confirm" ? "confirmed" : "cancelled" }
-          : order
-      )
-    );
-
-    if (selectedOrder?._id === orderId) {
-      setSelectedOrder({
-        ...selectedOrder,
-        status: action === "confirm" ? "confirmed" : "cancelled",
-      });
-    }
-
-    toast.success(
-      action === "confirm"
-        ? "Order accepted successfully!"
-        : "Order rejected and refund request created!",
-      {
+    orderId: string,
+    action: "confirm" | "reject",
+    amount?: number
+  ) => {
+    if (!token) {
+      setError("No valid token available");
+      toast.error("No valid token available", {
         position: "top-right",
         autoClose: 3000,
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/book/status/${orderId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            status: action === "confirm" ? "confirmed" : "cancelled",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update order status");
       }
-    );
-  } catch (err) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Failed to process order action";
-    setError(errorMessage);
-    toast.error(errorMessage, {
-      position: "top-right",
-      autoClose: 3000,
-    });
-  }
-};
+
+      if (action === "reject") {
+        if (!amount) {
+          throw new Error("Amount is required for refund");
+        }
+
+        const refundResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/refunds`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              bookingId: orderId,
+              amount,
+            }),
+          }
+        );
+
+        if (!refundResponse.ok) {
+          const errorData = await refundResponse.json();
+          throw new Error(errorData.error || "Failed to create refund request");
+        }
+      }
+
+      setOrders(
+        orders.map((order) =>
+          order._id === orderId
+            ? {
+                ...order,
+                status: action === "confirm" ? "confirmed" : "cancelled",
+              }
+            : order
+        )
+      );
+
+      if (selectedOrder?._id === orderId) {
+        setSelectedOrder({
+          ...selectedOrder,
+          status: action === "confirm" ? "confirmed" : "cancelled",
+        });
+      }
+
+      toast.success(
+        action === "confirm"
+          ? "Order accepted successfully!"
+          : "Order rejected and refund request created!",
+        {
+          position: "top-right",
+          autoClose: 3000,
+        }
+      );
+
+      // Close the confirmation box after action
+      setConfirmOrderId(null);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to process order action";
+      setError(errorMessage);
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      setConfirmOrderId(null);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = {
@@ -337,7 +371,9 @@ export default function OrderDashboard() {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <FiLoader className="animate-spin h-12 w-12 text-indigo-600 mx-auto" />
-            <p className="mt-4 text-lg font-semibold text-gray-800">Loading orders...</p>
+            <p className="mt-4 text-lg font-semibold text-gray-800">
+              Loading orders...
+            </p>
           </div>
         </div>
       </div>
@@ -351,7 +387,9 @@ export default function OrderDashboard() {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center p-8 bg-white rounded-2xl shadow-lg max-w-md">
             <div className="text-red-500 text-4xl mb-4">⚠️</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Error loading orders</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Error loading orders
+            </h3>
             <p className="text-gray-600 mb-6">{error}</p>
             <button
               onClick={() => window.location.reload()}
@@ -370,10 +408,11 @@ export default function OrderDashboard() {
       <SidebarMaid />
       <div className="flex-1 p-6">
         <div className="max-w-7xl mx-auto">
-          {/* Header and Filters */}
           <div className="mb-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Order Management
+              </h1>
               <div className="flex items-center gap-3">
                 <div className="relative flex-1 max-w-md">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -398,17 +437,18 @@ export default function OrderDashboard() {
               </div>
             </div>
 
-            {/* Expanded Filters Panel */}
             {showFilters && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
+                animate={{ opacity: 1, height: "auto" }}
                 transition={{ duration: 0.2 }}
                 className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6"
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
                     <select
                       name="status"
                       value={filters.status}
@@ -423,7 +463,9 @@ export default function OrderDashboard() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Date Range
+                    </label>
                     <select
                       name="date"
                       value={filters.date}
@@ -437,7 +479,9 @@ export default function OrderDashboard() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount Range</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Amount Range
+                    </label>
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -479,23 +523,25 @@ export default function OrderDashboard() {
               </motion.div>
             )}
 
-            {/* Results Count */}
             <div className="flex justify-between items-center mb-4">
               <div className="text-sm text-gray-600">
-                Showing {filteredOrders.length} {filteredOrders.length === 1 ? "order" : "orders"}
+                Showing {filteredOrders.length}{" "}
+                {filteredOrders.length === 1 ? "order" : "orders"}
               </div>
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Orders List */}
             <div className="lg:col-span-2">
               {paginatedOrders.length === 0 ? (
                 <div className="bg-white rounded-xl shadow-sm p-6 text-center">
                   <div className="text-gray-400 text-4xl mb-4">🍽️</div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">No orders found</h3>
-                  <p className="text-gray-500">Try adjusting your filters or search terms</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    No orders found
+                  </h3>
+                  <p className="text-gray-500">
+                    Try adjusting your filters or search terms
+                  </p>
                 </div>
               ) : (
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -534,7 +580,9 @@ export default function OrderDashboard() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.2 }}
                             className={`cursor-pointer hover:bg-gray-50 ${
-                              selectedOrder?._id === order._id ? "bg-indigo-50" : ""
+                              selectedOrder?._id === order._id
+                                ? "bg-indigo-50"
+                                : ""
                             }`}
                             onClick={() => setSelectedOrder(order)}
                           >
@@ -548,7 +596,11 @@ export default function OrderDashboard() {
                               ₹{order.totalAmount.toFixed(2)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                              {order.members.reduce((sum, member) => sum + member.mealQuantity, 0)} meals
+                              {order.members.reduce(
+                                (sum, member) => sum + member.mealQuantity,
+                                0
+                              )}{" "}
+                              meals
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                               {formatDate(order.time.date)} <br />
@@ -560,26 +612,111 @@ export default function OrderDashboard() {
                                   order.status
                                 )}`}
                               >
-                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                {order.status.charAt(0).toUpperCase() +
+                                  order.status.slice(1)}
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                               {order.status === "pending" ? (
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOrderAction(order._id, "confirm");
-                                    }}
-                                    className="p-1.5 bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors"
+                                <div className="flex space-x-2 relative">
+                                  {/* Hidden checkbox for confirmation box */}
+                                  <input
+                                    type="checkbox"
+                                    id={`confirm-${order._id}`}
+                                    className="hidden peer"
+                                    checked={confirmOrderId === order._id}
+                                    onChange={() =>
+                                      setConfirmOrderId(
+                                        confirmOrderId === order._id
+                                          ? null
+                                          : order._id
+                                      )
+                                    }
+                                  />
+                                  <label
+                                    htmlFor={`confirm-${order._id}`}
+                                    className="p-1.5 bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors cursor-pointer"
                                     title="Accept Order"
                                   >
                                     <FiCheck size={16} />
-                                  </button>
+                                  </label>
+                                  {/* Confirmation Box */}
+                                  <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 hidden peer-checked:flex">
+                                    <motion.div
+                                      initial={{ scale: 0.95, opacity: 0 }}
+                                      animate={{ scale: 1, opacity: 1 }}
+                                      exit={{ scale: 0.95, opacity: 0 }}
+                                      transition={{
+                                        type: "spring",
+                                        damping: 20,
+                                        stiffness: 300,
+                                      }}
+                                      className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-6 w-full max-w-md border border-gray-100 dark:border-gray-700"
+                                    >
+                                      <div className="flex flex-col items-center text-center">
+                                        {/* Icon */}
+                                        <div className="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-full mb-4">
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-6 w-6 text-blue-600 dark:text-blue-400"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M5 13l4 4L19 7"
+                                            />
+                                          </svg>
+                                        </div>
+
+                                        {/* Title */}
+                                        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+                                          Confirm Order
+                                        </h3>
+
+                                        {/* Description */}
+                                        <p className="text-gray-600 dark:text-gray-300 mb-6">
+                                          Are you sure you want to accept order{" "}
+                                          <span className="font-medium text-gray-900 dark:text-white">
+                                            #{order._id.slice(-6).toUpperCase()}
+                                          </span>
+                                         
+                                        </p>
+
+                                        {/* Buttons */}
+                                        <div className="flex justify-center space-x-4 w-full">
+                                          <label
+                                            htmlFor={`confirm-${order._id}`}
+                                            className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer flex-1 text-center"
+                                          >
+                                            Cancel
+                                          </label>
+                                          <button
+                                            onClick={() =>
+                                              handleOrderAction(
+                                                order._id,
+                                                "confirm"
+                                              )
+                                            }
+                                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-1 shadow-sm hover:shadow-md"
+                                          >
+                                            Confirm
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </motion.div>
+                                  </div>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleOrderAction(order._id, "reject", order.totalAmount);
+                                      handleOrderAction(
+                                        order._id,
+                                        "reject",
+                                        order.totalAmount
+                                      );
                                     }}
                                     className="p-1.5 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors"
                                     title="Reject Order"
@@ -599,7 +736,6 @@ export default function OrderDashboard() {
                 </div>
               )}
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex justify-between items-center mt-6">
                   <button
@@ -619,7 +755,9 @@ export default function OrderDashboard() {
                     onClick={handleNextPage}
                     disabled={currentPage === totalPages}
                     className={`flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors ${
-                      currentPage === totalPages ? "opacity-50 cursor-not-allowed" : ""
+                      currentPage === totalPages
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
                     }`}
                   >
                     Next
@@ -629,21 +767,27 @@ export default function OrderDashboard() {
               )}
             </div>
 
-            {/* Order Details Panel */}
             <div className="lg:col-span-1">
               {selectedOrder ? (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="bg-white rounded-xl shadow-sm overflow-hidden sticky top-6"
+                  className="bg-white rounded-xl shadow-sm overflow-y-auto max-h-[calc(100vh-2rem)] scrollbar-thin scrollbar-thumb-indigo-600 scrollbar-track-gray-100 hover:scrollbar-thumb-indigo-700 sticky top-6"
                 >
                   <div className="p-5">
                     <div className="flex justify-between items-start mb-6">
                       <div>
-                        <h2 className="text-xl font-bold text-gray-900">Order Details</h2>
+                        <h2 className="text-xl font-bold text-gray-900">
+                          Order Details
+                        </h2>
                         <div className="flex items-center mt-1">
-                          <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(selectedOrder.status)}`}>
-                            {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full ${getStatusColor(
+                              selectedOrder.status
+                            )}`}
+                          >
+                            {selectedOrder.status.charAt(0).toUpperCase() +
+                              selectedOrder.status.slice(1)}
                           </span>
                           <span className="text-xs text-gray-500 ml-2">
                             #{selectedOrder._id.slice(-6).toUpperCase()}
@@ -651,7 +795,9 @@ export default function OrderDashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-semibold">₹{selectedOrder.totalAmount.toFixed(2)}</div>
+                        <div className="text-lg font-semibold">
+                          ₹{selectedOrder.totalAmount.toFixed(2)}
+                        </div>
                         <div className="text-xs text-gray-500 mt-1">
                           {formatDate(selectedOrder.time.date)}
                         </div>
@@ -659,7 +805,6 @@ export default function OrderDashboard() {
                     </div>
 
                     <div className="space-y-6">
-                      {/* Customer Section */}
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
                           Customer
@@ -671,9 +816,12 @@ export default function OrderDashboard() {
                             </div>
                             <div>
                               <h4 className="font-medium text-gray-900">
-                                {selectedOrder.userId.name || selectedOrder.userId.email.split('@')[0]}
+                                {selectedOrder.userId.name ||
+                                  selectedOrder.userId.email.split("@")[0]}
                               </h4>
-                              <p className="text-sm text-gray-500">{selectedOrder.userId.email}</p>
+                              <p className="text-sm text-gray-500">
+                                {selectedOrder.userId.email}
+                              </p>
                             </div>
                           </div>
                           <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
@@ -683,13 +831,14 @@ export default function OrderDashboard() {
                             </div>
                             <div className="flex items-center">
                               <FiMapPin className="text-gray-400 mr-2" />
-                              <span>{selectedOrder.time.address.split(',')[0]}</span>
+                              <span>
+                                {selectedOrder.time.address.split(",")[0]}
+                              </span>
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Order Summary Section */}
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
                           Order Summary
@@ -703,12 +852,21 @@ export default function OrderDashboard() {
                           </div>
                           <div className="space-y-3">
                             {selectedOrder.confirmedFoods.map((food) => (
-                              <div key={food._id} className="flex justify-between">
+                              <div
+                                key={food._id}
+                                className="flex justify-between"
+                              >
                                 <div>
-                                  <span className="font-medium">{food.name}</span>
-                                  <span className="text-gray-500 text-sm ml-2">x{food.quantity}</span>
+                                  <span className="font-medium">
+                                    {food.name}
+                                  </span>
+                                  <span className="text-gray-500 text-sm ml-2">
+                                    x{food.quantity}
+                                  </span>
                                 </div>
-                                <span>₹{(food.price * food.quantity).toFixed(2)}</span>
+                                <span>
+                                  ₹{(food.price * food.quantity).toFixed(2)}
+                                </span>
                               </div>
                             ))}
                           </div>
@@ -719,7 +877,6 @@ export default function OrderDashboard() {
                         </div>
                       </div>
 
-                      {/* Delivery Information */}
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
                           Delivery Information
@@ -732,51 +889,67 @@ export default function OrderDashboard() {
                           <div className="flex items-center space-x-3">
                             <FiClock className="text-gray-400" />
                             <div className="flex space-x-2">
-                              {selectedOrder.time.time.map((timeSlot, index) => (
-                                <span key={index}>{formatTime(timeSlot)}</span>
-                              ))}
+                              {selectedOrder.time.time.map(
+                                (timeSlot, index) => (
+                                  <span key={index}>
+                                    {formatTime(timeSlot)}
+                                  </span>
+                                )
+                              )}
                             </div>
                           </div>
                           <div className="mt-3 pt-3 border-t border-gray-200">
                             <div className="flex items-start space-x-3">
                               <FiMapPin className="text-gray-400 mt-1" />
                               <div>
-                                <p className="text-sm">{selectedOrder.time.address}</p>
+                                <p className="text-sm">
+                                  {selectedOrder.time.address}
+                                </p>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Members Section */}
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
                           Members ({selectedOrder.members.length})
                         </h3>
                         <div className="space-y-3">
                           {selectedOrder.members.map((member, index) => (
-                            <div key={member._id} className="bg-gray-50 p-4 rounded-lg">
+                            <div
+                              key={member._id}
+                              className="bg-gray-50 p-4 rounded-lg"
+                            >
                               <div className="flex justify-between items-start">
-                                <h4 className="font-medium">Member {index + 1}</h4>
+                                <h4 className="font-medium">
+                                  Member {index + 1}
+                                </h4>
                                 <span className="text-sm bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
                                   {member.mealQuantity} meal(s)
                                 </span>
                               </div>
                               <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                                 <div>
-                                  <span className="text-gray-500">Preference:</span>
+                                  <span className="text-gray-500">
+                                    Preference:
+                                  </span>
                                   <p className="font-medium capitalize">
                                     {member.dietaryPreference.toLowerCase()}
                                   </p>
                                 </div>
                                 <div>
-                                  <span className="text-gray-500">Allergies:</span>
+                                  <span className="text-gray-500">
+                                    Allergies:
+                                  </span>
                                   <p className="font-medium">
                                     {member.allergies || "None"}
                                   </p>
                                 </div>
                                 <div className="col-span-2">
-                                  <span className="text-gray-500">Requests:</span>
+                                  <span className="text-gray-500">
+                                    Requests:
+                                  </span>
                                   <p className="font-medium">
                                     {member.specialRequests || "None"}
                                   </p>
@@ -787,19 +960,103 @@ export default function OrderDashboard() {
                         </div>
                       </div>
 
-                      {/* Action Buttons */}
                       {selectedOrder.status === "pending" && (
-                        <div className="flex space-x-3 pt-2">
-                          <button
-                            onClick={() => handleOrderAction(selectedOrder._id, "confirm")}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg flex items-center justify-center"
+                        <div className="flex space-x-3 pt-2 relative">
+                          {/* Hidden checkbox for confirmation box in details */}
+                          <input
+                            type="checkbox"
+                            id={`confirm-details-${selectedOrder._id}`}
+                            className="hidden peer"
+                            checked={confirmOrderId === selectedOrder._id}
+                            onChange={() =>
+                              setConfirmOrderId(
+                                confirmOrderId === selectedOrder._id
+                                  ? null
+                                  : selectedOrder._id
+                              )
+                            }
+                          />
+                          <label
+                            htmlFor={`confirm-details-${selectedOrder._id}`}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg flex items-center justify-center cursor-pointer"
                           >
                             <FiCheck className="mr-2" />
                             Accept Order
-                          </button>
+                          </label>
+                          {/* Confirmation Box */}
+                          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden peer-checked:flex">
+                            <motion.div
+                              initial={{ scale: 0.95, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 20,
+                              }}
+                              className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-sm border border-gray-100 dark:border-gray-700"
+                            >
+                                                                            {/* Optional Icon (Uncomment if needed) */}
+                                                                            {/* <div className="flex justify-center mb-4">
+                                                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                                                      <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-6 w-6 text-blue-600 dark:text-blue-400"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                      >
+                                                        <path
+                                                          strokeLinecap="round"
+                                                          strokeLinejoin="round"
+                                                          strokeWidth={2}
+                                                          d="M5 13l4 4L19 7"
+                                                        />
+                                                      </svg>
+                                                    </div>
+                                                  </div> */}
+
+                              {/* Title & Message */}
+                              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3 text-center">
+                                Confirm Order
+                              </h3>
+                              <p className="text-gray-600 dark:text-gray-300 text-center mb-6">
+                                Are you sure you want to accept order{" "}
+                                <span className="font-semibold text-gray-900 dark:text-white">
+                                  #{selectedOrder._id.slice(-6).toUpperCase()}
+                                </span>
+                                ?
+                              </p>
+
+                              {/* Action Buttons */}
+                              <div className="flex justify-between gap-3">
+                                <label
+                                  htmlFor={`confirm-details-${selectedOrder._id}`}
+                                  className="flex-1 px-4 py-2.5 text-center rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                                >
+                                  Cancel
+                                </label>
+                                <button
+                                  onClick={() =>
+                                    handleOrderAction(
+                                      selectedOrder._id,
+                                      "confirm"
+                                    )
+                                  }
+                                  className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm hover:shadow-md"
+                                >
+                                  Confirm
+                                </button>
+                              </div>
+                            </motion.div>
+                          </div>
+
                           <button
                             onClick={() =>
-                              handleOrderAction(selectedOrder._id, "reject", selectedOrder.totalAmount)
+                              handleOrderAction(
+                                selectedOrder._id,
+                                "reject",
+                                selectedOrder.totalAmount
+                              )
                             }
                             className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg flex items-center justify-center"
                           >
@@ -814,8 +1071,12 @@ export default function OrderDashboard() {
               ) : (
                 <div className="bg-white rounded-xl shadow-sm p-6 text-center">
                   <div className="text-gray-400 text-4xl mb-4">👈</div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Select an order</h3>
-                  <p className="text-gray-500">Choose an order from the list to view details</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    Select an order
+                  </h3>
+                  <p className="text-gray-500">
+                    Choose an order from the list to view details
+                  </p>
                 </div>
               )}
             </div>

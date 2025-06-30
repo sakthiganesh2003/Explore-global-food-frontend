@@ -23,7 +23,7 @@ interface Chef {
 interface ApiResponse {
   success: boolean;
   data: Chef[];
-  totalPages?: number; // Added for pagination
+  totalPages?: number;
 }
 
 const ChefsPage: NextPage = () => {
@@ -60,7 +60,7 @@ const ChefsPage: NextPage = () => {
         const data: ApiResponse = await response.json();
         if (data.success && Array.isArray(data.data)) {
           setChefs(data.data);
-          setTotalPages(data.totalPages || 1); // Default to 1 if totalPages not provided
+          setTotalPages(data.totalPages || 1);
         } else {
           setError('Invalid data format from server');
         }
@@ -103,38 +103,53 @@ const ChefsPage: NextPage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex min-h-screen bg-gray-100">
+        <Sidebar />
+        <div className="flex-1 flex flex-col items-center py-10">
+          <h1 className="text-3xl text-center font-bold text-gray-800 mb-6">
+            Chef Management
+          </h1>
+          <div className="w-full max-w-7xl flex flex-col justify-center items-center h-64 bg-white rounded-lg shadow-sm">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+            <p className="mt-4 text-sm font-medium text-gray-600">Loading chefs...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
+      <div className="flex min-h-screen bg-gray-100">
+        <Sidebar />
+        <div className="flex-1 flex flex-col items-center py-10">
+          <h1 className="text-3xl text-center font-bold text-gray-800 mb-6">
+            Chef Management
+          </h1>
+          <div className="w-full max-w-7xl flex justify-center items-center h-64">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-white text-gray-600">
+    <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 w-full">
-        <div className="max-w-full mx-auto">
-          <div className="text-left mb-12">
-            <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-              Chef Management
-            </h1>
-            <p className="mt-3 text-xl text-gray-500">
+      <div className="flex-1 flex flex-col items-center py-10">
+        <div className="w-full max-w-7xl">
+          <div className="text-left mb-8">
+            <h1 className="text-3xl font-bold text-gray-800 ml-5">Chef Management</h1>
+            <p className="mt-2 text-lg text-gray-500 ml-5">
               Manage all registered chefs in your system
             </p>
           </div>
 
           {chefs.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="bg-white rounded-lg shadow-sm p-6 text-center">
               <svg
                 className="mx-auto h-12 w-12 text-gray-400"
                 fill="none"
@@ -153,100 +168,117 @@ const ChefsPage: NextPage = () => {
             </div>
           ) : (
             <>
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-white rounded-lg shadow-md">
-                  <thead>
-                    <tr className="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
-                      <th className="py-3 px-6 text-left">Name</th>
-                      <th className="py-3 px-6 text-left">Experience</th>
-                      <th className="py-3 px-6 text-left">Specialty</th>
-                      <th className="py-3 px-6 text-left">Certification</th>
-                      <th className="py-3 px-6 text-left">Registered</th>
-                      <th className="py-3 px-6 text-left">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-gray-600 text-sm">
-                    {chefs.map((chef) => (
-                      <tr
-                        key={chef._id}
-                        className="border-b border-gray-200 hover:bg-gray-50"
-                      >
-                        <td className="py-3 px-6">{chef.name}</td>
-                        <td className="py-3 px-6">
-                          {chef.experienceYears} {chef.experienceYears === 1 ? 'year' : 'years'}
-                        </td>
-                        <td className="py-3 px-6">{chef.specialty}</td>
-                        <td className="py-3 px-6">
-                          {chef.certification ? (
-                            <a
-                              href={chef.certification.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-green-600 hover:text-green-800"
-                            >
-                              View
-                            </a>
-                          ) : (
-                            <span className="text-gray-500">None</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-6">
-                          {new Date(chef.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="py-3 px-6">
-                          <button
-                            onClick={() => handleDelete(chef._id)}
-                            disabled={isDeleting && deleteId === chef._id}
-                            className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white ${
-                              isDeleting && deleteId === chef._id
-                                ? 'bg-gray-400 cursor-not-allowed'
-                                : 'bg-red-600 hover:bg-red-700'
-                            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500`}
-                          >
-                            {isDeleting && deleteId === chef._id ? (
-                              <>
-                                <svg
-                                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                  ></circle>
-                                  <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                  ></path>
-                                </svg>
-                                Deleting...
-                              </>
-                            ) : (
-                              'Delete'
-                            )}
-                          </button>
-                        </td>
+              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Experience
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Specialty
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Certification
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Registered
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {chefs.map((chef) => (
+                        <tr key={chef._id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {chef.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {chef.experienceYears} {chef.experienceYears === 1 ? 'year' : 'years'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {chef.specialty}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {chef.certification ? (
+                              <a
+                                href={chef.certification.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-indigo-600 hover:text-indigo-800"
+                              >
+                                View
+                              </a>
+                            ) : (
+                              <span className="text-gray-500">None</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(chef.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <button
+                              onClick={() => handleDelete(chef._id)}
+                              disabled={isDeleting && deleteId === chef._id}
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium text-white ${
+                                isDeleting && deleteId === chef._id
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-red-600 hover:bg-red-700'
+                              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500`}
+                            >
+                              {isDeleting && deleteId === chef._id ? (
+                                <>
+                                  <svg
+                                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <circle
+                                      className="opacity-25"
+                                      cx="12"
+                                      cy="12"
+                                      r="10"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                    ></circle>
+                                    <path
+                                      className="opacity-75"
+                                      fill="currentColor"
+                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    ></path>
+                                  </svg>
+                                  Deleting...
+                                </>
+                              ) : (
+                                'Delete'
+                              )}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex justify-center mt-8">
-                  <div className="flex gap-2">
+                <div className="flex justify-center mt-6">
+                  <div className="flex space-x-2">
                     <button
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="px-4 py-2 bg-white border rounded-lg disabled:opacity-50"
+                      className={`px-4 py-2 rounded-md text-sm font-medium ${
+                        currentPage === 1
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
                     >
                       Previous
                     </button>
@@ -254,10 +286,10 @@ const ChefsPage: NextPage = () => {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`px-4 py-2 rounded-lg ${
-                          currentPage === page 
-                            ? 'bg-indigo-600 text-white' 
-                            : 'bg-white border'
+                        className={`px-4 py-2 rounded-md text-sm font-medium ${
+                          currentPage === page
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
                         }`}
                       >
                         {page}
@@ -266,7 +298,11 @@ const ChefsPage: NextPage = () => {
                     <button
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-4 py-2 bg-white border rounded-lg disabled:opacity-50"
+                      className={`px-4 py-2 rounded-md text-sm font-medium ${
+                        currentPage === totalPages
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
                     >
                       Next
                     </button>

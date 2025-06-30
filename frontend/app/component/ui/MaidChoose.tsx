@@ -181,7 +181,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
         {/* Results Count and Pagination */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-8">
           <p className="text-gray-600 font-medium">
-            Showing {filteredMaids.length} available maids
+            Showing {filteredMaids.length} available Cooks
           </p>
           {totalPages > 1 && (
             <div className="flex items-center space-x-2 mt-4 sm:mt-0">

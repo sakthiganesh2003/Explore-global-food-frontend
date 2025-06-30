@@ -3,6 +3,17 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Head from 'next/head';
 import Sidebar from '@/app/component/dashboard/Sidebar';
+import { Card, Statistic, Table, Tag, Image, Button, Spin, Divider, Typography, Empty } from 'antd';
+import { 
+  DeleteOutlined, 
+  FileImageOutlined, 
+  VideoCameraOutlined, 
+  ClockCircleOutlined, 
+  FireOutlined, 
+  TeamOutlined 
+} from '@ant-design/icons';
+
+const { Title, Text } = Typography;
 
 interface Media {
   url: string;
@@ -52,6 +63,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
+        setLoading(true);
         const response = await axios.get<ApiResponse>(`${process.env.NEXT_PUBLIC_API_URL}/api/chefposts`);
         if (response.data.success) {
           const fetchedRecipes = response.data.data;
@@ -120,108 +132,183 @@ export default function AdminDashboard() {
     }
   };
 
+  const columns = [
+    {
+      title: 'Recipe',
+      dataIndex: 'recipe_name',
+      key: 'recipe_name',
+      render: (text: string, record: Recipe) => (
+        <div className="flex items-center">
+          {record.media.media_type === 'image' ? (
+            <Image
+              src={record.media.url}
+              alt={text}
+              width={60}
+              height={60}
+              className="rounded-md object-cover"
+              preview={false}
+            />
+          ) : (
+            <div className="w-16 h-16 bg-gray-200 rounded-md flex items-center justify-center">
+              <VideoCameraOutlined className="text-xl" />
+            </div>
+          )}
+          <span className="ml-3 font-medium">{text}</span>
+        </div>
+      ),
+    },
+    {
+      title: 'Category',
+      dataIndex: 'category_type',
+      key: 'category_type',
+      render: (text: string) => <Tag color="blue">{text}</Tag>,
+    },
+    {
+      title: 'Cuisine',
+      dataIndex: 'cuisine_type',
+      key: 'cuisine_type',
+      render: (text: string) => <Tag color="green">{text}</Tag>,
+    },
+    {
+      title: 'Ingredients',
+      dataIndex: 'ingredients',
+      key: 'ingredients',
+      render: (ingredients: string[]) => (
+        <div className="max-w-xs">
+          <Text ellipsis={{ tooltip: ingredients.join(', ') }}>
+            {ingredients.slice(0, 3).join(', ')}
+            {ingredients.length > 3 ? '...' : ''}
+          </Text>
+        </div>
+      ),
+    },
+    {
+      title: 'Time',
+      key: 'time',
+      render: (record: Recipe) => (
+        <div>
+          <div className="flex items-center">
+            <ClockCircleOutlined className="mr-1" />
+            <span>Prep: {record.prep_time}m</span>
+          </div>
+          <div className="flex items-center">
+            <FireOutlined className="mr-1" />
+            <span>Cook: {record.cook_time}m</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: 'Servings',
+      dataIndex: 'servings',
+      key: 'servings',
+      render: (text: string) => (
+        <div className="flex items-center">
+          <TeamOutlined className="mr-1" />
+          <span>{text}</span>
+        </div>
+      ),
+    },
+    {
+      title: 'Created',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (text: string) => new Date(text).toLocaleDateString(),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (record: Recipe) => (
+        <Button
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => handleDelete(record._id)}
+        >
+          Delete
+        </Button>
+      ),
+    },
+  ];
+
   return (
-    <div className="flex h-screen bg-white text-gray-600">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="min-h-screen bg-gray-100 flex-1">
+      <div className="flex-1 overflow-auto">
         <Head>
-          <title>Admin Dashboard - Recipes</title>
+          <title> Recipes</title>
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         </Head>
-        <nav className="bg-white p-4 text-black">
-          <h1 className="text-2xl font-bold">Admin Dashboard - Recipes</h1>
-        </nav>
-        <div className="container mx-auto p-6">
-          {/* Summary Section */}
-          {!loading && !error && recipes.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h3 className="text-sm font-semibold text-gray-600">Total Posts</h3>
-                <p className="text-2xl font-bold text-gray-900">{totalPosts}</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h3 className="text-sm font-semibold text-gray-600">Categories</h3>
-                <p className="text-sm text-gray-900">
-                  {Object.entries(categoryBreakdown)
-                    .map(([category, count]) => `${category}: ${count}`)
-                    .join(', ')}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h3 className="text-sm font-semibold text-gray-600">Media Types</h3>
-                <p className="text-sm text-gray-900">
-                  Images: {mediaBreakdown.image}, Videos: {mediaBreakdown.video}
-                </p>
-              </div>
-            </div>
-          )}
 
-          {loading && <p className="text-center text-gray-500">Loading...</p>}
-          {error && <p className="text-center text-red-500">{error}</p>}
-          {!loading && !error && recipes.length === 0 && (
-            <p className="text-center text-gray-500">No recipes found.</p>
-          )}
-          {!loading && !error && recipes.length > 0 && (
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipe Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cuisine</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ingredients</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Media</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prep Time</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cook Time</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Servings</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {recipes.map((recipe) => (
-                      <tr key={recipe._id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{recipe.recipe_name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{recipe.category_type}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{recipe.cuisine_type}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{recipe.ingredients.join(', ')}</td>
-                        <td className="px-6 py-4">
-                          {recipe.media.media_type === 'image' ? (
-                            <img
-                              src={recipe.media.url}
-                              alt={recipe.recipe_name}
-                              className="w-16 h-16 object-cover rounded"
-                            />
-                          ) : (
-                            <video
-                              src={recipe.media.url}
-                              className="w-16 h-16 object-cover rounded"
-                              controls
-                            />
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{recipe.prep_time} min</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{recipe.cook_time} min</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{recipe.servings}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(recipe.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <button
-                            onClick={() => handleDelete(recipe._id)}
-                            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+        <div className="bg-white p-6 shadow-sm">
+          <Title level={3} className="mb-0 text-3xl font-bold text-gray-800">Recipe Management</Title>
+          <Text type="secondary">Manage all recipes posted by chefs</Text>
+        </div>
+
+        <div className="p-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <Card>
+              <Statistic
+                title="Total Recipes"
+                value={totalPosts}
+                prefix={<FileImageOutlined />}
+                valueStyle={{ color: '#3f8600' }}
+              />
+            </Card>
+            <Card>
+              <Statistic
+                title="Images"
+                value={mediaBreakdown.image}
+                prefix={<FileImageOutlined />}
+                valueStyle={{ color: '#1890ff' }}
+              />
+            </Card>
+            <Card>
+              <Statistic
+                title="Videos"
+                value={mediaBreakdown.video}
+                prefix={<VideoCameraOutlined />}
+                valueStyle={{ color: '#722ed1' }}
+              />
+            </Card>
+          </div>
+
+          {/* Category Tags */}
+          <Card title="Categories" className="mb-6">
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(categoryBreakdown).map(([category, count]) => (
+                <Tag key={category} color="geekblue" className="text-sm py-1 px-3">
+                  {category}: {count}
+                </Tag>
+              ))}
             </div>
-          )}
+          </Card>
+
+          <Divider />
+
+          {/* Recipes Table */}
+          <Card title="All Recipes" className="shadow-sm">
+            {loading ? (
+              <div className="text-center py-12">
+                <Spin size="large" />
+              </div>
+            ) : error ? (
+              <div className="text-center py-12">
+                <Text type="danger">{error}</Text>
+              </div>
+            ) : recipes.length === 0 ? (
+              <Empty description="No recipes found" />
+            ) : (
+              <Table
+                columns={columns}
+                dataSource={recipes}
+                rowKey="_id"
+                pagination={{ pageSize: 10 }}
+                scroll={{ x: true }}
+                className="rounded-md overflow-hidden"
+              />
+            )}
+          </Card>
         </div>
       </div>
     </div>

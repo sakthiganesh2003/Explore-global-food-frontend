@@ -37,7 +37,7 @@ export default function MaidDashboard() {
     pincode: "",
     image: DEFAULT_IMAGE,
     isActive: false,
-    description: "Professional maid",
+    description: "Professional Cook",
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Maid> & { image?: string | File }>({});
@@ -117,7 +117,7 @@ export default function MaidDashboard() {
         pincode: result.data.pincode || "",
         image: result.data.image || DEFAULT_IMAGE,
         isActive: result.data.isActive || false,
-        description: result.data.description || "Professional maid",
+        description: result.data.description || "Professional Cook",
       });
     } catch (error) {
       console.error("Fetch error:", error);

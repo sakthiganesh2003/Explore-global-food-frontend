@@ -105,10 +105,9 @@ const MaidsManagementPage = () => {
 
       setMaids(maids.map((maid) => (maid._id === id ? updatedMaid : maid)));
 
-      toast.success(
-        `Maid ${currentStatus ? "deactivated" : "activated"}`,
-        { position: "top-right" }
-      );
+      toast.success(`Maid ${currentStatus ? "deactivated" : "activated"}`, {
+        position: "top-right",
+      });
     } catch (error: any) {
       toast.error(error.message || "Failed to update status", { position: "top-right" });
       console.error(error);
@@ -212,19 +211,28 @@ const MaidsManagementPage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex min-h-screen bg-gray-100">
+        <Sidebar />
+        <div className="flex-1 flex flex-col items-center py-10">
+          <h1 className="text-3xl text-center font-bold text-gray-800 mb-6">
+            Cooks Management
+          </h1>
+          <div className="w-full max-w-7xl flex flex-col justify-center items-center h-64 bg-white rounded-lg shadow-sm">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+            <p className="mt-4 text-sm font-medium text-gray-600">Loading maids...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-white text-gray-600">
+    <div className="flex min-h-screen bg-gray-100 ">
       <Sidebar />
-      <div className="flex-1 overflow-y-auto">
-        <div className="container mx-auto px-4 py-8">
+      <div className="flex-1 flex flex-col items-center py-10">
+        <div className="w-full max-w-7xl">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">Cooks Management</h1>
+            <h1 className="text-3xl font-bold text-gray-800 ml-6">Cooks Management</h1>
             <div className="flex items-center space-x-4">
               <div className="relative w-64">
                 <input
@@ -235,7 +243,7 @@ const MaidsManagementPage = () => {
                     setFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
                 <svg
                   className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
@@ -253,14 +261,14 @@ const MaidsManagementPage = () => {
               </div>
               <button
                 onClick={() => setAddingMaid(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
               >
                 Add Maid
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -297,7 +305,7 @@ const MaidsManagementPage = () => {
                     </tr>
                   ) : (
                     currentMaids.map((maid) => (
-                      <tr key={maid._id} className={!maid.active ? "bg-gray-50" : ""}>
+                      <tr key={maid._id} className={!maid.active ? "bg-gray-50" : "hover:bg-gray-50"}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-200">
                             <Image
@@ -323,7 +331,7 @@ const MaidsManagementPage = () => {
                             {maid.specialties.slice(0, 3).map((specialty, i) => (
                               <span
                                 key={i}
-                                className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
+                                className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs"
                               >
                                 {specialty}
                               </span>
@@ -371,7 +379,7 @@ const MaidsManagementPage = () => {
                           <div className="flex space-x-2">
                             <button
                               onClick={() => setEditingMaid(maid)}
-                              className="text-blue-600 hover:text-blue-900"
+                              className="text-indigo-600 hover:text-indigo-900"
                               aria-label={`Edit ${maid.fullName}`}
                             >
                               ✏️
@@ -394,7 +402,7 @@ const MaidsManagementPage = () => {
 
             {filteredMaids.length > maidsPerPage && (
               <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <div className="text-sm text-gray-700">
+                <div className="text-sm text-gray-600">
                   Showing <span className="font-medium">{indexOfFirstMaid + 1}</span> to{" "}
                   <span className="font-medium">
                     {Math.min(indexOfLastMaid, filteredMaids.length)}
@@ -405,10 +413,10 @@ const MaidsManagementPage = () => {
                   <button
                     onClick={prevPage}
                     disabled={currentPage === 1}
-                    className={`px-4 py-2 border rounded-md ${
+                    className={`px-4 py-2 rounded-md text-sm font-medium ${
                       currentPage === 1
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-indigo-600 text-white hover:bg-indigo-700"
                     }`}
                   >
                     Previous
@@ -418,10 +426,10 @@ const MaidsManagementPage = () => {
                       <button
                         key={number}
                         onClick={() => paginate(number)}
-                        className={`px-4 py-2 border rounded-md ${
+                        className={`px-4 py-2 rounded-md text-sm font-medium ${
                           currentPage === number
-                            ? "bg-blue-600 text-white"
-                            : "bg-white text-gray-700 hover:bg-gray-50"
+                            ? "bg-indigo-600 text-white"
+                            : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
                         }`}
                       >
                         {number}
@@ -431,10 +439,10 @@ const MaidsManagementPage = () => {
                   <button
                     onClick={nextPage}
                     disabled={currentPage === totalPages}
-                    className={`px-4 py-2 border rounded-md ${
+                    className={`px-4 py-2 rounded-md text-sm font-medium ${
                       currentPage === totalPages
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-indigo-600 text-white hover:bg-indigo-700"
                     }`}
                   >
                     Next
@@ -448,7 +456,7 @@ const MaidsManagementPage = () => {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 max-w-md w-full">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold">Edit Maid</h2>
+                  <h2 className="text-xl font-bold text-gray-900">Edit Maid</h2>
                   <button
                     onClick={() => setEditingMaid(null)}
                     className="text-gray-500 hover:text-gray-700"
@@ -468,7 +476,7 @@ const MaidsManagementPage = () => {
                       onChange={(e) =>
                         setEditingMaid({ ...editingMaid, fullName: e.target.value })
                       }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
                     />
                   </div>
@@ -489,7 +497,7 @@ const MaidsManagementPage = () => {
                             .filter(Boolean),
                         })
                       }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="e.g., Cleaning, Cooking, Childcare"
                     />
                   </div>
@@ -503,7 +511,7 @@ const MaidsManagementPage = () => {
                       onChange={(e) =>
                         setEditingMaid({ ...editingMaid, experience: e.target.value })
                       }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       <option value="0-1 years">0-1 years</option>
                       <option value="1-3 years">1-3 years</option>
@@ -515,7 +523,7 @@ const MaidsManagementPage = () => {
                   <div className="flex justify-end space-x-2 pt-4">
                     <button
                       onClick={() => setEditingMaid(null)}
-                      className="px-4 py-2 border rounded-md hover:bg-gray-50"
+                      className="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50"
                     >
                       Cancel
                     </button>
@@ -531,7 +539,7 @@ const MaidsManagementPage = () => {
                         }
 
                         try {
-                          const res = await fetch(
+                         const res = await fetch(
                             `${process.env.NEXT_PUBLIC_API_URL}/api/maids/maids/${editingMaid._id}`,
                             {
                               method: "PATCH",
@@ -563,7 +571,7 @@ const MaidsManagementPage = () => {
                           console.error(error);
                         }
                       }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                     >
                       Save Changes
                     </button>
@@ -577,7 +585,7 @@ const MaidsManagementPage = () => {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 max-w-md w-full">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold">Add Maid</h2>
+                  <h2 className="text-xl font-bold text-gray-900">Add Maid</h2>
                   <button
                     onClick={() => setAddingMaid(false)}
                     className="text-gray-500 hover:text-gray-700"
@@ -597,7 +605,7 @@ const MaidsManagementPage = () => {
                       onChange={(e) =>
                         setNewMaid({ ...newMaid, fullName: e.target.value })
                       }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       required
                     />
                   </div>
@@ -618,7 +626,7 @@ const MaidsManagementPage = () => {
                             .filter(Boolean),
                         })
                       }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="e.g., Cleaning, Cooking, Childcare"
                     />
                   </div>
@@ -632,7 +640,7 @@ const MaidsManagementPage = () => {
                       onChange={(e) =>
                         setNewMaid({ ...newMaid, experience: e.target.value })
                       }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       <option value="0-1 years">0-1 years</option>
                       <option value="1-3 years">1-3 years</option>
@@ -654,7 +662,7 @@ const MaidsManagementPage = () => {
                       min="0"
                       max="5"
                       step="0.1"
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
 
@@ -668,7 +676,7 @@ const MaidsManagementPage = () => {
                       onChange={(e) =>
                         setNewMaid({ ...newMaid, image: e.target.value })
                       }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="e.g., /images/maid.jpg"
                     />
                   </div>
@@ -683,7 +691,7 @@ const MaidsManagementPage = () => {
                       onChange={(e) =>
                         setNewMaid({ ...newMaid, userId: e.target.value })
                       }
-                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="Enter user ID"
                     />
                   </div>
@@ -691,13 +699,13 @@ const MaidsManagementPage = () => {
                   <div className="flex justify-end space-x-2 pt-4">
                     <button
                       onClick={() => setAddingMaid(false)}
-                      className="px-4 py-2 border rounded-md hover:bg-gray-50"
+                      className="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={addMaid}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                     >
                       Add Maid
                     </button>
