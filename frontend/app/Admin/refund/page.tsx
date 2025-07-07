@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { FiSearch, FiDollarSign, FiX, FiFilter, FiArrowLeft, FiUpload } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -45,10 +45,6 @@ const RefundsPage = () => {
   const refundsPerPage = 10;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetchRefunds();
-  }, []);
-
   const fetchRefunds = async () => {
     setIsLoading(true);
     try {
@@ -63,7 +59,7 @@ const RefundsPage = () => {
       } else {
         throw new Error('Invalid response format');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching refunds:', error);
       toast.error('Failed to load refunds');
     } finally {
@@ -72,10 +68,10 @@ const RefundsPage = () => {
   };
 
   useEffect(() => {
-    filterRefunds();
-  }, [activeFilter, searchTerm, refunds]);
+    fetchRefunds();
+  }, []);
 
-  const filterRefunds = () => {
+  const filterRefunds = useCallback(() => {
     let filtered = [...refunds];
 
     switch (activeFilter) {
@@ -99,7 +95,11 @@ const RefundsPage = () => {
 
     setFilteredRefunds(filtered);
     setCurrentPage(1);
-  };
+  }, [activeFilter, searchTerm, refunds]);
+
+  useEffect(() => {
+    filterRefunds();
+  }, [filterRefunds]);
 
   // Calculate summary statistics
   const summary = {
@@ -139,9 +139,9 @@ const RefundsPage = () => {
       } else {
         throw new Error(data.error || 'Failed to update refund proof');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error updating refund proof:', error);
-      toast.error(error.message || 'Failed to update refund proof');
+      toast.error((error as Error).message || 'Failed to update refund proof');
     }
   };
 

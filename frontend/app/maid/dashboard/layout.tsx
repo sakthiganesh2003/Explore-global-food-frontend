@@ -1,42 +1,36 @@
-"use client"
+"use client";
 import { useRouter } from "next/navigation";
 import { useEffect, ReactNode } from "react";
 import { jwtDecode } from "jwt-decode";
 
-const adminLayout = ({ children }: { children: ReactNode }) => {
+interface DecodedToken {
+  role: string;
+  [key: string]: unknown;
+}
 
-    const router = useRouter();
+const AdminLayout = ({ children }: { children: ReactNode }) => {
+  const router = useRouter();
 
-useEffect(() => {
-  // Get the token from localStorage
-  const token = localStorage.getItem("token");
+  useEffect(() => {
+    const token = localStorage.getItem("token");
 
-  if (token) {
-    try {
-      // Decode the token
-      const decoded: any = jwtDecode(token);
+    if (token) {
+      try {
+        const decoded = jwtDecode<DecodedToken>(token);
 
-      // Check if the role is 'instructor'
-      if (decoded.role !== "maid") {
-        // If the role is not 'instructor', redirect to login
-        router.push("/maid/dashboard");
+        if (decoded.role !== "maid") {
+          router.push("/maid/dashboard");
+        }
+      } catch (error) {
+        console.error("Error decoding token", error);
+        router.push("/login");
       }
-    } catch (error) {
-      console.error("Error decoding token", error);
-      // If decoding fails, redirect to login
+    } else {
       router.push("/login");
     }
-  } else {
-    // If no token, redirect to login
-    router.push("/login");
-  }
-}, [router]);
+  }, [router]);
 
+  return <>{children}</>;
+};
 
-
-return(
-    <>
-    {children}
-    </>
-)}
-export default adminLayout;
+export default AdminLayout;

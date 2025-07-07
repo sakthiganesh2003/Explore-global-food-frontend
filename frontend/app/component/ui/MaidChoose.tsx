@@ -45,8 +45,9 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
 
         if (!res.ok) throw new Error('Failed to fetch maids');
 
-        const data = await res.json();
-        const processedMaids = data.map((maid: any) => ({
+        const data: Maid[] = await res.json();
+        const processedMaids = data.map((maid) => ({
+
           _id: maid._id,
           userId: maid.userId,
           fullName: maid.fullName || 'Professional Maid',

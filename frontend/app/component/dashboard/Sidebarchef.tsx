@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Home, BookOpen, CreditCard, Menu, ArrowLeft } from "lucide-react";
+import { Home, CreditCard, Menu, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 

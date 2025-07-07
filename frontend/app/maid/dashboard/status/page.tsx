@@ -62,9 +62,10 @@ export default function Home() {
         } else {
           setError('Failed to fetch booking data');
         }
-      } catch (err) {
-        setError('An error occurred while fetching data');
-      } finally {
+     } catch (error) {
+      console.error('Failed to decode token:', error);
+         }
+   finally {
         setLoading(false);
       }
     };
@@ -83,7 +84,7 @@ export default function Home() {
       <div className="flex-1 min-h-screen p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Dashboard Overview</h1>
-          <p className="text-gray-600">Welcome back! Here's your booking summary</p>
+          <p className="text-gray-600">Welcome back! Here&apos;s your booking summary</p>
         </div>
 
         {loading && (

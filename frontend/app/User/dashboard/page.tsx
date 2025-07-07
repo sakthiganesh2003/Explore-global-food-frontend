@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Sidebaruser from '@/app/component/dashboard/Sidebaruser';
 import { jwtDecode } from 'jwt-decode';
+import Image from 'next/image';
 
 type Address = {
   city: string;
@@ -299,7 +300,7 @@ export default function ProfilePage() {
           <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
             <div className="flex flex-col sm:flex-row items-center gap-6">
               <div className="relative group">
-                <img
+                <Image
                   className="h-24 w-24 rounded-full object-cover border-2 border-gray-200"
                   src={typeof user.image === 'string' ? user.image : user.image instanceof File ? URL.createObjectURL(user.image) : 'https://randomuser.me/api/portraits/men/1.jpg'}
                   alt={`${user.name || 'User'}'s profile`}

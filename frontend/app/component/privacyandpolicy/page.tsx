@@ -1,11 +1,15 @@
 "use client";
 
+import * as React from 'react';
 import Head from 'next/head';
 import { useEffect } from 'react';
+import Link from 'next/link';
+
+import type { ReactNode } from 'react';
 
 interface PolicySection {
   title: string;
-  content: string | JSX.Element;
+  content: string | ReactNode;
 }
 
 const privacyPolicy: PolicySection[] = [
@@ -193,8 +197,8 @@ export default function PrivacyPolicy() {
         <main className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
           {/* Breadcrumbs */}
           <nav className="mb-8">
-            <a href="/" className="text-blue-600 hover:underline">Home</a> &gt; <span className="text-gray-500">Privacy Policy</span>
-          </nav>
+                <Link href="/" className="text-blue-600 hover:underline">Home</Link> &gt; <span className="text-gray-500">Privacy Policy</span>
+            </nav>
 
           {/* Policy Sections */}
           <div className="space-y-12">

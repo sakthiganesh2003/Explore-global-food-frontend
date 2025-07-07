@@ -4,19 +4,29 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
+// Define the expected response type
+interface SignupResponse {
+  token: string;
+  user: {
+    id: string;
+    name: string;
+    role: string;
+  };
+}
+
 const useSignup = () => {
   const [loading, setLoading] = useState(false);
   const [serverMessage, setServerMessage] = useState("");
-  const [isNameTaken, setIsNameTaken] = useState(false); // New state for name conflict
+  const [isNameTaken, setIsNameTaken] = useState(false);
 
   const handleSignup = async (data: { name: string; email: string; password: string }) => {
     setLoading(true);
     setServerMessage("");
-    setIsNameTaken(false); // Reset name conflict state
+    setIsNameTaken(false);
     console.log("🔍 Sending Signup Request:", data);
 
     try {
-      const response = await axios.post(
+      const response = await axios.post<SignupResponse>(
         `${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`,
         data,
         {
@@ -41,19 +51,19 @@ const useSignup = () => {
 
       if (error.response) {
         console.error("🚨 Server Response:", error.response.data);
-        
+
         // Handle name conflict differently
         if (error.response.data.info && error.response.data.isNameTaken) {
           setServerMessage(error.response.data.info);
           setIsNameTaken(true);
-          toast(error.response.data.info, { 
-            icon: 'ℹ',
+          toast(error.response.data.info, {
+            icon: "ℹ",
             style: {
-              background: '#f0f7ff',
-              color: '#0066cc'
-            }
+              background: "#f0f7ff",
+              color: "#0066cc",
+            },
           });
-        } 
+        }
         // Handle other errors normally
         else {
           setServerMessage(error.response.data.message || "Signup failed");

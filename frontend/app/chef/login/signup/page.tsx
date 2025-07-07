@@ -2,13 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Eye, EyeOff, Mail, User, Lock } from "lucide-react";
 import toast from "react-hot-toast";
 
 const SignUpComponent = () => {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -28,7 +26,12 @@ const SignUpComponent = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateForm = () => {
-    let newErrors = { fullName: "", email: "", password: "", confirmPassword: "" };
+    const newErrors = {
+      fullName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    };
     let isValid = true;
 
     if (!formData.fullName.trim()) {
@@ -64,37 +67,40 @@ const SignUpComponent = () => {
     return isValid;
   };
 
-  const handleChange = (e: { target: { name: any; value: any } }) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     setErrors({ ...errors, [name]: "" });
   };
 
-  const handleSubmit = async (e: { preventDefault: () => void }) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
-      Object.values(errors).forEach(error => {
+      Object.values(errors).forEach((error) => {
         if (error) toast.error(error, { position: "top-center" });
       });
       return;
     }
 
     setLoading(true);
-    
+
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/chef/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.fullName,
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/chef/signup`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.fullName,
+            email: formData.email,
+            password: formData.password,
+          }),
+        }
+      );
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || "Registration failed. Please try again.");
       }
@@ -111,10 +117,13 @@ const SignUpComponent = () => {
               </div>
               <p className="font-bold text-gray-800">Check your email!</p>
             </div>
-            <p className="text-gray-600">We sent a verification link to <span className="font-medium">{formData.email}</span></p>
+            <p className="text-gray-600">
+              We sent a verification link to{" "}
+              <span className="font-medium">{formData.email}</span>
+            </p>
             <button
               onClick={() => {
-                window.open(`mailto:${formData.email}`, '_blank');
+                window.open(`mailto:${formData.email}`, "_blank");
                 toast.dismiss(t.id);
               }}
               className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
@@ -136,15 +145,15 @@ const SignUpComponent = () => {
           },
         }
       );
-
-    } catch (error: any) {
-      toast.error(
-        error.message || "An error occurred during registration. Please try again.",
-        {
-          position: "top-center",
-          duration: 4000,
-        }
-      );
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "An unknown error occurred during registration.";
+      toast.error(message, {
+        position: "top-center",
+        duration: 4000,
+      });
     } finally {
       setLoading(false);
     }
@@ -154,7 +163,7 @@ const SignUpComponent = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 text-gray-800">
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden">
         <div className="flex flex-col lg:flex-row">
-          {/* Left Section - Illustration */}
+          {/* Illustration */}
           <div className="hidden lg:block lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 flex items-center justify-center">
             <div className="text-center text-white">
               <Image
@@ -169,7 +178,7 @@ const SignUpComponent = () => {
             </div>
           </div>
 
-          {/* Right Section - Form */}
+          {/* Form */}
           <div className="w-full lg:w-1/2 p-8 sm:p-12">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
@@ -177,24 +186,22 @@ const SignUpComponent = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Name Field */}
+              {/* Full Name */}
               <div>
                 <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
                   Full Name
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="text-gray-400" size={18} />
-                  </div>
+                  <User className="absolute left-3 top-3 text-gray-400" size={18} />
                   <input
                     id="fullName"
                     type="text"
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg ${
                       errors.fullName ? "border-red-500" : "border-gray-300"
-                    }`}
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     placeholder="John Doe"
                     disabled={loading}
                   />
@@ -202,24 +209,22 @@ const SignUpComponent = () => {
                 {errors.fullName && <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>}
               </div>
 
-              {/* Email Field */}
+              {/* Email */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                   Email Address
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="text-gray-400" size={18} />
-                  </div>
+                  <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
                   <input
                     id="email"
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg ${
                       errors.email ? "border-red-500" : "border-gray-300"
-                    }`}
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     placeholder="you@example.com"
                     disabled={loading}
                   />
@@ -227,84 +232,74 @@ const SignUpComponent = () => {
                 {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
               </div>
 
-              {/* Password Field */}
+              {/* Password */}
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                   Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="text-gray-400" size={18} />
-                  </div>
+                  <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full pl-10 pr-10 py-3 border rounded-lg ${
                       errors.password ? "border-red-500" : "border-gray-300"
-                    }`}
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     placeholder="••••••••"
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className="absolute right-3 top-3 text-gray-500"
                     disabled={loading}
                   >
-                    {showPassword ? (
-                      <EyeOff className="text-gray-500" size={18} />
-                    ) : (
-                      <Eye className="text-gray-500" size={18} />
-                    )}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
                 {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
               </div>
 
-              {/* Confirm Password Field */}
+              {/* Confirm Password */}
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="text-gray-400" size={18} />
-                  </div>
+                  <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
                   <input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full pl-10 pr-10 py-3 border rounded-lg ${
                       errors.confirmPassword ? "border-red-500" : "border-gray-300"
-                    }`}
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     placeholder="••••••••"
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className="absolute right-3 top-3 text-gray-500"
                     disabled={loading}
                   >
-                    {showConfirmPassword ? (
-                      <EyeOff className="text-gray-500" size={18} />
-                    ) : (
-                      <Eye className="text-gray-500" size={18} />
-                    )}
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-                {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                )}
               </div>
 
               {/* Submit Button */}
               <button
                 type="submit"
-                className={`w-full py-3.5 bg-blue-600 text-white font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                className={`w-full py-3.5 bg-blue-600 text-white font-medium rounded-lg transition-all ${
                   loading ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-700"
                 }`}
                 disabled={loading}
@@ -317,12 +312,19 @@ const SignUpComponent = () => {
                       fill="none"
                       viewBox="0 0 24 24"
                     >
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
                       <path
                         className="opacity-75"
                         fill="currentColor"
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
+                      />
                     </svg>
                     <span>Creating account...</span>
                   </div>

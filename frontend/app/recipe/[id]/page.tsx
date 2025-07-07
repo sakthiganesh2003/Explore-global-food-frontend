@@ -83,7 +83,10 @@ export default function RecipeDetail() {
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
           <h2 className="text-2xl font-bold text-red-500 mb-4">Recipe Not Found</h2>
-          <p className="text-gray-600 mb-6">The recipe you\'re looking for doesn\'t exist.</p>
+          <p className="text-gray-600 mb-6">
+                  The recipe you&rsquo;re looking for doesn&rsquo;t exist.
+             </p>
+
           <button 
             onClick={() => router.push('/')}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"

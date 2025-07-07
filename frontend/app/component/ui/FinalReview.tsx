@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Image from 'next/image';
 
 // Declare Razorpay types
 interface RazorpayOptions {
@@ -121,7 +122,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
     };
   }, []);
 
-  const renderRatingStars = (rating: number): JSX.Element[] => {
+  const renderRatingStars = (rating: number): React.ReactElement[] => {
     return Array(5)
       .fill(0)
       .map((_, i) => (
@@ -162,6 +163,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
       const decoded = jwtDecode<DecodedToken>(token);
       userId = decoded.id;
     } catch (err) {
+      console.error('Error decoding token:', err);
       throw new Error('Invalid or expired token. Please log in again.');
     }
 
@@ -217,107 +219,106 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
     router.push('/');
   };
 
-  const initiatePayment = async (isRetry: boolean = false): Promise<void> => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found. Please log in.');
-      }
-
-      let userId: string;
-      try {
-        const decoded = jwtDecode<DecodedToken>(token);
-        userId = decoded.id;
-      } catch (err) {
-        throw new Error('Invalid or expired token. Please log in again.');
-      }
-
-      const endpoint = isRetry ? '/api/payments/retry' : '/api/payments/initiate';
-      const payload = isRetry ? { paymentId, userId } : { userId, amount: parseFloat(calculateTotal()) * 100 }; // Convert to paise
-
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || `Failed to ${isRetry ? 'retry' : 'initiate'} payment`);
-      }
-
-      const options: RazorpayOptions = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY || 'rzp_test_2HTK1FzohCF9N2',
-        order_id: data.order.id,
-        amount: data.order.amount,
-        currency: 'INR',
-        name: 'Maid Booking Service',
-        description: `Payment for booking${isRetry ? ' (Retry)' : ''}`,
-        handler: async (response) => {
-          try {
-            const verifyResponse = await fetch('http://localhost:5000/api/payments/verify', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                orderId: response.razorpay_order_id,
-                paymentId: data.paymentId,
-                razorpayPaymentId: response.razorpay_payment_id,
-                signature: response.razorpay_signature,
-                userId,
-              }),
-            });
-
-            const verifyResult = await verifyResponse.json();
-            if (!verifyResponse.ok) {
-              throw new Error(verifyResult.message || 'Payment verification failed');
-            }
-
-            setPaymentStatus('Payment verified successfully!');
-            toast.success('Payment verified successfully!', { position: 'top-center' });
-            await createBooking(verifyResult.payment._id, response.razorpay_order_id);
-          } catch (err) {
-            const errorMsg = err instanceof Error ? err.message : 'Payment verification failed';
-            setError(errorMsg);
-            setPaymentStatus(null);
-            toast.error(`Payment failed: ${errorMsg}`, { position: 'top-center' });
-            if (!isRetry) {
-              setPaymentId(data.paymentId);
-              setRetryAttempts(retryAttempts + 1);
-            }
-          }
-        },
-        prefill: {
-          contact: formData.time?.phoneNumber || '',
-        },
-        theme: {
-          color: '#2563eb',
-        },
-      };
-
-      if (typeof window.Razorpay !== 'undefined') {
-        const razorpay = new window.Razorpay(options);
-        razorpay.open();
-      } else {
-        throw new Error('Razorpay script not loaded');
-      }
-
-      if (!isRetry) {
-        setPaymentId(data.paymentId);
-      }
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : `Failed to ${isRetry ? 'retry' : 'initiate'} payment`;
-      setError(errorMsg);
-      setPaymentStatus(null);
-      toast.error(`Payment failed: ${errorMsg}`, { position: 'top-center' });
+ const initiatePayment = async (isRetry: boolean = false): Promise<void> => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found. Please log in.');
     }
-  };
 
+    let userId: string;
+    try {
+      const decoded = jwtDecode<DecodedToken>(token);
+      userId = decoded.id;
+    } catch {
+      throw new Error('Invalid or expired token. Please log in again.');
+    }
+
+    const endpoint = isRetry ? '/api/payments/retry' : '/api/payments/initiate';
+    const payload = isRetry ? { paymentId, userId } : { userId, amount: parseFloat(calculateTotal()) * 100 }; // Convert to paise
+
+    const response = await fetch(`http://localhost:5000${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || `Failed to ${isRetry ? 'retry' : 'initiate'} payment`);
+    }
+
+    const options: RazorpayOptions = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY || 'rzp_test_2HTK1FzohCF9N2',
+      order_id: data.order.id,
+      amount: data.order.amount,
+      currency: 'INR',
+      name: 'Maid Booking Service',
+      description: `Payment for booking${isRetry ? ' (Retry)' : ''}`,
+      handler: async (response) => {
+        try {
+          const verifyResponse = await fetch('http://localhost:5000/api/payments/verify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              orderId: response.razorpay_order_id,
+              paymentId: data.paymentId,
+              razorpayPaymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+              userId,
+            }),
+          });
+
+          const verifyResult = await verifyResponse.json();
+          if (!verifyResponse.ok) {
+            throw new Error(verifyResult.message || 'Payment verification failed');
+          }
+
+          setPaymentStatus('Payment verified successfully!');
+          toast.success('Payment verified successfully!', { position: 'top-center' });
+          await createBooking(verifyResult.payment._id, response.razorpay_order_id);
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : 'Payment verification failed';
+          setError(errorMsg);
+          setPaymentStatus(null);
+          toast.error(`Payment failed: ${errorMsg}`, { position: 'top-center' });
+          if (!isRetry) {
+            setPaymentId(data.paymentId);
+            setRetryAttempts(retryAttempts + 1);
+          }
+        }
+      },
+      prefill: {
+        contact: formData.time?.phoneNumber || '',
+      },
+      theme: {
+        color: '#2563eb',
+      },
+    };
+
+    if (typeof window.Razorpay !== 'undefined') {
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } else {
+      throw new Error('Razorpay script not loaded');
+    }
+
+    if (!isRetry) {
+      setPaymentId(data.paymentId);
+    }
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : `Failed to ${isRetry ? 'retry' : 'initiate'} payment`;
+    setError(errorMsg);
+    setPaymentStatus(null);
+    toast.error(`Payment failed: ${errorMsg}`, { position: 'top-center' });
+  }
+};
   const handleRetryPayment = async (): Promise<void> => {
     if (retryAttempts >= 3) {
       setError('Maximum retry attempts exceeded. Please start a new payment.');
@@ -380,14 +381,17 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
         {formData.maid ? (
           <div className="flex items-start">
             <div className="w-20 h-20 mr-4 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-              <img
-                src={formData.maid.image || '/chef-placeholder.jpg'}
-                alt={formData.maid.fullName}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/chef-placeholder.jpg';
-                }}
-              />
+                                    <Image
+                        src={formData.maid.image || '/chef-placeholder.jpg'}
+                        alt={formData.maid.fullName}
+                        className="w-full h-full object-cover"
+                        width={80}
+                        height={80}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/chef-placeholder.jpg';
+                        }}
+                      />
             </div>
             <div className="flex-1">
               <div className="flex justify-between items-start">

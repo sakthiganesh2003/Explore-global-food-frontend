@@ -262,7 +262,8 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="bg-white p-8 rounded-xl shadow-lg border border-gray-100"
               >
-                <div className="text-orange-400 text-4xl mb-4">"</div>
+               <div className="text-orange-400 text-4xl mb-4">&ldquo;</div>
+
                 <p className="text-gray-600 italic mb-6">{testimonial.quote}</p>
                 <div className="border-t border-gray-200 pt-4">
                   <p className="font-bold">{testimonial.author}</p>

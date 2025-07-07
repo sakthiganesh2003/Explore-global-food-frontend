@@ -22,7 +22,9 @@ export default function ChefRegistrationForm() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
@@ -63,13 +65,13 @@ export default function ChefRegistrationForm() {
         body: formDataToSend,
       });
 
-      const text = await response.text(); // Get raw response
-      console.log("Raw response:", text); // Log for debugging
+      const text = await response.text();
+      console.log("Raw response:", text);
 
       let data;
       try {
-        data = JSON.parse(text); // Attempt to parse JSON
-      } catch (err) {
+        data = JSON.parse(text);
+      } catch {
         throw new Error(`Invalid JSON response: ${text.substring(0, 100)}`);
       }
 
@@ -78,9 +80,13 @@ export default function ChefRegistrationForm() {
       }
 
       setSuccess(true);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Submit error:", err);
-      setError(err.message || "An error occurred while submitting the form");
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -186,10 +192,7 @@ export default function ChefRegistrationForm() {
                   onChange={handleChange}
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                 />
-                <label
-                  htmlFor="agreeToTerms"
-                  className="ml-2 block text-sm text-gray-700"
-                >
+                <label htmlFor="agreeToTerms" className="ml-2 block text-sm text-gray-700">
                   I agree to the terms and conditions
                 </label>
               </div>

@@ -68,11 +68,16 @@ const SignInComponent = () => {
       localStorage.setItem("token", data.token);
       toast.success("Login successful!");
       router.push("/");
-    } catch (err: any) {
-      const fallbackMsg = err?.message || "Something went wrong";
-      setError(fallbackMsg);
-      setLoading(false);
-    }
+        }  catch (err: unknown) {
+        if (err instanceof Error) {
+          const fallbackMsg = err.message || "Something went wrong";
+          setError(fallbackMsg);
+        } else {
+          setError("Something went wrong");
+        }
+        setLoading(false);
+      }
+
   };
 
   const resendVerificationEmail = async () => {

@@ -4,6 +4,7 @@ import { useState, useRef, ChangeEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ToastContainer, toast } from 'react-toastify';
 import { jwtDecode } from 'jwt-decode';
+import Image from 'next/image';
 import 'react-toastify/dist/ReactToastify.css';
 
 interface DecodedToken {
@@ -54,7 +55,7 @@ const BecomeMaidForm = () => {
     bankAccountNumber: '',
     bankName: '',
     ifscCode: '',
-    accountHolderName: ''
+    accountHolderName: '',
   });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -68,7 +69,7 @@ const BecomeMaidForm = () => {
   const fallbackLocations: Location[] = [
     { _id: '1', cityName: 'Madurai', pincode: '625001' },
     { _id: '2', cityName: 'Chennai', pincode: '600001' },
-    { _id: '3', cityName: 'Bangalore', pincode: '560001' }
+    { _id: '3', cityName: 'Bangalore', pincode: '560001' },
   ];
 
   const cuisines = ['Indian', 'Italian', 'Chinese', 'Mexican', 'Thai', 'Japanese', 'Mediterranean', 'Other'];
@@ -85,8 +86,8 @@ const BecomeMaidForm = () => {
       try {
         const response = await fetch(url, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
         });
         if (!response.ok) {
           throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
@@ -96,17 +97,18 @@ const BecomeMaidForm = () => {
         if (!Array.isArray(data)) {
           throw new Error('Invalid response format: Expected an array');
         }
-        const uniqueCities = new Set(data.map(loc => loc.cityName.toLowerCase()));
-        console.log(uniqueCities)
+        const uniqueCities = new Set(data.map((loc: Location) => loc.cityName.toLowerCase()));
+        console.log(uniqueCities);
         if (uniqueCities.size < data.length) {
           console.warn('Duplicate city names detected in locations API response');
           toast.warn('Duplicate city names found. Contact support to fix location data.');
         }
         setLocations(data);
         setLocationError(null);
-      } catch (error: any) {
-        console.error('Error fetching locations:', error);
-        setLocationError(`Failed to load locations: ${error.message}. Using fallback locations.`);
+      } catch (error: unknown) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Error fetching locations:', errorMsg);
+        setLocationError(`Failed to load locations: ${errorMsg}. Using fallback locations.`);
         toast.error('Failed to load locations. Using fallback data.');
         setLocations(fallbackLocations); // Use fallback locations
       } finally {
@@ -115,6 +117,7 @@ const BecomeMaidForm = () => {
     };
 
     fetchLocations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Check authentication on component mount
@@ -141,25 +144,25 @@ const BecomeMaidForm = () => {
       setIsLoggedIn(true);
 
       if (decoded.email) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           email: decoded.email || '',
-          fullName: decoded.username || prev.fullName
+          fullName: decoded.username || prev.fullName,
         }));
       }
     } catch (error) {
-      toast.error('Session expired. Please login again.');
-      localStorage.removeItem('token');
-      router.push('/login');
-    }
+  console.error('Submission error:', error);
+  toast.error('Something went wrong');
+   }
+
   }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
     if (validationErrors[name]) {
-      setValidationErrors(prev => {
+      setValidationErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[name];
         return newErrors;
@@ -167,7 +170,7 @@ const BecomeMaidForm = () => {
     }
 
     if (name === 'location') {
-      setFormData(prev => ({ ...prev, pincode: '' }));
+      setFormData((prev) => ({ ...prev, pincode: '' }));
     }
   };
 
@@ -186,9 +189,9 @@ const BecomeMaidForm = () => {
       return;
     }
 
-    setFormData(prev => ({ ...prev, aadhaarPhoto: file }));
+    setFormData((prev) => ({ ...prev, aadhaarPhoto: file }));
 
-    setValidationErrors(prev => {
+    setValidationErrors((prev) => {
       const newErrors = { ...prev };
       delete newErrors.aadhaarPhoto;
       return newErrors;
@@ -204,15 +207,15 @@ const BecomeMaidForm = () => {
   };
 
   const handleCheckboxChange = (cuisine: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       specialties: prev.specialties.includes(cuisine)
-        ? prev.specialties.filter(item => item !== cuisine)
-        : [...prev.specialties, cuisine]
+        ? prev.specialties.filter((item) => item !== cuisine)
+        : [...prev.specialties, cuisine],
     }));
 
     if (validationErrors.specialties) {
-      setValidationErrors(prev => {
+      setValidationErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors.specialties;
         return newErrors;
@@ -294,9 +297,9 @@ const BecomeMaidForm = () => {
       const response = await fetch(`${API_URL}/api/formMaids`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: formDataToSend
+        body: formDataToSend,
       });
 
       if (!response.ok) {
@@ -304,12 +307,12 @@ const BecomeMaidForm = () => {
         throw new Error(errorData.message || 'Submission failed');
       }
 
-      const result = await response.json();
       toast.success('Application submitted successfully!');
       router.push('./');
-    } catch (error: any) {
-      console.error('Submission error:', error);
-      toast.error(error.message || 'Failed to submit application');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to submit application';
+      console.error('Submission error:', errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsUploading(false);
     }
@@ -420,7 +423,7 @@ const BecomeMaidForm = () => {
                         }`}
                       >
                         <option value="">Select location</option>
-                        {locations.map(location => (
+                        {locations.map((location) => (
                           <option key={location._id} value={location._id}>
                             {location.cityName}
                           </option>
@@ -498,10 +501,12 @@ const BecomeMaidForm = () => {
                     {renderError('aadhaarPhoto')}
                     {previewUrl && (
                       <div className="mt-2">
-                        <img
+                        <Image
                           src={previewUrl}
                           alt="Aadhaar preview"
-                          className="h-32 border rounded-lg object-contain"
+                          width={128}
+                          height={128}
+                          className="border rounded-lg object-contain"
                         />
                       </div>
                     )}
@@ -560,7 +565,7 @@ const BecomeMaidForm = () => {
                 </h2>
                 {renderError('specialties')}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {cuisines.map(cuisine => (
+                  {cuisines.map((cuisine) => (
                     <div key={cuisine} className="flex items-center">
                       <input
                         type="checkbox"
@@ -658,9 +663,25 @@ const BecomeMaidForm = () => {
                 >
                   {isUploading ? (
                     <span className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
                       Processing...
                     </span>

@@ -36,14 +36,16 @@ const Time = ({ onSelect }: TimeProps) => {
 
   // Function to convert time string (e.g., "8:00 AM") to Date object for comparison
   const parseTimeToDate = (time: string, date: string) => {
-    const [timePart, period] = time.split(' ');
-    let [hours, minutes] = timePart.split(':').map(Number);
-    if (period === 'PM' && hours !== 12) hours += 12;
-    if (period === 'AM' && hours === 12) hours = 0;
-    const timeDate = new Date(date);
-    timeDate.setHours(hours, minutes, 0, 0);
-    return timeDate;
-  };
+  const [timePart, period] = time.split(' ');
+  const [parsedHours, minutes] = timePart.split(':').map(Number);
+  let hours = parsedHours;
+  if (period === 'PM' && hours !== 12) hours += 12;
+  if (period === 'AM' && hours === 12) hours = 0;
+  const timeDate = new Date(date);
+  timeDate.setHours(hours, minutes, 0, 0);
+  return timeDate;
+};
+
 
   // Get current time and calculate the minimum allowed time (current time + 4 hours)
   const now = new Date();

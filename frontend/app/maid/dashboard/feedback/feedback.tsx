@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import Sidebar from '@/app/component/dashboard/Sidebar';
 import SidebarMaid from '@/app/component/dashboard/SidebarMaid';
 
 // Define TypeScript interfaces for feedback data
@@ -47,9 +46,13 @@ const FeedbackPage: React.FC = () => {
         } else {
           setError('No feedback found');
         }
-      } catch (err: any) {
-        setError(err.message || 'Server error');
-      } finally {
+              } catch (err: unknown) {
+          if (err instanceof Error) {
+            setError(err.message);
+          } else {
+            setError('Server error');
+          }
+        }finally {
         setLoading(false);
       }
     };

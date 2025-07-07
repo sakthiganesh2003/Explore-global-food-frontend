@@ -1,42 +1,36 @@
-"use client"
+"use client";
 import { useRouter } from "next/navigation";
 import { useEffect, ReactNode } from "react";
 import { jwtDecode } from "jwt-decode";
 
-const adminLayout = ({ children }: { children: ReactNode }) => {
+interface JwtPayload {
+  role?: string;
+  // you can add more fields like exp, name, email, etc. if needed
+}
 
-    const router = useRouter();
+const AdminLayout = ({ children }: { children: ReactNode }) => {
+  const router = useRouter();
 
-useEffect(() => {
-  // Get the token from localStorage
-  const token = localStorage.getItem("token");
+  useEffect(() => {
+    const token = localStorage.getItem("token");
 
-  if (token) {
-    try {
-      // Decode the token
-      const decoded: any = jwtDecode(token);
+    if (token) {
+      try {
+        const decoded = jwtDecode<JwtPayload>(token);
 
-      // Check if the role is 'instructor'
-      if (decoded.role !== "chef") {
-        // If the role is not 'instructor', redirect to login
+        if (decoded.role !== "chef") {
+          router.push("/login");
+        }
+      } catch (error) {
+        console.error("Error decoding token", error);
         router.push("/login");
       }
-    } catch (error) {
-      console.error("Error decoding token", error);
-      // If decoding fails, redirect to login
+    } else {
       router.push("/login");
     }
-  } else {
-    // If no token, redirect to login
-    router.push("/login");
-  }
-}, [router]);
+  }, [router]);
 
+  return <>{children}</>;
+};
 
-
-return(
-    <>
-    {children}
-    </>
-)}
-export default adminLayout;
+export default AdminLayout;

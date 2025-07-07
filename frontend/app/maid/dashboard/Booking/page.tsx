@@ -57,7 +57,6 @@ interface DecodedToken {
   email: string;
   exp: number;
   id?: string;
-  [key: string]: any;
 }
 
 export default function OrderDashboard() {
@@ -94,7 +93,7 @@ export default function OrderDashboard() {
           setToken(null);
           setDecodedToken(null);
         }
-      } catch (err) {
+      } catch {
         setError("Invalid token");
         setToken(null);
         setDecodedToken(null);
@@ -683,7 +682,6 @@ export default function OrderDashboard() {
                                           <span className="font-medium text-gray-900 dark:text-white">
                                             #{order._id.slice(-6).toUpperCase()}
                                           </span>
-                                         
                                         </p>
 
                                         {/* Buttons */}
@@ -995,26 +993,6 @@ export default function OrderDashboard() {
                               }}
                               className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-sm border border-gray-100 dark:border-gray-700"
                             >
-                                                                            {/* Optional Icon (Uncomment if needed) */}
-                                                                            {/* <div className="flex justify-center mb-4">
-                                                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                                                      <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="h-6 w-6 text-blue-600 dark:text-blue-400"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                      >
-                                                        <path
-                                                          strokeLinecap="round"
-                                                          strokeLinejoin="round"
-                                                          strokeWidth={2}
-                                                          d="M5 13l4 4L19 7"
-                                                        />
-                                                      </svg>
-                                                    </div>
-                                                  </div> */}
-
                               {/* Title & Message */}
                               <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3 text-center">
                                 Confirm Order

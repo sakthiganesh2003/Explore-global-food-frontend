@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { toast } from "react-hot-toast";
 import Sidebar from "@/app/component/dashboard/Sidebar";
@@ -13,6 +13,12 @@ interface Maid {
   image: string;
   userId?: string;
   active?: boolean;
+}
+
+interface ApiResponse {
+  maid?: Maid;
+  maids?: Maid[];
+  message?: string;
 }
 
 const MaidsManagementPage = () => {
@@ -32,10 +38,6 @@ const MaidsManagementPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const maidsPerPage = 10;
 
-  useEffect(() => {
-    fetchMaids();
-  }, []);
-
   const normalizeExperience = (exp: string | number): string => {
     const years = typeof exp === "string" ? parseInt(exp, 10) : exp;
     if (isNaN(years)) return "0-1 years";
@@ -52,40 +54,53 @@ const MaidsManagementPage = () => {
     return `/${url}`;
   };
 
-  const normalizeMaid = (maid: any): Maid => ({
-    _id: maid._id,
-    fullName: maid.name || maid.fullName || "Unknown",
-    specialties: [
-      ...(maid.cuisine || []),
-      ...(maid.specialties || []),
-    ].filter(Boolean).length > 0
-      ? [...(maid.cuisine || []), ...(maid.specialties || [])].filter(Boolean)
-      : ["General"],
-    rating: maid.rating || 0,
-    experience: normalizeExperience(maid.experience || "0"),
-    image: formatImageUrl(maid.image),
-    userId: maid.userId,
-    active: maid.active !== false,
-  });
+  const normalizeMaid = useCallback((maid: unknown): Maid => {
+    const m = maid as Record<string, unknown>;
+    return {
+      _id: (m._id as string) || "",
+      fullName: (m.name as string) || (m.fullName as string) || "Unknown",
+      specialties: [
+        ...(m.cuisine as string[] || []),
+        ...(m.specialties as string[] || []),
+      ].filter(Boolean).length > 0
+        ? [...(m.cuisine as string[] || []), ...(m.specialties as string[] || [])].filter(Boolean)
+        : ["General"],
+      rating: Number(m.rating) || 0,
+      experience: normalizeExperience(
+        typeof m.experience === "string" || typeof m.experience === "number"
+          ? m.experience
+          : "0"
+      ),
+      image: formatImageUrl(m.image as string),
+      userId: m.userId as string | undefined,
+      active: m.active !== false,
+    };
+  }, []);
 
-  const fetchMaids = async () => {
+  const fetchMaids = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/maids/maids`);
       if (!res.ok) {
-        const errorData = await res.json();
+        const errorData: ApiResponse = await res.json();
         throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
       }
-      const data = await res.json();
-      const normalizedMaids = data.map((maid: any) => normalizeMaid(maid));
+      const data: ApiResponse = await res.json();
+      const normalizedMaids = (data.maids || []).map((maid) => normalizeMaid(maid));
       setMaids(normalizedMaids);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to load maids");
-      console.error(error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message || "Failed to load maids");
+      console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [normalizeMaid]);
+
+
+  useEffect(() => {
+    fetchMaids();
+  }, [fetchMaids]);
 
   const toggleMaidStatus = async (id: string, currentStatus: boolean) => {
     try {
@@ -96,11 +111,11 @@ const MaidsManagementPage = () => {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
+        const errorData: ApiResponse = await res.json();
         throw new Error(errorData.message || "Failed to update status");
       }
 
-      const response = await res.json();
+      const response: ApiResponse = await res.json();
       const updatedMaid = normalizeMaid(response.maid);
 
       setMaids(maids.map((maid) => (maid._id === id ? updatedMaid : maid)));
@@ -108,9 +123,10 @@ const MaidsManagementPage = () => {
       toast.success(`Maid ${currentStatus ? "deactivated" : "activated"}`, {
         position: "top-right",
       });
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update status", { position: "top-right" });
-      console.error(error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message || "Failed to update status", { position: "top-right" });
+      console.error(err);
     }
   };
 
@@ -123,15 +139,16 @@ const MaidsManagementPage = () => {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
+        const errorData: ApiResponse = await res.json();
         throw new Error(errorData.message || "Failed to delete maid");
       }
 
       setMaids(maids.filter((maid) => maid._id !== id));
       toast.success("Maid deleted successfully");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete maid");
-      console.error(error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message || "Failed to delete maid");
+      console.error(err);
     }
   };
 
@@ -168,14 +185,14 @@ const MaidsManagementPage = () => {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
+        const errorData: ApiResponse = await res.json();
         throw new Error(errorData.message || "Failed to add maid");
       }
 
-      const addedMaid = await res.json();
-      const normalizedMaid = normalizeMaid(addedMaid.maid);
+      const response: ApiResponse = await res.json();
+      const addedMaid = normalizeMaid(response.maid);
 
-      setMaids([...maids, normalizedMaid]);
+      setMaids([...maids, addedMaid]);
       toast.success("Maid added successfully");
       setAddingMaid(false);
       setNewMaid({
@@ -186,9 +203,10 @@ const MaidsManagementPage = () => {
         image: "",
         userId: "",
       });
-    } catch (error: any) {
-      toast.error(error.message || "Failed to add maid");
-      console.error(error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message || "Failed to add maid");
+      console.error(err);
     }
   };
 
@@ -227,7 +245,7 @@ const MaidsManagementPage = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100 ">
+    <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
       <div className="flex-1 flex flex-col items-center py-10">
         <div className="w-full max-w-7xl">
@@ -246,7 +264,9 @@ const MaidsManagementPage = () => {
                   className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
                 <svg
-                  className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+                  className="absolute left-3 top-2.5 h-5 w彼此
+
+System: w-5 text-gray-400"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -270,7 +290,7 @@ const MaidsManagementPage = () => {
 
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full divide-Y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -539,7 +559,7 @@ const MaidsManagementPage = () => {
                         }
 
                         try {
-                         const res = await fetch(
+                          const res = await fetch(
                             `${process.env.NEXT_PUBLIC_API_URL}/api/maids/maids/${editingMaid._id}`,
                             {
                               method: "PATCH",
@@ -553,11 +573,11 @@ const MaidsManagementPage = () => {
                           );
 
                           if (!res.ok) {
-                            const errorData = await res.json();
+                            const errorData: ApiResponse = await res.json();
                             throw new Error(errorData.message || "Failed to update maid");
                           }
 
-                          const response = await res.json();
+                          const response: ApiResponse = await res.json();
                           const updatedMaid = normalizeMaid(response.maid);
 
                           setMaids((prev) =>
@@ -566,9 +586,10 @@ const MaidsManagementPage = () => {
 
                           toast.success("Maid updated successfully");
                           setEditingMaid(null);
-                        } catch (error: any) {
-                          toast.error(error.message || "Failed to update maid");
-                          console.error(error);
+                        } catch (error: unknown) {
+                          const err = error as Error;
+                          toast.error(err.message || "Failed to update maid");
+                          console.error(err);
                         }
                       }}
                       className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"

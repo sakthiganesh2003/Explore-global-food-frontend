@@ -1,7 +1,8 @@
-"use client"
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import axios from 'axios';
+"use client";
+import React, { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import axios from "axios";
+import Image from "next/image";
 
 interface Recipe {
   _id: string;
@@ -28,24 +29,31 @@ const ChefPostsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [chefData, setChefData] = useState<ChefPostsData>({
-    chefId: '',
+    chefId: "",
     totalRecipes: 0,
     recipes: [],
-    statusCounts: {}
+    statusCounts: {},
   });
-  const [activeTab, setActiveTab] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<string>("all");
 
   useEffect(() => {
     const fetchChefPosts = async () => {
       try {
         setLoading(true);
-        const response = await axios.get<{ success: boolean; data: ChefPostsData }>(
+        const response = await axios.get<{
+          success: boolean;
+          data: ChefPostsData;
+        }>(
           `${process.env.NEXT_PUBLIC_API_URL}/api/chefposts/chef/status/${chefId}`
         );
         setChefData(response.data.data);
         setLoading(false);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        setError(
+          err instanceof Error
+            ? err.message
+            : "An unknown error occurred while fetching chef posts"
+        );
         setLoading(false);
       }
     };
@@ -57,15 +65,19 @@ const ChefPostsPage: React.FC = () => {
     setActiveTab(newValue);
   };
 
-  const filteredRecipes = activeTab === 'all' 
-    ? chefData.recipes 
-    : chefData.recipes.filter(recipe => recipe.status === activeTab);
+  const filteredRecipes =
+    activeTab === "all"
+      ? chefData.recipes
+      : chefData.recipes.filter((recipe) => recipe.status === activeTab);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'published': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "published":
+        return "bg-green-100 text-green-800";
+      case "draft":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -87,13 +99,17 @@ const ChefPostsPage: React.FC = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Chef's Recipes</h1>
-      
+      <h1 className="text-3xl font-bold mb-6">Chef’s Recipes</h1>
+
       <div className="border-b border-gray-200 mb-6">
         <div className="flex space-x-4">
           <button
-            onClick={() => handleTabChange('all')}
-            className={`px-4 py-2 ${activeTab === 'all' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
+            onClick={() => handleTabChange("all")}
+            className={`px-4 py-2 ${
+              activeTab === "all"
+                ? "border-b-2 border-blue-500 text-blue-600"
+                : "text-gray-500"
+            }`}
           >
             All ({chefData.totalRecipes})
           </button>
@@ -101,7 +117,11 @@ const ChefPostsPage: React.FC = () => {
             <button
               key={status}
               onClick={() => handleTabChange(status)}
-              className={`px-4 py-2 ${activeTab === status ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
+              className={`px-4 py-2 ${
+                activeTab === status
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500"
+              }`}
             >
               {`${status.charAt(0).toUpperCase() + status.slice(1)} (${count})`}
             </button>
@@ -113,7 +133,7 @@ const ChefPostsPage: React.FC = () => {
         <div className="text-center p-8">
           <h2 className="text-xl font-semibold">No recipes found</h2>
           <p className="text-gray-500 mt-2">
-            This chef hasn't posted any recipes yet.
+            This chef hasn’t posted any recipes yet.
           </p>
           <button className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
             Add New Recipe
@@ -122,18 +142,29 @@ const ChefPostsPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {filteredRecipes.map((recipe) => (
-            <div key={recipe._id} className="flex flex-col border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <img
-                src={recipe.image || '/placeholder-recipe.jpg'}
-                alt={recipe.title}
-                className="w-full h-48 object-cover"
-              />
+            <div
+              key={recipe._id}
+              className="flex flex-col border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="relative w-full h-48">
+                <Image
+                  src={recipe.image || "/placeholder-recipe.jpg"}
+                  alt={recipe.title}
+                  layout="fill"
+                  objectFit="cover"
+                  className="rounded-t-lg"
+                />
+              </div>
               <div className="p-4 flex flex-col flex-grow">
                 <h3 className="text-xl font-semibold mb-2">{recipe.title}</h3>
                 <p className="text-gray-600 mb-4">
-                  {recipe.description || 'No description available'}
+                  {recipe.description || "No description available"}
                 </p>
-                <span className={`mt-auto px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(recipe.status)}`}>
+                <span
+                  className={`mt-auto px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                    recipe.status
+                  )}`}
+                >
                   {recipe.status}
                 </span>
               </div>

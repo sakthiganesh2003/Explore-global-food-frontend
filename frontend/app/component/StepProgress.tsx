@@ -10,6 +10,7 @@ import Time from './ui/Time';
 import FinalReview from './ui/FinalReview';
 
 type MaidType = {
+  _id: string; // Added _id to match the expected type in FinalReview
   userId: string;
   fullName: string;
   specialties: string[];
@@ -38,6 +39,7 @@ type TimeSlotType = {
   time: string[];
   address: string;
   phoneNumber: string;
+  pincode: string;
 };
 
 type FoodItemType = {
@@ -56,7 +58,7 @@ type FormDataType = {
   confirmedFoods: FoodItemType[];
 };
 
-const steps = [' Choose Cook', 'Select Cuisine', 'Members', 'Time', 'Final Review'] as const;
+const steps = ['Choose Cook', 'Select Cuisine', 'Members', 'Time', 'Final Review'] as const;
 
 const StepProgress = () => {
   const [currentStep, setCurrentStep] = useState<number>(0);
@@ -105,8 +107,11 @@ const StepProgress = () => {
     }
   };
 
-  const updateMembers = (members: MemberType[]) => {
-    setFormData((prev) => ({ ...prev, members }));
+  const updateMembers = (members: React.SetStateAction<MemberType[]>) => {
+    setFormData((prev) => ({
+      ...prev,
+      members: typeof members === 'function' ? (members as (prev: MemberType[]) => MemberType[])(prev.members) : members,
+    }));
   };
 
   const renderStepContent = () => {
@@ -132,7 +137,7 @@ const StepProgress = () => {
         return (
           <Members
             members={formData.members}
-            setMembers={(members: MemberType[]) => updateFormData({ members })}
+            setMembers={updateMembers}
           />
         );
       case 3:

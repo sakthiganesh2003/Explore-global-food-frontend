@@ -6,46 +6,61 @@ import { toast } from "react-hot-toast";
 interface Maid {
   _id: string;
   fullName: string;
-  name?: string; // Legacy field
+  name?: string;
   cuisine?: (string | null)[];
   specialties: string[];
   rating: number;
   experience: string;
   image?: string;
-  status: "active" | "inactive"; // Assumed field
+  status: "active" | "inactive";
+}
+
+interface ApiMaid {
+  _id?: string;
+  fullName?: string;
+  name?: string;
+  cuisine?: (string | null)[];
+  specialties?: (string | null)[];
+  rating?: number;
+  experience?: string;
+  image?: string;
+  status?: "active" | "inactive";
 }
 
 const MaidAdmin: React.FC = () => {
   const [maids, setMaids] = useState<Maid[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const maidsPerPage = 12; // 3 columns * 4 rows
+  const maidsPerPage = 12;
 
   useEffect(() => {
     const fetchMaids = async () => {
       try {
-        const res = await fetch("{{url}}/api/maids/maids");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/maids/maids`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        const data = await res.json();
-        console.log("API response:", data);
+        const data: ApiMaid[] = await res.json();
 
-        const normalizedMaids = data.map((maid: any) => ({
-          ...maid,
-          fullName: maid.fullName || maid.name || "Unknown", // Handle legacy 'name' field
+        const normalizedMaids = data.map((maid) => ({
+          _id: maid._id || "",
+          fullName: maid.fullName || maid.name || "Unknown",
           specialties: [
-            ...(maid.cuisine || []).filter((c: string | null) => c !== null),
-            ...(maid.specialties || []).filter((s: string | null) => s !== null),
-          ].filter(Boolean).length > 0
-            ? [...(maid.cuisine || []).filter((c: string | null) => c !== null), ...(maid.specialties || [])]
+            ...(maid.cuisine || []).filter((c): c is string => c !== null),
+            ...(maid.specialties || []).filter((s): s is string => s !== null),
+          ].length > 0
+            ? [
+                ...(maid.cuisine || []).filter((c): c is string => c !== null),
+                ...(maid.specialties || []).filter((s): s is string => s !== null),
+              ]
             : ["General Housekeeping"],
           image: formatImageUrl(maid.image),
           experience: maid.experience || "0",
-          status: maid.status || "active", // Mock status if not provided by API
+          rating: maid.rating || 0,
+          status: maid.status || "active",
         }));
 
         setMaids(normalizedMaids);
-      } catch (error) {
-        console.error("Fetch error:", error);
+      } catch (err) {
+        console.error("Fetch error:", err);
         toast.error("Failed to load maids. Please try again later.", {
           position: "top-center",
         });
@@ -67,7 +82,7 @@ const MaidAdmin: React.FC = () => {
   const handleToggleStatus = async (maidId: string, currentStatus: "active" | "inactive") => {
     const newStatus = currentStatus === "active" ? "inactive" : "active";
     try {
-      const res = await fetch(`{{url}}/api/maids/${maidId}/status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/maids/${maidId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -84,8 +99,8 @@ const MaidAdmin: React.FC = () => {
         position: "top-center",
         style: { background: "#4BB543", color: "#fff" },
       });
-    } catch (error) {
-      console.error("Status update error:", error);
+    } catch (err) {
+      console.error("Status update error:", err);
       toast.error("Failed to update status. Please try again.", {
         position: "top-center",
       });
@@ -96,7 +111,7 @@ const MaidAdmin: React.FC = () => {
     if (!confirm(`Are you sure you want to delete ${maidName}?`)) return;
 
     try {
-      const res = await fetch(`{{url}}/api/maids/${maidId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/maids/${maidId}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -106,8 +121,8 @@ const MaidAdmin: React.FC = () => {
         position: "top-center",
         style: { background: "#ff4d4f", color: "#fff" },
       });
-    } catch (error) {
-      console.error("Delete error:", error);
+    } catch (err) {
+      console.error("Delete error:", err);
       toast.error("Failed to delete maid. Please try again.", {
         position: "top-center",
       });
@@ -121,15 +136,11 @@ const MaidAdmin: React.FC = () => {
   );
 
   const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
 
   const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
   if (loading) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Home, Utensils, BookOpen, CreditCard, Menu, ChefHat,BookA ,Book,IndianRupee ,CalendarCog,MessagesSquare,ContactRound,Users,Banknote,ClockArrowUp} from "lucide-react";
+import { Home, Menu, ChefHat,BookA ,Book,IndianRupee ,CalendarCog,MessagesSquare,ContactRound,Users,Banknote,ClockArrowUp} from "lucide-react";
 import Link from "next/link";
 
 const Sidebar = () => {

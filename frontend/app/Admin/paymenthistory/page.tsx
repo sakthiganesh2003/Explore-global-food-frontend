@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
 import Sidebar from '@/app/component/dashboard/Sidebar';
 
-// TypeScript interfaces (unchanged from your original code)
+// TypeScript interfaces
 interface PaymentDetails {
   gateway: string;
   orderId: string;
@@ -105,10 +105,10 @@ interface ApiResponse {
 interface DecodedToken {
   id: string;
   exp?: number;
-  [key: string]: any;
+  [key: string]: unknown; // Allow additional properties
 }
 
-// API utility function (unchanged)
+// API utility function
 const fetchPaymentHistory = async (
   token: string,
   page: number = 1,
@@ -143,7 +143,7 @@ const fetchPaymentHistory = async (
   return data;
 };
 
-// Payment Table Component (unchanged)
+// Payment Table Component
 const PaymentTable: React.FC<{ payments: Payment[] }> = ({ payments }) => {
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -230,9 +230,11 @@ const PaymentHistoryPage: React.FC = () => {
             router.push('/login');
             return;
           }
-        } catch (err) {
+        } catch {
           setError('Invalid authentication token. Please log in again.');
-          router.push('/login');
+          setTimeout(() => {
+            router.push('/login');
+          }, 0);
           return;
         }
 
@@ -261,7 +263,8 @@ const PaymentHistoryPage: React.FC = () => {
         } else {
           setError(data.message || 'Failed to load payment history');
         }
-      } catch (err: any) {
+      } catch (error: unknown) {
+        const err = error as Error;
         setError(err.message || 'An error occurred while fetching payment history');
       } finally {
         setLoading(false);

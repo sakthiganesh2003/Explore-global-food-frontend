@@ -28,7 +28,7 @@ const UserTable = () => {
     const fetchUsers = async () => {
       try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/getalluser`);
-        const userData: User[] = response.data;
+        const userData = response.data as User[];
         setUsers(userData);
         
         // Calculate totals
@@ -37,10 +37,11 @@ const UserTable = () => {
         setTotalMaids(userData.filter(user => user.role === 'maid').length);
         
         setLoading(false);
-      } catch (err) {
-        setError('Failed to fetch users');
+      } catch (err: unknown) {
+        const error = err as Error;
+        setError(error.message || 'Failed to fetch users');
         setLoading(false);
-        toast.error('Failed to fetch users');
+        toast.error(error.message || 'Failed to fetch users');
       }
     };
     fetchUsers();
@@ -61,9 +62,10 @@ const UserTable = () => {
       }
       
       toast.success('User deleted successfully!');
-    } catch (err) {
-      setError('Failed to delete user');
-      toast.error('Failed to delete user');
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Failed to delete user');
+      toast.error(error.message || 'Failed to delete user');
     }
   };
 
@@ -76,9 +78,10 @@ const UserTable = () => {
         user._id === userId ? { ...user, isActive: !currentStatus } : user
       ));
       toast.success(`User ${currentStatus ? 'deactivated' : 'activated'} successfully!`);
-    } catch (err) {
-      setError('Failed to update user status');
-      toast.error('Failed to update user status');
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Failed to update user status');
+      toast.error(error.message || 'Failed to update user status');
     }
   };
 
@@ -97,101 +100,97 @@ const UserTable = () => {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex-1 bg-gray-50 p-6">
+      <ToastContainer position="top-right" autoClose={3000} />
       
-      
-                <div className="flex-1 bg-gray-50">
-            <ToastContainer position="top-right" autoClose={3000} />
-            
-            <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="font-semibold text-lg text-gray-900">Total Users</h3>
-                <p className="text-2xl font-bold text-gray-700">{totalUsers}</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="font-semibold text-lg text-gray-900">Total Chefs</h3>
-                <p className="text-2xl font-bold text-gray-700">{totalChefs}</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="font-semibold text-lg text-gray-900">Total Cooks</h3>
-                <p className="text-2xl font-bold text-gray-700">{totalMaids}</p>
-              </div>
-              </div>
-        
-        <table className="min-w-full bg-white border border-gray-200">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {currentUsers.map((user) => (
-              <tr key={user._id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">{user.role}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    user.isActive 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {user.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <button
-                    onClick={() => {
-                      if (window.confirm(`Are you sure you want to ${user.isActive ? 'deactivate' : 'activate'} this user?`)) {
-                        handleToggleStatus(user._id, user.isActive);
-                      }
-                    }}
-                    className={`mr-2 font-bold py-1 px-3 rounded text-xs ${
-                      user.isActive 
-                        ? 'bg-yellow-500 hover:bg-yellow-700 text-white' 
-                        : 'bg-green-500 hover:bg-green-700 text-white'
-                    }`}
-                  >
-                    {user.isActive ? 'Deactivate' : 'Activate'}
-                  </button>
-                  <button 
-                    onClick={() => {
-                      if (window.confirm('Are you sure you want to delete this user?')) {
-                        handleDelete(user._id);
-                      }
-                    }}
-                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        
-        {/* Pagination */}
-        <div className="flex justify-between items-center mt-4">
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            className={`px-4 py-2 rounded ${currentPage === 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700 text-white'}`}
-          >
-            Previous
-          </button>
-          <span>Page {currentPage} of {totalPages}</span>
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-            className={`px-4 py-2 rounded ${currentPage === totalPages ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700 text-white'}`}
-          >
-            Next
-          </button>
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <h3 className="font-semibold text-lg text-gray-900">Total Users</h3>
+          <p className="text-2xl font-bold text-gray-700">{totalUsers}</p>
         </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <h3 className="font-semibold text-lg text-gray-900">Total Chefs</h3>
+          <p className="text-2xl font-bold text-gray-700">{totalChefs}</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <h3 className="font-semibold text-lg text-gray-900">Total Maids</h3>
+          <p className="text-2xl font-bold text-gray-700">{totalMaids}</p>
+        </div>
+      </div>
+      
+      <table className="min-w-full bg-white border border-gray-200">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {currentUsers.map((user) => (
+            <tr key={user._id}>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.name}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.email}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">{user.role}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  user.isActive 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {user.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <button
+                  onClick={() => {
+                    if (window.confirm(`Are you sure you want to ${user.isActive ? 'deactivate' : 'activate'} this user?`)) {
+                      handleToggleStatus(user._id, user.isActive);
+                    }
+                  }}
+                  className={`mr-2 font-bold py-1 px-3 rounded text-xs ${
+                    user.isActive 
+                      ? 'bg-yellow-500 hover:bg-yellow-700 text-white' 
+                      : 'bg-green-500 hover:bg-green-700 text-white'
+                  }`}
+                >
+                  {user.isActive ? 'Deactivate' : 'Activate'}
+                </button>
+                <button 
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to delete this user?')) {
+                      handleDelete(user._id);
+                    }
+                  }}
+                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      
+      {/* Pagination */}
+      <div className="flex justify-between items-center mt-4">
+        <button
+          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className={`px-4 py-2 rounded ${currentPage === 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700 text-white'}`}
+        >
+          Previous
+        </button>
+        <span>Page {currentPage} of {totalPages}</span>
+        <button
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+          className={`px-4 py-2 rounded ${currentPage === totalPages ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-700 text-white'}`}
+        >
+          Next
+        </button>
       </div>
     </div>
   );
@@ -199,15 +198,15 @@ const UserTable = () => {
 
 const UserPage = () => {
   return (
-          <div className="min-h-screen bg-gray-100 flex">
-        <Sidebar />
-        <div className="flex-1 flex flex-col items-center py-10">
-          <h1 className="text-3xl text-center font-bold text-gray-800 mb-6">User Management</h1>
-          <div className="w-full max-w-9xl bg-white shadow-md rounded-lg p-6">
-            <UserTable />
-          </div>
+    <div className="min-h-screen bg-gray-100 flex">
+      <Sidebar />
+      <div className="flex-1 flex flex-col items-center py-10">
+        <h1 className="text-3xl text-center font-bold text-gray-800 mb-6">User Management</h1>
+        <div className="w-full max-w-7xl bg-white shadow-md rounded-lg p-6">
+          <UserTable />
         </div>
       </div>
+    </div>
   );
 };
 

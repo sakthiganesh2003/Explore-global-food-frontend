@@ -82,7 +82,7 @@ interface Payment {
   paymentType: string;
   installmentNumber: number;
   isPartial: boolean;
-  customerResponse?: CustomerResponse; // Made optional to handle undefined cases
+  customerResponse?: CustomerResponse;
   payId: string;
   completedAt: string;
   createdAt: string;
@@ -106,7 +106,7 @@ interface DecodedToken {
   id: string;
   email?: string;
   name?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const fetchPaymentHistory = async (id: string, token: string): Promise<ApiResponse> => {
@@ -240,11 +240,15 @@ const PaymentHistoryPage: React.FC = () => {
         } else {
           throw new Error(data.message || 'Failed to load payment history');
         }
-      } catch (err: any) {
-        setError(err.message);
-        if (err.message.includes('Authentication') || err.message.includes('Invalid')) {
-          localStorage.removeItem('token');
-          router.push('/login');
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+          if (err.message.includes('Authentication') || err.message.includes('Invalid')) {
+            localStorage.removeItem('token');
+            router.push('/login');
+          }
+        } else {
+          setError('An unknown error occurred');
         }
       } finally {
         setLoading(false);
@@ -292,7 +296,7 @@ const PaymentHistoryPage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <h3 className="mt-2 text-lg font-medium text-gray-900">No payments found</h3>
-              <p className="mt-1 text-sm text-gray-500">You haven't made any payments yet.</p>
+              <p className="mt-1 text-sm text-gray-500">You haven&apos;t made any payments yet.</p>
               <div className="mt-6">
                 <button
                   onClick={() => router.push('/dashboard')}

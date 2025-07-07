@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { toast, Toaster } from "react-hot-toast"; // Import Toaster
+import { toast, Toaster } from "react-hot-toast";
 import SidebarMaid from "@/app/component/dashboard/SidebarMaid";
 import { jwtDecode } from "jwt-decode";
 import { useRouter } from "next/navigation";
-import { users } from "lucide-react";
+import Image from "next/image";
 
 interface Maid {
   id: string;
@@ -17,6 +17,20 @@ interface Maid {
   image: string;
   isActive: boolean;
   description: string;
+}
+
+// Define a separate type for editData to allow image as string | File
+interface EditMaidData {
+  id?: string;
+  fullName?: string;
+  specialties?: string[];
+  rating?: number;
+  experience?: string;
+  servicesLocation?: string;
+  pincode?: string;
+  image?: string | File;
+  isActive?: boolean;
+  description?: string;
 }
 
 interface DecodedToken {
@@ -40,7 +54,7 @@ export default function MaidDashboard() {
     description: "Professional Cook",
   });
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState<Partial<Maid> & { image?: string | File }>({});
+  const [editData, setEditData] = useState<EditMaidData>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -129,8 +143,10 @@ export default function MaidDashboard() {
     }
   };
 
+  // Keep it as is and suppress the warning:
   useEffect(() => {
     fetchMaidProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const activateProfile = async () => {
@@ -311,7 +327,7 @@ export default function MaidDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
-        <Toaster position="top-right" reverseOrder={false} /> {/* Add Toaster */}
+        <Toaster position="top-right" reverseOrder={false} />
         <SidebarMaid />
         <div className="flex-1 p-6 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -323,7 +339,7 @@ export default function MaidDashboard() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
-        <Toaster position="top-right" reverseOrder={false} /> {/* Add Toaster */}
+        <Toaster position="top-right" reverseOrder={false} />
         <SidebarMaid />
         <div className="flex-1 p-6 flex flex-col items-center justify-center">
           <div className="text-red-500 text-lg mb-4">{error}</div>
@@ -348,20 +364,22 @@ export default function MaidDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <Toaster position="top-right" reverseOrder={false} /> {/* Add Toaster */}
+      <Toaster position="top-right" reverseOrder={false} />
       <SidebarMaid />
       <div className="flex-1 p-6 text-gray-800">
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-6">
               <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200">
-                <img
+                <Image
                   src={
                     typeof editData.image === "string" && isEditing
                       ? editData.image
                       : maid.image || DEFAULT_IMAGE
                   }
                   alt={maid.fullName}
+                  width={96}
+                  height={96}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = DEFAULT_IMAGE;
@@ -421,6 +439,16 @@ export default function MaidDashboard() {
                 </span>
               </div>
               <div className="flex gap-2">
+                <button
+                  onClick={activateProfile}
+                  className={`px-4 py-2 rounded-lg text-white transition-colors ${
+                    maid.isActive
+                      ? "bg-red-600 hover:bg-red-700"
+                      : "bg-green-600 hover:bg-green-700"
+                  }`}
+                >
+                  {maid.isActive ? "Deactivate Profile" : "Activate Profile"}
+                </button>
                 {isEditing ? (
                   <>
                     <button
@@ -437,15 +465,12 @@ export default function MaidDashboard() {
                     </button>
                   </>
                 ) : (
-                  <>
-                   
-                    <button
-                      onClick={startEditing}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Edit Profile
-                    </button>
-                  </>
+                  <button
+                    onClick={startEditing}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Edit Profile
+                  </button>
                 )}
               </div>
             </div>

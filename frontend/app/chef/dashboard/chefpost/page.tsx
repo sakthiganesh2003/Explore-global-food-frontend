@@ -1,6 +1,7 @@
 "use client";
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import Sidebarchef from '@/app/component/dashboard/Sidebarchef';
 
 interface FormData {
@@ -154,8 +155,9 @@ export default function RecipeForm() {
         servings: ''
       });
       setTimeout(() => setSubmitSuccess(false), 3000);
-    } catch (error: any) {
-      setErrorMessage(error.message || 'An error occurred while submitting the recipe');
+    } catch (error: unknown) {
+      const err = error as Error;
+      setErrorMessage(err.message || 'An error occurred while submitting the recipe');
     } finally {
       setIsSubmitting(false);
     }
@@ -201,7 +203,7 @@ export default function RecipeForm() {
               <div className="absolute inset-0 bg-opacity-20 bg-white"></div>
               <div className="relative z-10">
                 <h2 className="text-3xl font-bold text-center font-serif">Share Your Signature Recipe</h2>
-                <p className="text-center text-amber-100 mt-2 italic">"A recipe has no soul. You, as the cook, must bring soul to the recipe."</p>
+                <p className="text-center text-amber-100 mt-2 italic">&quot;A recipe has no soul. You, as the cook, must bring soul to the recipe.&quot;</p>
               </div>
             </div>
 
@@ -215,7 +217,7 @@ export default function RecipeForm() {
                   <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  Recipe submitted successfully! It's now cooking in our database!
+                  Recipe submitted successfully! It&apos;s now cooking in our database!
                 </motion.div>
               )}
 
@@ -400,14 +402,14 @@ export default function RecipeForm() {
                           <video
                             src={formData.previewImage}
                             controls
-                            loading="lazy"
                             className="mx-auto h-48 w-auto object-cover rounded-lg shadow-md border-2 border-white"
                           />
                         ) : (
-                          <img
+                          <Image
                             src={formData.previewImage}
                             alt="Preview"
-                            loading="lazy"
+                            width={192}
+                            height={192}
                             className="mx-auto h-48 w-auto object-cover rounded-lg shadow-md border-2 border-white"
                           />
                         )}
@@ -432,7 +434,7 @@ export default function RecipeForm() {
                           aria-hidden="true"
                         >
                           <path
-                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-rn4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
                             strokeWidth={2}
                             strokeLinecap="round"
                             strokeLinejoin="round"

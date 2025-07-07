@@ -1,5 +1,6 @@
-"use client";
-import { useState, useEffect } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import Sidebaruser from '@/app/component/dashboard/Sidebaruser';
@@ -56,7 +57,7 @@ type Booking = {
 interface DecodedToken {
   userId?: string;
   id?: string;
-  [key: string]: any;
+  [key: string]: string | undefined; // Restrict to string or undefined
 }
 
 export default function BookingHistory() {
@@ -69,7 +70,7 @@ export default function BookingHistory() {
   const [feedbackComment, setFeedbackComment] = useState<string>('');
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [feedbackSuccess, setFeedbackSuccess] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Loading state for feedback submission
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const bookingsPerPage = 5;
   const router = useRouter();
 
@@ -99,8 +100,12 @@ export default function BookingHistory() {
         }
         const data: Booking[] = await response.json();
         setBookings(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('An unknown error occurred');
+        }
       } finally {
         setLoading(false);
       }
@@ -140,7 +145,7 @@ export default function BookingHistory() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          userId, // Include userId as per API request
+          userId,
           bookingId,
           rating: feedbackRating,
           comment: feedbackComment,
@@ -232,7 +237,7 @@ export default function BookingHistory() {
 
   // Loading state
   if (loading) {
-    return (
+ return (
       <div className="flex min-h-screen bg-gray-100">
         <Sidebaruser />
         <main className="flex-1 p-6 flex items-center justify-center">
@@ -301,9 +306,8 @@ export default function BookingHistory() {
               <h3 className="mt-2 text-lg font-semibold text-gray-900">
                 No bookings found
               </h3>
-              <p className="mt-1 text-gray-500">
-                You haven't made any bookings yet.
-              </p>
+              <p className="mt-1 text-gray-500">You haven&apos;t made any bookings yet.</p>
+
               <div className="mt-6">
                 <button
                   onClick={() => router.push('/book')}
@@ -630,7 +634,7 @@ export default function BookingHistory() {
                                       fill="currentColor"
                                       viewBox="0 0 20 20"
                                     >
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.97a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.357 2.44a1 1 0 00-.364 1.118l1.287 3.97c.3.921-.755 1.688-1.538 1.118l-3.357-2.44a1 1 0 00-1.175 0l-3.357 2.44c-.783.57-1.838-.197-1.538-1.118l1.287-3.97a1 1 0 00-.364-1.118L2.236 9.397c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.97z" />
+                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.97a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.357 2.44a1 1 0 00-.364 1.118l1.287 3.97c.3 .921-.755 1.688-1.538 1.118l-3.357-2.44a1 1 0 00-1.175 0l-3.357 2.44c-.783.57-1.838-.197-1.538-1.118l1.287-3.97a1 1 0 00-.364-1.118L2.236 9.397c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.97z" />
                                     </svg>
                                   </button>
                                 ))}

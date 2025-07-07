@@ -104,26 +104,26 @@ export default function AdminDashboard() {
 
     try {
       const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/chefposts/${id}`);
-      if (response.data.success) {
-        setRecipes(recipes.filter((recipe) => recipe._id !== id));
+      const data = response.data as { success: boolean };
+      if (data.success) {
+        setRecipes((prevRecipes) => {
+          const deletedRecipe = prevRecipes.find((recipe) => recipe._id === id);
+          if (deletedRecipe) {
+            setCategoryBreakdown((prev) => {
+              const newBreakdown = { ...prev };
+              newBreakdown[deletedRecipe.category_type] = (newBreakdown[deletedRecipe.category_type] || 1) - 1;
+              if (newBreakdown[deletedRecipe.category_type] === 0) delete newBreakdown[deletedRecipe.category_type];
+              return newBreakdown;
+            });
+
+            setMediaBreakdown((prev) => ({
+              ...prev,
+              [deletedRecipe.media.media_type]: prev[deletedRecipe.media.media_type as 'image' | 'video'] - 1,
+            }));
+          }
+          return prevRecipes.filter((recipe) => recipe._id !== id);
+        });
         setTotalPosts((prev) => prev - 1);
-
-        // Update category breakdown
-        const deletedRecipe = recipes.find((recipe) => recipe._id === id);
-        if (deletedRecipe) {
-          setCategoryBreakdown((prev) => {
-            const newBreakdown = { ...prev };
-            newBreakdown[deletedRecipe.category_type] = (newBreakdown[deletedRecipe.category_type] || 1) - 1;
-            if (newBreakdown[deletedRecipe.category_type] === 0) delete newBreakdown[deletedRecipe.category_type];
-            return newBreakdown;
-          });
-
-          // Update media breakdown
-          setMediaBreakdown((prev) => ({
-            ...prev,
-            [deletedRecipe.media.media_type]: prev[deletedRecipe.media.media_type] - 1,
-          }));
-        }
       } else {
         setError('Failed to delete recipe');
       }

@@ -1,17 +1,16 @@
-// app/chef/recipespost/[id]/page.tsx
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import Head from 'next/head';
 import Navbar from '@/app/component/navbar';
 import Footer from '@/app/component/Footer';
 
-// Define TypeScript interface for Recipe
 interface Recipe {
   _id: string;
   recipe_name: string;
   media?: {
     url: string;
     public_id?: string;
-    media_type: string; // e.g., "video" or "image"
+    media_type: string;
     width?: number;
     height?: number;
     format?: string;
@@ -29,9 +28,7 @@ interface Recipe {
 }
 
 async function getRecipe(id: string): Promise<Recipe | null> {
-  if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
-    return null;
-  }
+  if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) return null;
 
   if (!process.env.NEXT_PUBLIC_API_URL) {
     console.error('NEXT_PUBLIC_API_URL is not defined');
@@ -40,17 +37,15 @@ async function getRecipe(id: string): Promise<Recipe | null> {
 
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chefposts/${id}`, {
-      next: { revalidate: 60 }, // Revalidate every 60 seconds
+      next: { revalidate: 60 },
     });
 
-    if (!res.ok) {
-      return null;
-    }
+    if (!res.ok) return null;
 
     const data = await res.json();
     return data.success ? data.data : null;
-  } catch (error) {
-    console.error('Fetch error:', error);
+  } catch (err) {
+    console.error('Fetch error:', err);
     return null;
   }
 }
@@ -58,17 +53,15 @@ async function getRecipe(id: string): Promise<Recipe | null> {
 export async function generateStaticParams() {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chefposts`);
-    if (!res.ok) {
-      return [];
-    }
+    if (!res.ok) return [];
 
     const data = await res.json();
     return data.success
       ? data.data
-          .filter((recipe: Recipe) => recipe._id && /^[0-9a-fA-F]{24}$/.test(recipe._id))
-          .map((recipe: Recipe) => ({ id: recipe._id }))
+          .filter((r: Recipe) => r._id && /^[0-9a-fA-F]{24}$/.test(r._id))
+          .map((r: Recipe) => ({ id: r._id }))
       : [];
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -78,7 +71,7 @@ interface PageProps {
 }
 
 export default async function RecipePage({ params }: PageProps) {
-  const { id } = await params; // Await params to resolve the Promise
+  const { id } = await params;
   const recipe = await getRecipe(id);
 
   if (!recipe) {
@@ -87,7 +80,8 @@ export default async function RecipePage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
-      < Navbar/>
+      <Navbar />
+
       <Head>
         <title>{recipe.recipe_name || 'Recipe'} | Food App</title>
         <meta name="description" content={`Recipe for ${recipe.recipe_name || 'unknown'}`} />
@@ -96,7 +90,7 @@ export default async function RecipePage({ params }: PageProps) {
       <main className="max-w-4xl mx-auto p-4">
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <div className="relative h-64 sm:h-80">
-            {/* Conditionally render image, video, or placeholder */}
+            {/* Optimized media rendering */}
             {recipe.media ? (
               recipe.media.media_type === 'video' ? (
                 <video
@@ -106,23 +100,28 @@ export default async function RecipePage({ params }: PageProps) {
                   aria-label={`Video for ${recipe.recipe_name}`}
                 />
               ) : (
-                <img
+                <Image
                   src={recipe.media.url || '/placeholder.png'}
                   alt={recipe.recipe_name || 'Recipe'}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 700px"
                 />
               )
             ) : (
-              <img
+              <Image
                 src="/placeholder.png"
                 alt="No media available"
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 700px"
               />
             )}
           </div>
 
           <div className="p-6">
             <h1 className="text-3xl font-bold mb-2">{recipe.recipe_name}</h1>
+
             <div className="flex gap-2 mb-4">
               <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
                 {recipe.category_type || 'Unknown'}
@@ -171,7 +170,8 @@ export default async function RecipePage({ params }: PageProps) {
           </div>
         </div>
       </main>
-      < Footer/>
+
+      <Footer />
     </div>
   );
 }

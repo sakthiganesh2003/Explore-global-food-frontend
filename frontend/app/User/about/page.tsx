@@ -206,8 +206,9 @@ const AboutPage = () => {
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Experience Our Cuisine?</h2>
           <p className="text-xl mb-8">
-            Book your table today and embark on a culinary journey through India's diverse flavors
-          </p>
+            Book your table today and embark on a culinary journey through India&apos;s diverse flavors
+           </p>
+
           <button className="bg-white text-orange-500 hover:bg-gray-100 px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg">
             Reserve Your Table
           </button>

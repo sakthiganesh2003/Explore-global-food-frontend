@@ -31,11 +31,12 @@ const ChangePassword = () => {
       if (res.ok) {
         toast.success("Password changed successfully");
         router.push("/login");
-        
       } else {
         toast.error(data.message || "Failed to change password");
       }
     } catch (error) {
+      // Optional: Log error to console for debugging
+      console.error("Change password error:", error);
       toast.error("An error occurred. Please try again later.");
     }
   };

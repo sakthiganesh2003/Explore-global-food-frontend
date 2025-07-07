@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Sidebar from '@/app/component/dashboard/Sidebar';
+import Image from 'next/image';
 
 interface MaidApplication {
   _id: string;
@@ -35,31 +36,30 @@ const AdminDashboard = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    fetchApplications();
-  }, [filter, currentPage]);
-
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     try {
       setLoading(true);
       const url = `http://localhost:5000/api/formMaids?page=${currentPage}${
         filter === 'all' ? '' : `&status=${filter}`
       }`;
       const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch applications');
-      }
-      
+
+      if (!response.ok) throw new Error('Failed to fetch applications');
+
       const { data, totalPages: pages } = await response.json();
       setApplications(data);
       setTotalPages(pages);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to fetch applications');
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message || 'Failed to fetch applications');
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, filter]);
+
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
 
   const updateApplicationStatus = async (id: string, status: 'approved' | 'rejected') => {
     try {
@@ -76,16 +76,17 @@ const AdminDashboard = () => {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Update failed');
       }
-      
+
       const { data } = await response.json();
       toast.success(`Application ${status}`);
-      
-      setApplications(prev => 
-        prev.map(app => app._id === id ? { ...app, status: data.status } : app)
+
+      setApplications(prev =>
+        prev.map(app => (app._id === id ? { ...app, status: data.status } : app))
       );
       setSelectedApp(null);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update application');
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message || 'Failed to update application');
     } finally {
       setIsProcessing(false);
     }
@@ -102,21 +103,20 @@ const AdminDashboard = () => {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Deletion failed');
       }
-      
+
       toast.success('Application deleted');
-      
       setApplications(prev => prev.filter(app => app._id !== id));
       setSelectedApp(null);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete application');
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message || 'Failed to delete application');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const filteredApplications = filter === 'all' 
-    ? applications 
-    : applications.filter(app => app.status === filter);
+  const filteredApplications =
+    filter === 'all' ? applications : applications.filter(app => app.status === filter);
 
   return (
     <div className="flex h-screen bg-white text-gray-600">
@@ -124,10 +124,10 @@ const AdminDashboard = () => {
       <div className="min-h-screen bg-gray-50 p-6 text-gray-800 w-full overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-800 mb-8">Cook Applications</h1>
-          
+
           {/* Filter Controls */}
           <div className="flex flex-wrap gap-2 mb-6">
-            {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
+            {(['all', 'pending', 'approved', 'rejected'] as const).map(f => (
               <button
                 key={f}
                 onClick={() => {
@@ -135,10 +135,13 @@ const AdminDashboard = () => {
                   setCurrentPage(1);
                 }}
                 className={`px-4 py-2 rounded-lg ${
-                  filter === f 
-                    ? f === 'all' ? 'bg-indigo-600 text-white' 
-                      : f === 'pending' ? 'bg-yellow-500 text-white'
-                      : f === 'approved' ? 'bg-green-600 text-white'
+                  filter === f
+                    ? f === 'all'
+                      ? 'bg-indigo-600 text-white'
+                      : f === 'pending'
+                      ? 'bg-yellow-500 text-white'
+                      : f === 'approved'
+                      ? 'bg-green-600 text-white'
                       : 'bg-red-600 text-white'
                     : 'bg-white text-gray-700 border'
                 }`}
@@ -153,9 +156,7 @@ const AdminDashboard = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
             </div>
           ) : filteredApplications.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              No applications found
-            </div>
+            <div className="text-center py-12 text-gray-500">No applications found</div>
           ) : (
             <>
               {/* Table */}
@@ -173,7 +174,7 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="text-gray-600 text-sm">
-                    {filteredApplications.map((app) => (
+                    {filteredApplications.map(app => (
                       <tr
                         key={app._id}
                         className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
@@ -222,9 +223,7 @@ const AdminDashboard = () => {
                         key={page}
                         onClick={() => setCurrentPage(page)}
                         className={`px-4 py-2 rounded-lg ${
-                          currentPage === page 
-                            ? 'bg-indigo-600 text-white' 
-                            : 'bg-white border'
+                          currentPage === page ? 'bg-indigo-600 text-white' : 'bg-white border'
                         }`}
                       >
                         {page}
@@ -243,14 +242,16 @@ const AdminDashboard = () => {
             </>
           )}
 
-          {/* Application Detail Modal */}
+          {/* Modal */}
           {selectedApp && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-6">
                   <div className="flex justify-between items-start">
-                    <h2 className="text-2xl font-bold">{selectedApp.fullName}'s Application</h2>
-                    <button 
+                    <h2 className="text-2xl font-bold">
+                      {selectedApp.fullName}&apos;s Application
+                    </h2>
+                    <button
                       onClick={() => setSelectedApp(null)}
                       className="text-gray-500 hover:text-gray-700 text-xl"
                       disabled={isProcessing}
@@ -263,14 +264,12 @@ const AdminDashboard = () => {
                     <div>
                       <h3 className="text-lg font-semibold mb-2">Personal Information</h3>
                       <div className="space-y-2">
-                        <p><span className="font-medium">Email:</span> {selectedApp.email}</p>
-                        <p><span className="font-medium">Phone:</span> {selectedApp.phone}</p>
-                        <p><span className="font-medium">Experience:</span> {selectedApp.experience}</p>
-                        <p><span className="font-medium">Aadhaar:</span> {selectedApp.aadhaarNumber}</p>
+                        <p><strong>Email:</strong> {selectedApp.email}</p>
+                        <p><strong>Phone:</strong> {selectedApp.phone}</p>
+                        <p><strong>Experience:</strong> {selectedApp.experience}</p>
+                        <p><strong>Aadhaar:</strong> {selectedApp.aadhaarNumber}</p>
                         {selectedApp.availability && (
-                          <p>
-                            <span className="font-medium">Availability:</span> {selectedApp.availability.join(', ')}
-                          </p>
+                          <p><strong>Availability:</strong> {selectedApp.availability.join(', ')}</p>
                         )}
                       </div>
 
@@ -287,10 +286,10 @@ const AdminDashboard = () => {
                         <>
                           <h3 className="text-lg font-semibold mt-6 mb-2">Bank Details</h3>
                           <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
-                            <p><span className="font-medium">Account Holder:</span> {selectedApp.bankDetails.accountHolderName}</p>
-                            <p><span className="font-medium">Account Number:</span> {selectedApp.bankDetails.accountNumber}</p>
-                            <p><span className="font-medium">Bank Name:</span> {selectedApp.bankDetails.bankName}</p>
-                            <p><span className="font-medium">IFSC Code:</span> {selectedApp.bankDetails.ifscCode}</p>
+                            <p><strong>Account Holder:</strong> {selectedApp.bankDetails.accountHolderName}</p>
+                            <p><strong>Account Number:</strong> {selectedApp.bankDetails.accountNumber}</p>
+                            <p><strong>Bank Name:</strong> {selectedApp.bankDetails.bankName}</p>
+                            <p><strong>IFSC Code:</strong> {selectedApp.bankDetails.ifscCode}</p>
                           </div>
                         </>
                       )}
@@ -301,13 +300,12 @@ const AdminDashboard = () => {
                       <p className="text-gray-600 bg-gray-50 p-4 rounded-lg">{selectedApp.bio}</p>
 
                       <h3 className="text-lg font-semibold mt-6 mb-2">Aadhaar Photo</h3>
-                      <img 
-                        src={selectedApp.aadhaarPhoto || 'https://via.placeholder.com/300x200?text=Aadhaar+Photo'} 
-                        alt="Aadhaar" 
+                      <Image
+                        src={selectedApp.aadhaarPhoto || 'https://via.placeholder.com/300x200?text=Aadhaar+Photo'}
+                        alt="Aadhaar"
+                        width={300}
+                        height={200}
                         className="w-full h-auto border rounded-lg"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x200?text=Aadhaar+Photo';
-                        }}
                       />
                     </div>
                   </div>

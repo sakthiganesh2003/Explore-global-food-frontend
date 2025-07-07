@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ApiResponse, Feedback } from './types';
 import Sidebar from '@/app/component/dashboard/Sidebar';
 
 interface Feedback {

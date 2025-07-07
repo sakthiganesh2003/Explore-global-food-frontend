@@ -26,45 +26,46 @@ const SignUpComponent = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const validateForm = () => {
-    let newErrors = { fullName: "", email: "", password: "", confirmPassword: "" };
-    let isValid = true;
+ const validateForm = () => {
+  const newErrors = { fullName: "", email: "", password: "", confirmPassword: "" };
+  let isValid = true;
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required.";
-      isValid = false;
-    }
+  if (!formData.fullName.trim()) {
+    newErrors.fullName = "Full name is required.";
+    isValid = false;
+  }
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required.";
-      isValid = false;
-    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = "Enter a valid email address.";
-      isValid = false;
-    }
+  if (!formData.email.trim()) {
+    newErrors.email = "Email is required.";
+    isValid = false;
+  } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+    newErrors.email = "Enter a valid email address.";
+    isValid = false;
+  }
 
-    if (!formData.password.trim()) {
-      newErrors.password = "Password is required.";
-      isValid = false;
-    } 
+  if (!formData.password.trim()) {
+    newErrors.password = "Password is required.";
+    isValid = false;
+  }
 
-    if (!formData.confirmPassword.trim()) {
-      newErrors.confirmPassword = "Please confirm your password.";
-      isValid = false;
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match.";
-      isValid = false;
-    }
+  if (!formData.confirmPassword.trim()) {
+    newErrors.confirmPassword = "Please confirm your password.";
+    isValid = false;
+  } else if (formData.password !== formData.confirmPassword) {
+    newErrors.confirmPassword = "Passwords do not match.";
+    isValid = false;
+  }
 
-    setErrors(newErrors);
-    return isValid;
-  };
+  setErrors(newErrors);
+  return isValid;
+};
 
-  const handleChange = (e: { target: { name: any; value: any; }; }) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    setErrors({ ...errors, [name]: "" });
-  };
+const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { name, value } = e.target;
+  setFormData({ ...formData, [name]: value });
+  setErrors({ ...errors, [name]: "" });
+};
+
 
   const handleSubmit = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();

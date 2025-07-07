@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Image from "next/image";
 
 interface FoodItem {
   name: string;
@@ -230,11 +231,15 @@ export default function SelectCuisine({
               }`}
             >
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70 z-10" />
-              <img 
-                src={cuisine.image} 
-                alt={cuisine.name} 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
+                                    <Image 
+                      src={cuisine.image} 
+                      alt={cuisine.name} 
+                      width={300}
+                      height={160}
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+
+
               <div className="absolute bottom-0 left-0 right-0 z-20 p-4 text-left">
                 <div className="flex items-center">
                   <span className="text-2xl mr-2">{cuisine.icon}</span>
@@ -259,25 +264,22 @@ export default function SelectCuisine({
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
           {/* Tab Navigation */}
           <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-200">
-            {selectedCuisines.map(cuisineName => {
-              const cuisine = availableCuisines.find(c => c.name === cuisineName);
-              return (
-                <button
-                  key={cuisineName}
-                  onClick={() => setActiveTab(cuisineName)}
-                  className={`flex-shrink-0 px-6 py-4 font-medium text-sm uppercase tracking-wider transition-colors relative ${
-                    activeTab === cuisineName
-                      ? 'text-indigo-600'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {cuisineName}
-                  {activeTab === cuisineName && (
-                    <span className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-indigo-600 rounded-t-full`} />
-                  )}
-                </button>
-              );
-            })}
+                            {selectedCuisines.map(cuisineName => {
+                  const cuisine = availableCuisines.find(c => c.name === cuisineName);
+                  return (
+                    <button
+                      key={cuisineName}
+                      onClick={() => setActiveTab(cuisineName)}
+                      className={`...`}
+                    >
+                      {cuisine?.icon} {cuisineName}
+                      {activeTab === cuisineName && (
+                        <span className="..." />
+                      )}
+                    </button>
+                  );
+                })}
+
           </div>
 
           {/* Tab Content */}
