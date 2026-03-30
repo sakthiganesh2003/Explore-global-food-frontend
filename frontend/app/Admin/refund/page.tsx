@@ -48,7 +48,7 @@ const RefundsPage = () => {
   const fetchRefunds = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/refunds');
+      const response = await fetch('${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/refunds');
       if (!response.ok) {
         throw new Error('Failed to fetch refunds');
       }
@@ -124,7 +124,7 @@ const RefundsPage = () => {
         formData.append('adminComment', adminComment);
       }
 
-      const response = await fetch(`http://localhost:5000/api/refunds/proof/${refundId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/refunds/proof/${refundId}`, {
         method: 'PATCH',
         body: formData,
       });

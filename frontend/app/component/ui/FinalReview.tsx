@@ -199,7 +199,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
       orderId,
     };
 
-    const response = await fetch('http://localhost:5000/api/bookings', {
+    const response = await fetch('${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/bookings', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -237,7 +237,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
     const endpoint = isRetry ? '/api/payments/retry' : '/api/payments/initiate';
     const payload = isRetry ? { paymentId, userId } : { userId, amount: parseFloat(calculateTotal()) * 100 }; // Convert to paise
 
-    const response = await fetch(`http://localhost:5000${endpoint}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -260,7 +260,7 @@ const FinalReview: React.FC<FinalReviewProps> = ({ formData, onConfirm, updateMe
       description: `Payment for booking${isRetry ? ' (Retry)' : ''}`,
       handler: async (response) => {
         try {
-          const verifyResponse = await fetch('http://localhost:5000/api/payments/verify', {
+          const verifyResponse = await fetch('${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/payments/verify', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

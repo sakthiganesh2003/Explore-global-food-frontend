@@ -38,7 +38,7 @@ const ChefsPage: NextPage = () => {
   useEffect(() => {
     const fetchChefs = async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || '${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}';
         const response = await fetch(`${API_URL}/api/chefs?page=${currentPage}`, {
           headers: { 'Accept': 'application/json' },
         });
@@ -80,7 +80,7 @@ const ChefsPage: NextPage = () => {
     setDeleteId(id);
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || '${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}';
       const response = await fetch(`${API_URL}/api/chefs/${id}`, {
         method: 'DELETE',
       });
