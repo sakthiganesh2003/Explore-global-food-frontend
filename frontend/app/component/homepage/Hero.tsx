@@ -2,15 +2,16 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { Star, Play, Users, ChefHat, Timer } from "lucide-react";
 
 const HeroSection = () => {
   return (
-    <section className="relative h-screen w-full overflow-hidden">
-      {/* Background Video with Overlay */}
+    <section className="relative h-screen w-full overflow-hidden flex items-center justify-center">
+      {/* Background Video with refined overlay */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-black/50 z-[1]"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/70 z-[1]"></div>
         <video
-          className="object-cover w-full h-full"
+          className="object-cover w-full h-full scale-105"
           autoPlay
           loop
           muted
@@ -22,66 +23,124 @@ const HeroSection = () => {
         </video>
       </div>
 
+      {/* Decorative Orbs */}
+      <div className="absolute top-1/4 -left-20 w-80 h-80 bg-orange-500/20 rounded-full blur-[100px] z-[2] animate-pulse"></div>
+      <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-indigo-500/20 rounded-full blur-[100px] z-[2] animate-pulse"></div>
+
       {/* Content Container */}
-      <div className="relative z-10 h-full flex flex-col justify-center">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center">
+      <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto flex flex-col items-center">
+          
+          {/* Trust Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full mb-8"
+          >
+            <div className="flex -space-x-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="w-6 h-6 rounded-full border-2 border-indigo-900 bg-gray-300 flex items-center justify-center overflow-hidden">
+                   <img src={`https://i.pravatar.cc/50?u=${i}`} alt="user" />
+                </div>
+              ))}
+            </div>
+            <span className="text-white text-xs sm:text-sm font-medium">Joined by 10k+ food lovers</span>
+            <div className="w-1 h-1 bg-white/40 rounded-full"></div>
+            <div className="flex items-center gap-1 text-orange-400">
+               <Star size={12} fill="currentColor" />
+               <span className="text-xs sm:text-sm font-bold text-white">4.9/5</span>
+            </div>
+          </motion.div>
+
+          <div className="text-center">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
             >
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-                Discover <span className="text-orange-500">World Flavors</span> <br />
-                Crafted Just For You
+              <h1 className="text-5xl sm:text-6xl md:text-8xl font-black text-white mb-6 leading-tight tracking-tight">
+                Authentic <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-500 to-red-600 drop-shadow-sm">
+                  Culinary Stories
+                </span>
               </h1>
               
-              <p className="text-xl text-gray-200 mb-10 max-w-2xl mx-auto">
-                Experience culinary excellence with our handpicked Chefs and Cooks. 
-                Elevate your dining moments with authentic global cuisine.
+              <p className="text-lg sm:text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
+                Connect with world-class private chefs and local cooking experts. 
+                Experience regional flavors prepared fresh in the comfort of your home.
               </p>
             </motion.div>
 
+            {/* Action Buttons */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-              className="flex flex-col sm:flex-row justify-center gap-4"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="flex flex-col sm:flex-row justify-center items-center gap-6"
             >
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  href="/explore"
-                  className="inline-block bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-4 rounded-lg text-lg transition-all shadow-lg"
-                >
-                  Explore Menu
-                </Link>
-              </motion.div>
+              <Link
+                href="/explore"
+                className="group relative inline-flex items-center gap-3 bg-orange-600 hover:bg-orange-500 text-white font-bold px-10 py-5 rounded-2xl text-lg transition-all shadow-[0_0_20px_rgba(234,88,12,0.4)]"
+              >
+                <span>Browse Menu</span>
+                <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-orange-400 group-hover:translate-x-1 transition-transform">
+                   <Play size={16} fill="white" />
+                </div>
+              </Link>
               
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  href="/maid"
-                  className="inline-block bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-4 rounded-lg text-lg transition-all border-2 border-white/30 backdrop-blur-sm"
-                >
-                  Book Cook
-                </Link>
-              </motion.div>
+              <Link
+                href="/maid"
+                className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 text-white font-semibold px-10 py-5 rounded-2xl text-lg transition-all border border-white/20 backdrop-blur-xl hover:border-white/40"
+              >
+                <ChefHat size={20} className="text-orange-400" />
+                <span>Book a Cook</span>
+              </Link>
             </motion.div>
           </div>
+
+          {/* Quick Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.8 }}
+            className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16"
+          >
+            <StatItem icon={<ChefHat size={18} />} label="Professional Chefs" value="500+" />
+            <StatItem icon={<Users size={18} />} label="Daily Bookings" value="1.2k" />
+            <StatItem icon={<Timer size={18} />} label="Avg Response" value="15 min" />
+            <StatItem icon={<Star size={18} />} label="Reviews" value="25k+" />
+          </motion.div>
         </div>
 
-        {/* Floating Food Elements (Optional) */}
+        {/* Scroll Indicator */}
         <motion.div 
-          className="absolute bottom-10 left-1/2 transform -translate-x-1/2"
-          animate={{ y: [0, -15, 0] }}
-          transition={{ duration: 4, repeat: Infinity }}
+          className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2"
+          animate={{ y: [0, 8, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
         >
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
+          <div className="w-6 h-10 border-2 border-white/20 rounded-full flex justify-center p-1">
+             <motion.div 
+               className="w-1 h-2 bg-orange-500 rounded-full"
+               animate={{ y: [0, 4, 0] }}
+               transition={{ duration: 2, repeat: Infinity }}
+             />
+          </div>
+          <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Scroll</span>
         </motion.div>
       </div>
     </section>
   );
 };
+
+const StatItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
+  <div className="flex flex-col items-center md:items-start text-center md:text-left">
+    <div className="flex items-center gap-2 text-orange-400 mb-1">
+      {icon}
+      <span className="text-xl md:text-2xl font-black text-white">{value}</span>
+    </div>
+    <span className="text-[10px] md:text-xs text-white/50 uppercase tracking-widest font-bold">{label}</span>
+  </div>
+);
 
 export default HeroSection;

@@ -230,7 +230,7 @@ const StatsDashboard: React.FC = () => {
 const Maiddash: React.FC = () => (
   <div className="flex min-h-screen bg-white">
     <Sidebar />
-    <main className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6">
+    <main className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6 pt-20 lg:pt-6">
       <StatsDashboard />
     </main>
   </div>

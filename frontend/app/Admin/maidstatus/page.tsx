@@ -247,11 +247,11 @@ const MaidsManagementPage = () => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
-      <div className="flex-1 flex flex-col items-center py-10">
-        <div className="w-full max-w-7xl">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 ml-6">Cooks Management</h1>
-            <div className="flex items-center space-x-4">
+      <div className="flex-1 flex flex-col items-center py-10 pt-20 lg:pt-10">
+        <div className="w-full max-w-7xl px-4 md:px-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Cooks Management</h1>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="relative w-64">
                 <input
                   type="text"

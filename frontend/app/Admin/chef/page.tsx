@@ -139,7 +139,7 @@ const ChefsPage: NextPage = () => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
-      <div className="flex-1 flex flex-col items-center py-10">
+      <div className="flex-1 flex flex-col items-center py-10 pt-20 lg:pt-10 px-4">
         <div className="w-full max-w-7xl">
           <div className="text-left mb-8">
             <h1 className="text-3xl font-bold text-gray-800 ml-5">Chef Management</h1>

@@ -3,6 +3,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import ChefSwiper from "@/app/component/ChefSwiper";
 import Navbar from "@/app/component/navbar";
 import Footer from "@/app/component/Footer";
@@ -25,60 +26,71 @@ export default function Home() {
       {/* 2. Hero Section (Full Viewport) */}
       <section className="relative h-screen p-0 border-spacing-1">
         <Hero />
-        <motion.div 
-          style={{ y: backgroundY }}
-          className="absolute inset-0 -z-10 overflow-hidden"
-        >
-          <Image
-            src="/hero1.jpg"
-            alt="Background"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-black/30"></div>
-        </motion.div>
       </section>
 
       {/* 3. Value Proposition Cards */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            {
-              icon: "🌟",
-              title: "Premium Ingredients",
-              description: "Locally sourced, organic produce for maximum freshness"
-            },
-            {
-              icon: "👨‍🍳",
-              title: "Expert Chefs",
-              description: "Trained culinary artists with 10+ years experience"
-            },
-            {
-              icon: "🚀",
-              title: "Fast Delivery",
-              description: "Hot meals delivered in under 30 minutes"
-            }
-          ].map((item, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all"
-            >
-              <span className="text-4xl mb-4 block">{item.icon}</span>
-              <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-              <p className="text-gray-600">{item.description}</p>
-            </motion.div>
-          ))}
+      <section className="relative py-24 px-4 bg-white overflow-hidden">
+        {/* Background Decorative Element */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl -z-10"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-orange-50 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl -z-10"></div>
+
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-black text-gray-900 mb-4 tracking-tighter sm:text-5xl">
+              Why We Are <span className="text-emerald-600">The Best</span> Choice
+            </h2>
+            <div className="w-24 h-1.5 bg-emerald-500 mx-auto rounded-full"></div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {[
+              {
+                icon: "🌟",
+                title: "Premium Ingredients",
+                description: "Locally sourced, organic produce for maximum freshness and flavor in every bite.",
+                color: "emerald"
+              },
+              {
+                icon: "👨‍🍳",
+                title: "Expert Chefs",
+                description: "Trained culinary artists with deep expertise in regional and global cuisines.",
+                color: "orange"
+              },
+              {
+                icon: "🚀",
+                title: "On-Time Service",
+                description: "Reliable scheduling and punctual service, whether it is for a party or daily meals.",
+                color: "indigo"
+              }
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.15 }}
+                whileHover={{ y: -10 }}
+                viewport={{ once: true }}
+                className="group relative bg-white p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-gray-100 overflow-hidden"
+              >
+                <div className={`absolute top-0 right-0 w-24 h-24 bg-${item.color}-50 rounded-bl-full -z-10 transition-all group-hover:scale-150`}></div>
+                <span className="text-5xl mb-6 block transform transition-transform group-hover:scale-110 group-hover:rotate-12">{item.icon}</span>
+                <h3 className="text-2xl font-bold mb-4 text-gray-900">{item.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{item.description}</p>
+                <div className="mt-6 flex items-center text-emerald-600 font-bold text-sm uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                  Learn More <span className="ml-2">→</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* 4. About Section */}
-      <section className="py-20 px-4 bg-gray-50">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12">
+      <section className="py-32 px-4 bg-gray-950 text-white relative overflow-hidden">
+        {/* Subtle decorative grid */}
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #ffffff 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
+        
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-20 relative z-10">
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -86,25 +98,31 @@ export default function Home() {
             viewport={{ once: true }}
             className="w-full lg:w-1/2 relative"
           >
-            <div className="relative h-96 w-full rounded-2xl overflow-hidden shadow-2xl">
+            <div className="relative h-[500px] w-full rounded-[40px] overflow-hidden shadow-2xl border-4 border-white/10 group">
               <Image
                 src="/Cultural Dishes.jpg"
                 alt="Our Kitchen"
                 fill
-                className="object-cover"
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-60"></div>
             </div>
-            <div className="absolute -bottom-6 -right-6 bg-white p-6 rounded-xl shadow-lg border border-gray-200 w-3/4">
-              <div className="flex items-center gap-4">
-                <div className="bg-orange-100 p-3 rounded-full">
-                  <span className="text-orange-500 text-2xl">🏆</span>
+            {/* Floating Accolade Card */}
+            <motion.div 
+               animate={{ y: [0, -10, 0] }}
+               transition={{ duration: 4, repeat: Infinity }}
+               className="absolute -bottom-10 -right-4 md:-right-10 bg-white p-8 rounded-3xl shadow-2xl border border-gray-100 max-w-xs hidden sm:block"
+            >
+              <div className="flex items-center gap-5">
+                <div className="bg-emerald-100 p-4 rounded-2xl">
+                  <span className="text-emerald-600 text-3xl font-black italic">#1</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">Award Winning</h3>
-                  <p className="text-sm text-gray-600">Best Restaurant 2023</p>
+                   <h4 className="text-gray-900 font-black text-lg mb-1 leading-none uppercase tracking-tighter">Kitchen Platform</h4>
+                   <p className="text-gray-500 text-xs font-bold leading-none">Voted by 50k+ food critics</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
 
           <motion.div
@@ -112,20 +130,30 @@ export default function Home() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="w-full lg:w-1/2 space-y-6"
+            className="w-full lg:w-1/2"
           >
-            <span className="text-orange-500 font-semibold tracking-wider">OUR STORY</span>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-800">
-              Crafting Culinary Excellence Since 2010
-            </h2>
-            <p className="text-lg text-gray-600">
-              Founded with passion and precision, our restaurant blends traditional recipes with innovative techniques to create unforgettable dining experiences.
-            </p>
-            <div className="pt-4">
-              <button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-full font-medium transition-all shadow-lg hover:shadow-orange-200">
-                Learn More About Us
-              </button>
+            <div className="flex items-center gap-3 mb-6">
+               <div className="w-12 h-[2px] bg-emerald-500"></div>
+               <span className="text-emerald-500 uppercase tracking-[0.3em] font-black text-sm">Experience Excellence</span>
             </div>
+            <h2 className="text-5xl md:text-7xl font-black mb-8 tracking-tighter leading-none">
+              Where <span className="text-emerald-500">Passion</span> <br />
+              Meets Your Taste.
+            </h2>
+            <p className="text-gray-400 text-xl leading-relaxed mb-10 font-normal">
+              We bridge the gap between world-class culinary masters and your dining table. Our mission is to provide an unforgettable gastronomic journey by bringing diverse cultures to your kitchen.
+            </p>
+            <ul className="space-y-6 mb-12">
+               {["Only Certified Master Chefs", "Customized Meal Plans", "24/7 Premium Support"].map((text, i) => (
+                 <li key={i} className="flex items-center gap-4 text-lg font-bold group">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">✓</div>
+                    {text}
+                 </li>
+               ))}
+            </ul>
+            <Link href="/explore" className="inline-block px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl transition-all shadow-[0_20px_40px_rgba(5,150,105,0.3)] uppercase tracking-widest text-sm translate-y-0 active:translate-y-1">
+               Discover More
+            </Link>
           </motion.div>
         </div>
       </section>

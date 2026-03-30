@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Menu, X } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false); // Mobile menu toggle
@@ -78,6 +79,16 @@ const Navbar = () => {
   const showBecomeChef = username && userRole === 'chef'; // Show "Become Chef" if logged in and is a chef
   const showBecomeMaid = username && userRole === 'maid'; // Show "Become Maid" if logged in and is a maid
 
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Determine dashboard link based on user role
   const getDashboardLink = () => {
     switch (userRole) {
@@ -107,19 +118,26 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 left-0 z-50 bg-[#059669] shadow-md px-10 py-2">
+    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 px-6 sm:px-10 py-3 ${
+      isScrolled 
+        ? "bg-emerald-800/90 backdrop-blur-lg shadow-xl py-2" 
+        : "bg-transparent py-4"
+    }`}>
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         {/* Logo */}
         <Link
           href="/"
-          className="relative group px-6 py-3 text-xl font-bold text-gray-800 hover:text-white transition-all duration-300"
+          className="relative group flex items-center gap-2 text-2xl font-black text-white tracking-tighter"
         >
           {/* Underline animation */}
           <span className="absolute bottom-0 left-0 h-0.5 bg-emerald-400 w-0 group-hover:w-full transition-all duration-500"></span>
           {/* Floating dots */}
           <span className="absolute -top-1 -left-1 w-2 h-2 rounded-full bg-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100"></span>
           <span className="absolute -bottom-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100"></span>
-          <span className="relative z-10 tracking-wider">GLOBAL FOOD EXPLORE</span>
+          <span className="relative z-10 tracking-wider uppercase">
+            <span className="md:hidden">GLOBAL FOOD</span>
+            <span className="hidden md:inline">GLOBAL FOOD EXPLORE</span>
+          </span>
         </Link>
 
         {/* Desktop Menu */}
@@ -254,10 +272,10 @@ const Navbar = () => {
 
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden text-white text-2xl"
+          className="md:hidden text-white p-2 rounded-lg hover:bg-white/10 transition-colors focus:outline-none"
           onClick={() => setIsOpen(!isOpen)}
         >
-          ☰
+          {isOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
       </div>
 
