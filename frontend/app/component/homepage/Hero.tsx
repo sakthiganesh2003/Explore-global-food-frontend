@@ -28,31 +28,9 @@ const HeroSection = () => {
       <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-indigo-500/20 rounded-full blur-[100px] z-[2] animate-pulse"></div>
 
       {/* Content Container */}
-      <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto flex flex-col items-center">
+      <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8 mt-16 md:mt-0">
+        <div className="max-w-5xl mx-auto flex flex-col items-center pt-24 md:pt-32">
           
-          {/* Trust Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full mb-8"
-          >
-            <div className="flex -space-x-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="w-6 h-6 rounded-full border-2 border-indigo-900 bg-gray-300 flex items-center justify-center overflow-hidden">
-                   <img src={`https://i.pravatar.cc/50?u=${i}`} alt="user" />
-                </div>
-              ))}
-            </div>
-            <span className="text-white text-xs sm:text-sm font-medium">Joined by 10k+ food lovers</span>
-            <div className="w-1 h-1 bg-white/40 rounded-full"></div>
-            <div className="flex items-center gap-1 text-orange-400">
-               <Star size={12} fill="currentColor" />
-               <span className="text-xs sm:text-sm font-bold text-white">4.9/5</span>
-            </div>
-          </motion.div>
-
           <div className="text-center">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
