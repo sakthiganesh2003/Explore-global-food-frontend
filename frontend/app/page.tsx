@@ -30,7 +30,7 @@ export default function Home() {
           className="absolute inset-0 -z-10 overflow-hidden"
         >
           <Image
-            src="/hero-bg.jpg"
+            src="/hero1.jpg"
             alt="Background"
             fill
             className="object-cover"
@@ -150,7 +150,7 @@ export default function Home() {
             {[
               {
                 name: "Indian Cuisine",
-                image: "/indian.jpg",
+                image: "/Indian.jpg",
                 description: "Aromatic spices and rich flavors",
                 dishes: ["Butter Chicken", "Biryani", "Masala Dosa"]
               },
