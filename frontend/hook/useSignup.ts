@@ -20,6 +20,11 @@ const useSignup = () => {
   const [isNameTaken, setIsNameTaken] = useState(false);
 
   const handleSignup = async (data: { name: string; email: string; password: string }) => {
+    // Smart URL Fallback
+    const apiUrl = (!process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL.includes('localhost')) 
+      ? 'https://explorer-global-food-backend.vercel.app' 
+      : process.env.NEXT_PUBLIC_API_URL;
+
     setLoading(true);
     setServerMessage("");
     setIsNameTaken(false);
@@ -27,7 +32,7 @@ const useSignup = () => {
 
     try {
       const response = await axios.post<SignupResponse>(
-        `${process.env.NEXT_PUBLIC_API_URL || "https://explorer-global-food-backend.vercel.app"}/api/auth/signup`,
+        `${apiUrl}/api/auth/signup`,
         data,
         {
           headers: {
