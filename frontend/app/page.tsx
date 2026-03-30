@@ -37,9 +37,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-black text-gray-900 mb-4 tracking-tighter sm:text-5xl">
-              Why We Are <span className="text-emerald-600">The Best</span> Choice
+              Why We Are <span className="text-orange-600 font-black">The Best</span> Choice
             </h2>
-            <div className="w-24 h-1.5 bg-emerald-500 mx-auto rounded-full"></div>
+            <div className="w-24 h-1.5 bg-orange-500 mx-auto rounded-full shadow-[0_0_15px_rgba(249,115,22,0.5)]"></div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
@@ -48,7 +48,7 @@ export default function Home() {
                 icon: "🌟",
                 title: "Premium Ingredients",
                 description: "Locally sourced, organic produce for maximum freshness and flavor in every bite.",
-                color: "emerald"
+                color: "orange"
               },
               {
                 icon: "👨‍🍳",
@@ -60,7 +60,7 @@ export default function Home() {
                 icon: "🚀",
                 title: "On-Time Service",
                 description: "Reliable scheduling and punctual service, whether it is for a party or daily meals.",
-                color: "indigo"
+                color: "orange"
               }
             ].map((item, index) => (
               <motion.div
@@ -72,11 +72,11 @@ export default function Home() {
                 viewport={{ once: true }}
                 className="group relative bg-white p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-gray-100 overflow-hidden"
               >
-                <div className={`absolute top-0 right-0 w-24 h-24 bg-${item.color}-50 rounded-bl-full -z-10 transition-all group-hover:scale-150`}></div>
+                <div className="absolute top-0 right-0 w-24 h-24 bg-orange-50 rounded-bl-full -z-10 transition-all group-hover:scale-150"></div>
                 <span className="text-5xl mb-6 block transform transition-transform group-hover:scale-110 group-hover:rotate-12">{item.icon}</span>
                 <h3 className="text-2xl font-bold mb-4 text-gray-900">{item.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{item.description}</p>
-                <div className="mt-6 flex items-center text-emerald-600 font-bold text-sm uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                <p className="text-gray-600 leading-relaxed hover:text-gray-900 transition-colors">{item.description}</p>
+                <div className="mt-6 flex items-center text-orange-600 font-bold text-sm uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
                   Learn More <span className="ml-2">→</span>
                 </div>
               </motion.div>
@@ -114,8 +114,8 @@ export default function Home() {
                className="absolute -bottom-10 -right-4 md:-right-10 bg-white p-8 rounded-3xl shadow-2xl border border-gray-100 max-w-xs hidden sm:block"
             >
               <div className="flex items-center gap-5">
-                <div className="bg-emerald-100 p-4 rounded-2xl">
-                  <span className="text-emerald-600 text-3xl font-black italic">#1</span>
+                <div className="bg-orange-100 p-4 rounded-2xl">
+                  <span className="text-orange-600 text-3xl font-black italic">#1</span>
                 </div>
                 <div>
                    <h4 className="text-gray-900 font-black text-lg mb-1 leading-none uppercase tracking-tighter">Kitchen Platform</h4>
@@ -133,11 +133,11 @@ export default function Home() {
             className="w-full lg:w-1/2"
           >
             <div className="flex items-center gap-3 mb-6">
-               <div className="w-12 h-[2px] bg-emerald-500"></div>
-               <span className="text-emerald-500 uppercase tracking-[0.3em] font-black text-sm">Experience Excellence</span>
+               <div className="w-12 h-[2px] bg-orange-500"></div>
+               <span className="text-orange-500 uppercase tracking-[0.3em] font-black text-sm">Experience Excellence</span>
             </div>
             <h2 className="text-5xl md:text-7xl font-black mb-8 tracking-tighter leading-none">
-              Where <span className="text-emerald-500">Passion</span> <br />
+              Where <span className="text-orange-500 italic">Passion</span> <br />
               Meets Your Taste.
             </h2>
             <p className="text-gray-400 text-xl leading-relaxed mb-10 font-normal">
@@ -146,15 +146,16 @@ export default function Home() {
             <ul className="space-y-6 mb-12">
                {["Only Certified Master Chefs", "Customized Meal Plans", "24/7 Premium Support"].map((text, i) => (
                  <li key={i} className="flex items-center gap-4 text-lg font-bold group">
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">✓</div>
+                    <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors duration-300">✓</div>
                     {text}
                  </li>
                ))}
             </ul>
-            <Link href="/explore" className="inline-block px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl transition-all shadow-[0_20px_40px_rgba(5,150,105,0.3)] uppercase tracking-widest text-sm translate-y-0 active:translate-y-1">
+            <Link href="/explore" className="inline-block px-12 py-5 bg-orange-600 hover:bg-orange-500 text-white font-black rounded-2xl transition-all shadow-[0_20px_40px_rgba(234,88,12,0.3)] uppercase tracking-widest text-sm translate-y-0 active:translate-y-1">
                Discover More
             </Link>
           </motion.div>
+
         </div>
       </section>
 

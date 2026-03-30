@@ -120,7 +120,7 @@ const Navbar = () => {
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 px-6 sm:px-10 py-3 ${
       isScrolled 
-        ? "bg-emerald-800/90 backdrop-blur-lg shadow-xl py-2 border-b border-emerald-700/30" 
+        ? "bg-orange-800/90 backdrop-blur-lg shadow-xl py-2 border-b border-orange-700/30" 
         : "bg-gradient-to-b from-black/60 to-transparent py-4"
     }`}>
       <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -130,13 +130,13 @@ const Navbar = () => {
           className="relative group flex items-center gap-2 text-2xl font-black text-white tracking-tighter"
         >
           {/* Underline animation */}
-          <span className="absolute bottom-0 left-0 h-0.5 bg-emerald-400 w-0 group-hover:w-full transition-all duration-500"></span>
+          <span className="absolute bottom-0 left-0 h-0.5 bg-orange-400 w-0 group-hover:w-full transition-all duration-500"></span>
           {/* Floating dots */}
-          <span className="absolute -top-1 -left-1 w-2 h-2 rounded-full bg-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100"></span>
-          <span className="absolute -bottom-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100"></span>
-          <span className="relative z-10 tracking-wider uppercase">
+          <span className="absolute -top-1 -left-1 w-2 h-2 rounded-full bg-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100"></span>
+          <span className="absolute -bottom-1 -right-1 w-2 h-2 rounded-full bg-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100"></span>
+          <span className="relative z-10 tracking-wider uppercase font-black text-white">
             <span className="md:hidden">GLOBAL FOOD</span>
-            <span className="hidden md:inline">GLOBAL FOOD EXPLORE</span>
+            <span className="hidden md:inline text-white">GLOBAL FOOD EXPLORE</span>
           </span>
         </Link>
 
@@ -281,7 +281,7 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-green-700">
+        <div className="md:hidden bg-orange-700">
           <div className="flex flex-col items-center py-3 space-y-2">
             <Link
               href="/"
