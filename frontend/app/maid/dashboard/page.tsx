@@ -97,7 +97,7 @@ export default function MaidDashboard() {
       }
 
       console.log("Fetching profile for userId:", userId);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/maid/profile/${userId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://explorer-global-food-backend.vercel.app"}/api/maid/profile/${userId}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -155,7 +155,7 @@ export default function MaidDashboard() {
 
     try {
       console.log("Toggling profile status for userId:", userId);
-      const response = await fetch("${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/maid/toggle-status", {
+      const response = await fetch("https://explorer-global-food-backend.vercel.app/api/maid/toggle-status", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -274,11 +274,11 @@ export default function MaidDashboard() {
         formData.append("image", editData.image);
       }
 
-      console.log("Sending PUT request to:", "${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/maid/profile");
+      console.log("Sending PUT request to:", "https://explorer-global-food-backend.vercel.app/api/maid/profile");
       console.log("Token:", localStorage.getItem("token"));
       console.log("FormData:", Object.fromEntries(formData));
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/maid/profile/${userId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://explorer-global-food-backend.vercel.app"}/api/maid/profile/${userId}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,

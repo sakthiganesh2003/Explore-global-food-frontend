@@ -39,7 +39,7 @@ const AdminDashboard = () => {
   const fetchApplications = useCallback(async () => {
     try {
       setLoading(true);
-      const url = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/formMaids?page=${currentPage}${
+      const url = `${process.env.NEXT_PUBLIC_API_URL || "https://explorer-global-food-backend.vercel.app"}/api/formMaids?page=${currentPage}${
         filter === 'all' ? '' : `&status=${filter}`
       }`;
       const response = await fetch(url);
@@ -64,7 +64,7 @@ const AdminDashboard = () => {
   const updateApplicationStatus = async (id: string, status: 'approved' | 'rejected') => {
     try {
       setIsProcessing(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/formMaids/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://explorer-global-food-backend.vercel.app"}/api/formMaids/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -95,7 +95,7 @@ const AdminDashboard = () => {
   const deleteApplication = async (id: string) => {
     try {
       setIsProcessing(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/formMaids/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://explorer-global-food-backend.vercel.app"}/api/formMaids/${id}`, {
         method: 'DELETE',
       });
 

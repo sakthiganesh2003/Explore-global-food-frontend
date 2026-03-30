@@ -126,7 +126,7 @@ export default function RecipeForm() {
         return;
       }
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || '${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}';
+      const API_URL = "https://explorer-global-food-backend.vercel.app";
       const response = await fetch(`${API_URL}/api/chefposts`, {
         method: 'POST',
         headers: {

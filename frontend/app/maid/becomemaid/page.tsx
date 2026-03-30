@@ -75,7 +75,7 @@ const BecomeMaidForm = () => {
   const cuisines = ['Indian', 'Italian', 'Chinese', 'Mexican', 'Thai', 'Japanese', 'Mediterranean', 'Other'];
 
   // Replace with your actual backend URL
-  const API_URL = '${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}'; // Update this to your backend URL
+  const API_URL = 'https://explorer-global-food-backend.vercel.app'; // Update this to your backend URL
 
   // Fetch locations on component mount
   useEffect(() => {

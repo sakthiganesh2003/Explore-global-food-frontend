@@ -36,7 +36,7 @@ const MaidChoose: React.FC<{ onNext: (maid: Maid) => void }> = ({ onNext }) => {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('Authentication required');
 
-        const res = await fetch('${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/maids/maids', {
+        const res = await fetch('https://explorer-global-food-backend.vercel.app/api/maids/maids', {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',

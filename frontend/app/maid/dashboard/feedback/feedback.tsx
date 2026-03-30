@@ -36,7 +36,7 @@ const FeedbackPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`http://localhost:3000/api/feedback/feedback/${userId}`);
+        const response = await fetch(`https://explorer-global-food-backend.vercel.app/api/feedback/feedback/${userId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch feedback');
         }
