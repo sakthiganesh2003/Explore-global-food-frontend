@@ -27,7 +27,7 @@ const useSignup = () => {
 
     try {
       const response = await axios.post<SignupResponse>(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`,
+        `${process.env.NEXT_PUBLIC_API_URL || "https://explorer-global-food-backend.vercel.app"}/api/auth/signup`,
         data,
         {
           headers: {
