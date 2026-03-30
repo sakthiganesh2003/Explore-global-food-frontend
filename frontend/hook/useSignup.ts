@@ -4,7 +4,8 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
-// Define the expected response type
+const API_BASE = "https://explorer-global-food-backend.vercel.app";
+
 interface SignupResponse {
   token: string;
   user: {
@@ -20,11 +21,6 @@ const useSignup = () => {
   const [isNameTaken, setIsNameTaken] = useState(false);
 
   const handleSignup = async (data: { name: string; email: string; password: string }) => {
-    // Smart URL Fallback
-    const apiUrl = (!process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL.includes('localhost')) 
-      ? 'https://explorer-global-food-backend.vercel.app' 
-      : process.env.NEXT_PUBLIC_API_URL;
-
     setLoading(true);
     setServerMessage("");
     setIsNameTaken(false);
@@ -32,7 +28,7 @@ const useSignup = () => {
 
     try {
       const response = await axios.post<SignupResponse>(
-        `${apiUrl}/api/auth/signup`,
+        `${API_BASE}/api/auth/signup`,
         data,
         {
           headers: {
@@ -57,20 +53,14 @@ const useSignup = () => {
       if (error.response) {
         console.error("🚨 Server Response:", error.response.data);
 
-        // Handle name conflict differently
         if (error.response.data.info && error.response.data.isNameTaken) {
           setServerMessage(error.response.data.info);
           setIsNameTaken(true);
           toast(error.response.data.info, {
             icon: "ℹ",
-            style: {
-              background: "#f0f7ff",
-              color: "#0066cc",
-            },
+            style: { background: "#f0f7ff", color: "#0066cc" },
           });
-        }
-        // Handle other errors normally
-        else {
+        } else {
           setServerMessage(error.response.data.message || "Signup failed");
           toast.error(error.response.data.message || "❌ Signup failed. Please try again.");
         }

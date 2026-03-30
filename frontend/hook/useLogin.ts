@@ -3,21 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const API_BASE = "https://explorer-global-food-backend.vercel.app";
+
 const useLogin = () => {
   const [error, setError] = useState("");
-  const [isUnverified, setIsUnverified] = useState(false); // Track unverified status
+  const [isUnverified, setIsUnverified] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (email: string, password: string) => {
     setError("");
     setIsUnverified(false);
 
-    const apiUrl = (!process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL.includes('localhost')) 
-      ? 'https://explorer-global-food-backend.vercel.app' 
-      : process.env.NEXT_PUBLIC_API_URL;
-
     try {
-      const res = await fetch(`${apiUrl}/api/auth/login`, {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -33,7 +31,6 @@ const useLogin = () => {
         return;
       }
 
-      // Store the token securely
       localStorage.setItem("token", data.token);
       router.push("/");
     } catch (error: any) {

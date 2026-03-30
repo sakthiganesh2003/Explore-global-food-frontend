@@ -50,7 +50,7 @@ const SignInComponent = () => {
 
   const resendVerificationEmail = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/resendverification`, {
+      const response = await fetch(`https://explorer-global-food-backend.vercel.app/api/auth/resendverification`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
