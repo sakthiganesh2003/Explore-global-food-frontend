@@ -292,9 +292,9 @@ const PaymentHistoryPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100 overflow-hidden">
       <Sidebar />
-      <div className="flex-1 p-6 lg:p-8">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pt-20 lg:p-8 lg:pt-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900">Payment History</h1>

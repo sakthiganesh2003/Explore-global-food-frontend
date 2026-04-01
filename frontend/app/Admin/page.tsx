@@ -228,9 +228,9 @@ const StatsDashboard: React.FC = () => {
 };
 
 const Maiddash: React.FC = () => (
-  <div className="flex min-h-screen bg-white">
+  <div className="flex min-h-screen bg-white overflow-hidden">
     <Sidebar />
-    <main className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6 pt-20 lg:pt-6">
+    <main className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6 pt-20 lg:pt-8 h-[100vh]">
       <StatsDashboard />
     </main>
   </div>

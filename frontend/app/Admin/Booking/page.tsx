@@ -119,9 +119,9 @@ const AdminDashboard = () => {
     filter === 'all' ? applications : applications.filter(app => app.status === filter);
 
   return (
-    <div className="flex min-h-screen bg-white text-gray-600">
+    <div className="flex min-h-screen bg-white text-gray-600 overflow-hidden">
       <Sidebar />
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6 pt-20 lg:pt-6 text-gray-800 w-full overflow-y-auto">
+      <div className="flex-1 h-[100vh] overflow-y-auto bg-gray-50 p-4 md:p-6 pt-20 lg:pt-8 text-gray-800">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-800 mb-8">Cook Applications</h1>
 

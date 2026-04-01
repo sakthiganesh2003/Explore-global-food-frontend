@@ -88,10 +88,10 @@ const FeedbackPage = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100 overflow-hidden">
       <Sidebar />
 
-      <div className="flex-1 p-8 justify-center">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pt-20 lg:p-8 lg:pt-8 h-[100vh] justify-center">
         <div className="bg-white rounded-xl shadow-lg p-8">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">Customer Feedback</h1>

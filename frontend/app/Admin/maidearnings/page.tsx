@@ -43,9 +43,9 @@ export default function MaidEarningsPage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 overflow-hidden">
       <Sidebar />
-      <main className="flex-1 p-8 ml-0">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 pt-20 lg:p-8 lg:pt-8 h-[100vh]">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Cook Earnings Dashboard</h1>

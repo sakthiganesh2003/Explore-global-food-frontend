@@ -231,9 +231,9 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 overflow-hidden">
       <Sidebar />
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-y-auto pt-20 lg:pt-0 h-[100vh]">
         <Head>
           <title> Recipes</title>
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />

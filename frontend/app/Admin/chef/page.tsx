@@ -103,9 +103,9 @@ const ChefsPage: NextPage = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-100">
+      <div className="flex min-h-screen bg-gray-100 overflow-hidden">
         <Sidebar />
-        <div className="flex-1 flex flex-col items-center py-10">
+        <div className="flex-1 flex flex-col items-center py-10 pt-20 lg:pt-10 h-[100vh] overflow-y-auto">
           <h1 className="text-3xl text-center font-bold text-gray-800 mb-6">
             Chef Management
           </h1>
@@ -120,9 +120,9 @@ const ChefsPage: NextPage = () => {
 
   if (error) {
     return (
-      <div className="flex min-h-screen bg-gray-100">
+      <div className="flex min-h-screen bg-gray-100 overflow-hidden">
         <Sidebar />
-        <div className="flex-1 flex flex-col items-center py-10">
+        <div className="flex-1 flex flex-col items-center py-10 pt-20 lg:pt-10 h-[100vh] overflow-y-auto">
           <h1 className="text-3xl text-center font-bold text-gray-800 mb-6">
             Chef Management
           </h1>
@@ -137,9 +137,9 @@ const ChefsPage: NextPage = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100 overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col items-center py-10 pt-20 lg:pt-10 px-4">
+      <div className="flex-1 flex flex-col items-center py-10 pt-20 lg:pt-10 px-4 h-[100vh] overflow-y-auto">
         <div className="w-full max-w-7xl">
           <div className="text-left mb-8">
             <h1 className="text-3xl font-bold text-gray-800 ml-5">Chef Management</h1>

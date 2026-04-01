@@ -202,9 +202,9 @@ const RefundsPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50 font-sans">
+    <div className="flex min-h-screen bg-gray-50 font-sans overflow-hidden">
       <Sidebar />
-      <div className="flex-1 p-4 md:p-6 pt-20 lg:pt-6 text-gray-800">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pt-20 lg:pt-8 text-gray-800 h-[100vh]">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Refunds Management</h1>

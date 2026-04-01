@@ -199,9 +199,9 @@ const BookingsPage: NextPage = () => {
         <meta name="description" content="Manage your bookings" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
       </Head>
-      <div className="flex min-h-screen bg-gray-50 font-sans">
+      <div className="flex min-h-screen bg-gray-50 font-sans overflow-hidden">
         <Sidebar />
-        <div className="flex-1 p-4 md:p-6 pt-20 lg:pt-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 pt-20 lg:pt-8 h-[100vh]">
           <div className="max-w-7xl mx-auto">
             <header className="mb-8">
               <h1 className="text-3xl font-bold text-gray-800">Bookings Management</h1>

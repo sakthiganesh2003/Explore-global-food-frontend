@@ -100,14 +100,11 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-10">
-        <Sidebar />
-      </div>
+    <div className="flex min-h-screen bg-gray-100 overflow-hidden">
+      <Sidebar />
 
       {/* Main Content */}
-      <div className="flex-1 ml-64 p-4 md:p-8">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pt-20 lg:p-8 lg:pt-8 h-[100vh]">
         <div className="container mx-auto bg-white rounded-lg shadow-md p-6">
           <h1 className="text-3xl font-bold text-gray-800">Contact Messages</h1>
           

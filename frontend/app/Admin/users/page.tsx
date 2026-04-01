@@ -198,9 +198,9 @@ const UserTable = () => {
 
 const UserPage = () => {
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-screen bg-gray-100 flex overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col items-center py-10 pt-20 lg:pt-10">
+      <div className="flex-1 flex flex-col items-center py-10 pt-20 lg:pt-10 h-[100vh] overflow-y-auto">
         <h1 className="text-3xl text-center font-bold text-gray-800 mb-6 px-4">User Management</h1>
         <div className="w-full max-w-7xl bg-white shadow-md rounded-lg p-4 md:p-6 overflow-hidden">
           <div className="overflow-x-auto">
